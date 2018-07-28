@@ -12,7 +12,9 @@ struct Series {
 
 impl Series {
     pub fn new(var: Var, min_pow: Pow, coeffs: Vec<Coeff>) -> Series {
-        Series{var, min_pow, coeffs}
+        let mut res = Series{var, min_pow, coeffs};
+        res.trim();
+        res
     }
 
     pub fn min_pow(&self) -> Pow {
@@ -32,6 +34,23 @@ impl Series {
         }
         let idx = (pow - self.min_pow()) as usize;
         Some(self.coeffs[idx])
+    }
+
+    fn trim(& mut self) {
+        let idx = {
+            let non_zero = self.coeffs.iter().enumerate().
+                find(|&(_, c)| *c != (0 as Coeff));
+            match non_zero {
+                Some((idx, _)) => Some(idx),
+                _ => None
+            }
+        };
+        if let Some(idx) = idx {
+            if idx > 0 {
+                self.min_pow += idx as Pow;
+                self.coeffs.drain(0..idx);
+            }
+        }
     }
 }
 
@@ -71,6 +90,15 @@ mod tests {
         assert_eq!(s.coeff(-2), Some(2 as Coeff));
         assert_eq!(s.coeff(-1), Some(3 as Coeff));
         assert_eq!(s.coeff(0), None);
+
+        let min_pow = -2;
+        let coeffs = vec!(0.,0.,3.);
+        let s = Series::new(var.clone(), min_pow, coeffs);
+        assert_eq!(s.min_pow(), min_pow + 2);
+        assert_eq!(s.coeff(-2), Some(0 as Coeff));
+        assert_eq!(s.coeff(-1), Some(0 as Coeff));
+        assert_eq!(s.coeff(0), Some(3 as Coeff));
+        assert_eq!(s.coeff(1), None);
     }
 
     #[test]
