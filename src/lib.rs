@@ -1,9 +1,12 @@
 use std::fmt;
+use std::ops::Add;
+use std::cmp::min;
 
 type Var = String;
 type Pow = i32;
 type Coeff = f64;
 
+#[derive(PartialEq,Debug,Clone)]
 struct Series {
     var: Var,
     min_pow: Pow,
@@ -74,6 +77,34 @@ impl fmt::Display for Series {
     }
 }
 
+impl<'a, 'b> Add<&'b Series> for &'a Series {
+    type Output = Series;
+
+    fn add(self, other: &'b Series) -> Series {
+        // TODO: handle this better
+        assert_eq!(self.var, other.var);
+        let res_min_pow = min(self.min_pow(), other.min_pow());
+        let res_max_pow = min(self.max_pow(), other.max_pow());
+        assert!(res_max_pow >= res_min_pow);
+        let num_coeffs = (res_max_pow - res_min_pow) as usize;
+        let mut res_coeff = Vec::with_capacity(num_coeffs);
+        for idx in res_min_pow..res_max_pow {
+            res_coeff.push(
+                self.coeff(idx).unwrap() +  other.coeff(idx).unwrap()
+            );
+        }
+        Series::new(self.var.clone(), res_min_pow, res_coeff)
+    }
+}
+
+impl Add for Series {
+    type Output = Series;
+
+    fn add(self, other: Series) -> Series {
+        &self + &other
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -115,4 +146,33 @@ mod tests {
         let s = Series::new(String::from("x"), -3, vec!(1.,0.,-3.));
         assert_eq!(format!("{}", s), "(1)*x^-3 + (-3)*x^-1 + O(x^0)");
     }
+
+    #[test]
+    fn tst_add() {
+        let s = Series::new(String::from("x"), -3, vec!(1.,0.,-3.));
+        let res = Series::new(String::from("x"), -3, vec!(2.,0.,-6.));
+        assert_eq!(res, &s + &s);
+        assert_eq!(res, s.clone() + s.clone());
+
+        let s = Series::new(String::from("x"), -3, vec!(1.,0.,-3.));
+        let t = Series::new(String::from("x"), -1, vec!(3., 4., 5.));
+        let res = Series::new(String::from("x"), -3, vec!(1.,0.,0.));
+        assert_eq!(res, &s + &t);
+        assert_eq!(res, &t + &s);
+        assert_eq!(res, s + t);
+
+        let s = Series::new(String::from("x"), -3, vec!(1.,0.,-3.));
+        let t = Series::new(String::from("x"), 1, vec!(3., 4., 5.));
+        assert_eq!(s, &s + &t);
+        assert_eq!(s, &t + &s);
+        assert_eq!(s, s.clone() + t);
+
+        let s = Series::new(String::from("x"), -3, vec!(1.,0.,-3.));
+        let t = Series::new(String::from("x"), -3, vec!(-1., 0., 3.));
+        let res = Series::new(String::from("x"), 0, vec!());
+        assert_eq!(res, &s + &t);
+        assert_eq!(res, &t + &s);
+        assert_eq!(res, s + t);
+    }
+
 }
