@@ -22,12 +22,13 @@ impl Series {
     }
 
     pub fn max_pow(&self) -> Pow {
-        self.min_pow + self.coeffs.len() as i32 - 1
+        // TODO: replace i32 by bigger type
+        self.min_pow + Pow::from(self.coeffs.len() as i32) - 1
     }
 
     pub fn coeff(&self, pow: Pow) -> Option<Coeff> {
         if pow < self.min_pow() {
-            return Some(0 as Coeff)
+            return Some(Coeff::from(0))
         }
         if pow > self.max_pow() {
             return None
@@ -39,7 +40,7 @@ impl Series {
     fn trim(& mut self) {
         let idx = {
             let non_zero = self.coeffs.iter().enumerate().
-                find(|&(_, c)| *c != (0 as Coeff));
+                find(|&(_, c)| *c != Coeff::from(0));
             match non_zero {
                 Some((idx, _)) => Some(idx),
                 _ => None
@@ -47,7 +48,7 @@ impl Series {
         };
         if let Some(idx) = idx {
             if idx > 0 {
-                self.min_pow += idx as Pow;
+                self.min_pow += Pow::from(idx as i32);
                 self.coeffs.drain(0..idx);
             }
         }
@@ -57,8 +58,8 @@ impl Series {
 impl fmt::Display for Series {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         for (i, coeff) in self.coeffs.iter().enumerate() {
-            if *coeff == (0 as Coeff) { continue; }
-            let cur_pow = self.min_pow() + (i as Pow);
+            if *coeff == Coeff::from(0) { continue; }
+            let cur_pow = self.min_pow() + Pow::from(i as i32);
             if i > 0 { write!(f, " + ")?; }
             write!(f, "({})*{}^{}", coeff, self.var, cur_pow)?;
         }
@@ -78,26 +79,26 @@ mod tests {
         let coeffs = vec!();
         let s = Series::new(var.clone(), min_pow, coeffs);
         assert_eq!(s.min_pow(), min_pow);
-        assert_eq!(s.coeff(-11), Some(0 as Coeff));
+        assert_eq!(s.coeff(-11), Some(Coeff::from(0)));
         assert_eq!(s.coeff(-10), None);
 
         let min_pow = -3;
         let coeffs = vec!(1.,2.,3.);
         let s = Series::new(var.clone(), min_pow, coeffs);
         assert_eq!(s.min_pow(), min_pow);
-        assert_eq!(s.coeff(-4), Some(0 as Coeff));
-        assert_eq!(s.coeff(-3), Some(1 as Coeff));
-        assert_eq!(s.coeff(-2), Some(2 as Coeff));
-        assert_eq!(s.coeff(-1), Some(3 as Coeff));
+        assert_eq!(s.coeff(-4), Some(Coeff::from(0)));
+        assert_eq!(s.coeff(-3), Some(Coeff::from(1)));
+        assert_eq!(s.coeff(-2), Some(Coeff::from(2)));
+        assert_eq!(s.coeff(-1), Some(Coeff::from(3)));
         assert_eq!(s.coeff(0), None);
 
         let min_pow = -2;
         let coeffs = vec!(0.,0.,3.);
         let s = Series::new(var.clone(), min_pow, coeffs);
         assert_eq!(s.min_pow(), min_pow + 2);
-        assert_eq!(s.coeff(-2), Some(0 as Coeff));
-        assert_eq!(s.coeff(-1), Some(0 as Coeff));
-        assert_eq!(s.coeff(0), Some(3 as Coeff));
+        assert_eq!(s.coeff(-2), Some(Coeff::from(0)));
+        assert_eq!(s.coeff(-1), Some(Coeff::from(0)));
+        assert_eq!(s.coeff(0), Some(Coeff::from(3)));
         assert_eq!(s.coeff(1), None);
     }
 
