@@ -1,5 +1,5 @@
 use std::fmt;
-use std::ops::Add;
+use std::ops::{Add,Mul};
 use std::cmp::min;
 
 type Var = String;
@@ -81,8 +81,7 @@ impl<'a, 'b> Add<&'b Series> for &'a Series {
     type Output = Series;
 
     fn add(self, other: &'b Series) -> Series {
-        // TODO: handle this better
-        assert_eq!(self.var, other.var);
+        assert_eq!(self.var, other.var); // TODO: handle this better
         let res_min_pow = min(self.min_pow(), other.min_pow());
         let res_max_pow = min(self.max_pow(), other.max_pow());
         assert!(res_max_pow >= res_min_pow);
@@ -102,6 +101,34 @@ impl Add for Series {
 
     fn add(self, other: Series) -> Series {
         &self + &other
+    }
+}
+
+impl<'a, 'b> Mul<&'b Series> for &'a Series {
+    type Output = Series;
+
+    fn mul(self, other: &'b Series) -> Series {
+        assert_eq!(self.var, other.var); // TODO: handle this better
+        let res_min_pow = self.min_pow() + other.min_pow();
+        let num_coeffs = min(self.coeffs.len(), other.coeffs.len());
+        // compute Cauchy product
+        let mut res_coeff = Vec::with_capacity(num_coeffs);
+        for k in 0..num_coeffs {
+            let mut c_k = self.coeffs[0]*other.coeffs[k];
+            for i in 1..(k+1) {
+                c_k += self.coeffs[i]*other.coeffs[k-i];
+            }
+            res_coeff.push(c_k);
+        }
+        Series::new(self.var.clone(), res_min_pow, res_coeff)
+    }
+}
+
+impl Mul for Series {
+    type Output = Series;
+
+    fn mul(self, other: Series) -> Series {
+        &self * &other
     }
 }
 
@@ -173,6 +200,28 @@ mod tests {
         assert_eq!(res, &s + &t);
         assert_eq!(res, &t + &s);
         assert_eq!(res, s + t);
+    }
+
+    #[test]
+    fn tst_mul() {
+        let s = Series::new(String::from("x"), -3, vec!(1.,0.,-3.));
+        let res = Series::new(String::from("x"), -6, vec!(1.,0.,-6.));
+        assert_eq!(res, &s * &s);
+        assert_eq!(res, s.clone() * s.clone());
+
+        let s = Series::new(String::from("x"), -3, vec!(1.,0.,-3.));
+        let t = Series::new(String::from("x"), -1, vec!(3., 4., 5., 7.));
+        let res = Series::new(String::from("x"), -4, vec!(3.,4.,-4.));
+        assert_eq!(res, &s * &t);
+        assert_eq!(res, &t * &s);
+        assert_eq!(res, s * t);
+
+        let s = Series::new(String::from("x"), -3, vec!(1., 7.,-3.));
+        let t = Series::new(String::from("x"), 3, vec!(1., -7., 52.));
+        let res = Series::new(String::from("x"), 0, vec!(1.,0., 0.));
+        assert_eq!(res, &s * &t);
+        assert_eq!(res, &t * &s);
+        assert_eq!(res, s * t);
     }
 
 }
