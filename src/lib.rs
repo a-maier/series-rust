@@ -46,10 +46,16 @@ impl Series {
                 _ => None
             }
         };
-        if let Some(idx) = idx {
-            if idx > 0 {
-                self.min_pow += Pow::from(idx as i32);
-                self.coeffs.drain(0..idx);
+        match idx {
+            Some(idx) => {
+                if idx > 0 {
+                    self.min_pow += Pow::from(idx as i32);
+                    self.coeffs.drain(0..idx);
+                }
+            },
+            None => {
+                self.min_pow += Pow::from(self.coeffs.len() as i32);
+                self.coeffs = vec!();
             }
         }
     }
