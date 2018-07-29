@@ -164,6 +164,14 @@ mod tests {
         assert_eq!(s.coeff(-1), Some(Coeff::from(0)));
         assert_eq!(s.coeff(0), Some(Coeff::from(3)));
         assert_eq!(s.coeff(1), None);
+
+        let s = Series::new(var.clone(), -2, vec!(0.,0.,1.));
+        let t = Series::new(var.clone(), 0, vec!(1.));
+        assert_eq!(s,t);
+
+        let s = Series::new(var.clone(), -3, vec!(0.,0.,0.));
+        let t = Series::new(var.clone(), 0, vec!());
+        assert_eq!(s,t);
     }
 
     #[test]
