@@ -23,14 +23,14 @@ impl Series {
 
     pub fn max_pow(&self) -> Pow {
         // TODO: replace i32 by bigger type
-        self.min_pow + Pow::from(self.coeffs.len() as i32) - 1
+        self.min_pow + Pow::from(self.coeffs.len() as i32)
     }
 
     pub fn coeff(&self, pow: Pow) -> Option<Coeff> {
         if pow < self.min_pow() {
             return Some(Coeff::from(0))
         }
-        if pow > self.max_pow() {
+        if pow >= self.max_pow() {
             return None
         }
         let idx = (pow - self.min_pow()) as usize;
@@ -64,7 +64,7 @@ impl fmt::Display for Series {
             write!(f, "({})*{}^{}", coeff, self.var, cur_pow)?;
         }
         if ! self.coeffs.is_empty() { write!(f, " + ")?; }
-        write!(f, "O({}^{})", self.var, self.max_pow() + 1)
+        write!(f, "O({}^{})", self.var, self.max_pow())
     }
 }
 
