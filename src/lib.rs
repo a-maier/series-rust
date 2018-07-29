@@ -1,5 +1,5 @@
 use std::fmt;
-use std::ops::{Add,Mul};
+use std::ops::{Add,Sub,Mul};
 use std::cmp::min;
 
 type Var = String;
@@ -101,6 +101,33 @@ impl Add for Series {
 
     fn add(self, other: Series) -> Series {
         &self + &other
+    }
+}
+
+impl<'a, 'b> Sub<&'b Series> for &'a Series {
+    type Output = Series;
+
+    fn sub(self, other: &'b Series) -> Series {
+        assert_eq!(self.var, other.var); // TODO: handle this better
+        let res_min_pow = min(self.min_pow(), other.min_pow());
+        let res_max_pow = min(self.max_pow(), other.max_pow());
+        assert!(res_max_pow >= res_min_pow);
+        let num_coeffs = (res_max_pow - res_min_pow) as usize;
+        let mut res_coeff = Vec::with_capacity(num_coeffs);
+        for idx in res_min_pow..res_max_pow {
+            res_coeff.push(
+                self.coeff(idx).unwrap() -  other.coeff(idx).unwrap()
+            );
+        }
+        Series::new(self.var.clone(), res_min_pow, res_coeff)
+    }
+}
+
+impl Sub for Series {
+    type Output = Series;
+
+    fn sub(self, other: Series) -> Series {
+        &self - &other
     }
 }
 
@@ -208,6 +235,25 @@ mod tests {
         assert_eq!(res, &s + &t);
         assert_eq!(res, &t + &s);
         assert_eq!(res, s + t);
+    }
+
+    #[test]
+    fn tst_sub() {
+        let s = Series::new(String::from("x"), -3, vec!(1.,0.,-3.));
+        let res = Series::new(String::from("x"), 0, vec!());
+        assert_eq!(res, &s - &s);
+        assert_eq!(res, s.clone() - s.clone());
+
+        let s = Series::new(String::from("x"), -3, vec!(1.,0.,-3.));
+        let t = Series::new(String::from("x"), -1, vec!(-3., 4., 5.));
+        let res = Series::new(String::from("x"), -3, vec!(1.,0.,0.));
+        assert_eq!(res, &s - &t);
+        assert_eq!(res, s - t);
+
+        let s = Series::new(String::from("x"), -3, vec!(1.,0.,-3.));
+        let t = Series::new(String::from("x"), 1, vec!(3., 4., 5.));
+        assert_eq!(s, &s - &t);
+        assert_eq!(s, s.clone() - t);
     }
 
     #[test]
