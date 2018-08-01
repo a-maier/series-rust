@@ -1,5 +1,5 @@
 use std::fmt;
-use std::ops::{Add,Sub,Mul};
+use std::ops::{Add,Sub,Mul,Div};
 use std::cmp::min;
 
 type Var = String;
@@ -38,6 +38,22 @@ impl Series {
         }
         let idx = (pow - self.min_pow()) as usize;
         Some(self.coeffs[idx])
+    }
+
+    pub fn inverse(&self) -> Series {
+        let a : Vec<_> = self.coeffs.iter().map(|c| c/self.coeffs[0]).collect();
+        let mut b = Vec::with_capacity(a.len());
+        b.push(Coeff::from(1));
+        for n in 1..a.len() {
+            let mut b_n = Coeff::from(0);
+            for i in 0..n {
+                b_n -= a[n-i]*b[i];
+            }
+            b.push(b_n);
+        }
+        let inv_min_pow = -self.min_pow;
+        let inv_coeffs : Vec<_> = b.iter().map(|b| b/self.coeffs[0]).collect();
+        Series::new(self.var.clone(), inv_min_pow, inv_coeffs)
     }
 
     fn trim(& mut self) {
@@ -159,6 +175,24 @@ impl Mul for Series {
     }
 }
 
+impl<'a, 'b> Div<&'b Series> for &'a Series {
+    type Output = Series;
+
+    fn div(self, other: &'b Series) -> Series {
+        assert_eq!(self.var, other.var); // TODO: handle this better
+        let inv = other.inverse();
+        self * &inv
+    }
+}
+
+impl Div for Series {
+    type Output = Series;
+
+    fn div(self, other: Series) -> Series {
+        &self / &other
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -276,6 +310,29 @@ mod tests {
         assert_eq!(res, &s * &t);
         assert_eq!(res, &t * &s);
         assert_eq!(res, s * t);
+    }
+
+    #[test]
+    fn tst_div() {
+        let s = Series::new(String::from("x"), -3, vec!(1.,0.,-3.));
+        let res = Series::new(String::from("x"), 0, vec!(1.,0.,0.));
+        assert_eq!(res, &s / &s);
+        assert_eq!(res, s.clone() / s.clone());
+
+        // disabled for floating-point inaccuracy
+        // let s = Series::new(String::from("x"), -3, vec!(1.,0.,-3.));
+        // let t = Series::new(String::from("x"), -1, vec!(3., 4., 5., 7.));
+        // let res = Series::new(String::from("x"), -2, vec!(1./3.,-4./9.,-26./27.));
+        // assert_eq!(res, &s / &t);
+        // assert_eq!(res, &t / &s);
+        // assert_eq!(res, s / t);
+
+        let s = Series::new(String::from("x"), -3, vec!(1., 7.,-3.));
+        let t = Series::new(String::from("x"), 3, vec!(1., -7., 52.));
+        let res = Series::new(String::from("x"), -6, vec!(1.,14., 43.));
+        assert_eq!(res, &s / &t);
+        assert_eq!(res.inverse(), &t / &s);
+        assert_eq!(res, s / t);
     }
 
 }
