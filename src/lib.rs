@@ -1,21 +1,22 @@
 use std::fmt;
 use std::ops::{Add,Sub,Mul,Div};
+use std::convert::From;
 use std::cmp::min;
 
 type Var = String;
 type Pow = i32;
-type Coeff = f64;
 
 #[derive(PartialEq,Debug,Clone)]
-struct Series {
+struct Series<Coeff> {
     var: Var,
     min_pow: Pow,
-    coeffs: Vec<Coeff>
+    coeffs: Vec<Coeff>,
+    zero: Coeff // TODO: evil hack, learn how to do this better
 }
 
-impl Series {
-    pub fn new(var: Var, min_pow: Pow, coeffs: Vec<Coeff>) -> Series {
-        let mut res = Series{var, min_pow, coeffs};
+impl<Coeff: From<i32> + PartialEq> Series<Coeff> {
+    pub fn new(var: Var, min_pow: Pow, coeffs: Vec<Coeff>) -> Series<Coeff> {
+        let mut res = Series{var, min_pow, coeffs, zero: Coeff::from(0)};
         res.trim();
         res
     }
@@ -29,33 +30,39 @@ impl Series {
         self.min_pow + Pow::from(self.coeffs.len() as i32)
     }
 
-    pub fn coeff(&self, pow: Pow) -> Option<Coeff> {
+    pub fn coeff(&self, pow: Pow) -> Option<&Coeff> {
         if pow < self.min_pow() {
-            return Some(Coeff::from(0))
+            return Some(&self.zero) // TODO this is a bad hack
         }
         if pow >= self.max_pow() {
             return None
         }
         let idx = (pow - self.min_pow()) as usize;
-        Some(self.coeffs[idx])
+        Some(&self.coeffs[idx])
     }
+}
 
-    pub fn inverse(&self) -> Series {
-        let a : Vec<_> = self.coeffs.iter().map(|c| c/self.coeffs[0]).collect();
+impl<Coeff: From<i32> + PartialEq + Sub<Output = Coeff>> Series<Coeff> where
+    for<'a> &'a Coeff: Div<Output = Coeff> + Mul<Output = Coeff>
+{
+    pub fn inverse(&self) -> Series<Coeff> {
+        let a : Vec<_> = self.coeffs.iter().map(|c| c/&self.coeffs[0]).collect();
         let mut b = Vec::with_capacity(a.len());
         b.push(Coeff::from(1));
         for n in 1..a.len() {
             let mut b_n = Coeff::from(0);
             for i in 0..n {
-                b_n -= a[n-i]*b[i];
+                b_n = b_n - &a[n-i] * &b[i];
             }
             b.push(b_n);
         }
         let inv_min_pow = -self.min_pow;
-        let inv_coeffs : Vec<_> = b.iter().map(|b| b/self.coeffs[0]).collect();
+        let inv_coeffs : Vec<_> = b.iter().map(|b| b/&self.coeffs[0]).collect();
         Series::new(self.var.clone(), inv_min_pow, inv_coeffs)
     }
+}
 
+impl<Coeff: From<i32> + PartialEq> Series<Coeff> {
     fn trim(& mut self) {
         let idx = {
             let non_zero = self.coeffs.iter().enumerate().
@@ -80,7 +87,9 @@ impl Series {
     }
 }
 
-impl fmt::Display for Series {
+impl<Coeff: From<i32> + PartialEq + fmt::Display> fmt::Display
+    for Series<Coeff>
+{
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         for (i, coeff) in self.coeffs.iter().enumerate() {
             if *coeff == Coeff::from(0) { continue; }
@@ -93,10 +102,13 @@ impl fmt::Display for Series {
     }
 }
 
-impl<'a, 'b> Add<&'b Series> for &'a Series {
-    type Output = Series;
+impl<'a, 'b, Coeff: From<i32> + PartialEq> Add<&'b Series<Coeff>>
+    for &'a Series<Coeff>
+    where for<'c> &'c Coeff: Add<Output = Coeff>
+{
+    type Output = Series<Coeff>;
 
-    fn add(self, other: &'b Series) -> Series {
+    fn add(self, other: &'b Series<Coeff>) -> Series<Coeff> {
         assert_eq!(self.var, other.var); // TODO: handle this better
         let res_min_pow = min(self.min_pow(), other.min_pow());
         let res_max_pow = min(self.max_pow(), other.max_pow());
@@ -112,18 +124,23 @@ impl<'a, 'b> Add<&'b Series> for &'a Series {
     }
 }
 
-impl Add for Series {
-    type Output = Series;
+impl<Coeff> Add for Series<Coeff>
+where for<'a> &'a Series<Coeff>: Add<Output = Series<Coeff>>
+{
+    type Output = Series<Coeff>;
 
-    fn add(self, other: Series) -> Series {
+    fn add(self, other: Series<Coeff>) -> Series<Coeff> {
         &self + &other
     }
 }
 
-impl<'a, 'b> Sub<&'b Series> for &'a Series {
-    type Output = Series;
+impl<'a, 'b, Coeff: From<i32> + PartialEq> Sub<&'b Series<Coeff>>
+    for &'a Series<Coeff>
+    where for<'c> &'c Coeff: Sub<Output = Coeff>
+{
+    type Output = Series<Coeff>;
 
-    fn sub(self, other: &'b Series) -> Series {
+    fn sub(self, other: &'b Series<Coeff>) -> Series<Coeff> {
         assert_eq!(self.var, other.var); // TODO: handle this better
         let res_min_pow = min(self.min_pow(), other.min_pow());
         let res_max_pow = min(self.max_pow(), other.max_pow());
@@ -139,27 +156,32 @@ impl<'a, 'b> Sub<&'b Series> for &'a Series {
     }
 }
 
-impl Sub for Series {
-    type Output = Series;
+impl<Coeff> Sub for Series<Coeff>
+where for<'a> &'a Series<Coeff>: Sub<Output = Series<Coeff>>
+{
+    type Output = Series<Coeff>;
 
-    fn sub(self, other: Series) -> Series {
+    fn sub(self, other: Series<Coeff>) -> Series<Coeff> {
         &self - &other
     }
 }
 
-impl<'a, 'b> Mul<&'b Series> for &'a Series {
-    type Output = Series;
+impl<'a, 'b, Coeff: From<i32> + PartialEq + Add<Output = Coeff>> Mul<&'b Series<Coeff>>
+    for &'a Series<Coeff>
+    where for<'c> &'c Coeff: Mul<Output = Coeff>
+{
+    type Output = Series<Coeff>;
 
-    fn mul(self, other: &'b Series) -> Series {
+    fn mul(self, other: &'b Series<Coeff>) -> Series<Coeff> {
         assert_eq!(self.var, other.var); // TODO: handle this better
         let res_min_pow = self.min_pow() + other.min_pow();
         let num_coeffs = min(self.coeffs.len(), other.coeffs.len());
         // compute Cauchy product
         let mut res_coeff = Vec::with_capacity(num_coeffs);
         for k in 0..num_coeffs {
-            let mut c_k = self.coeffs[0]*other.coeffs[k];
+            let mut c_k = &self.coeffs[0] * &other.coeffs[k];
             for i in 1..(k+1) {
-                c_k += self.coeffs[i]*other.coeffs[k-i];
+                c_k = c_k + &self.coeffs[i] * &other.coeffs[k-i];
             }
             res_coeff.push(c_k);
         }
@@ -167,28 +189,36 @@ impl<'a, 'b> Mul<&'b Series> for &'a Series {
     }
 }
 
-impl Mul for Series {
-    type Output = Series;
+impl<Coeff> Mul for Series<Coeff>
+where for<'a> &'a Series<Coeff>: Mul<Output = Series<Coeff>>
+{
+    type Output = Series<Coeff>;
 
-    fn mul(self, other: Series) -> Series {
+    fn mul(self, other: Series<Coeff>) -> Series<Coeff> {
         &self * &other
     }
 }
 
-impl<'a, 'b> Div<&'b Series> for &'a Series {
-    type Output = Series;
+impl<'a, 'b, Coeff: From<i32> + PartialEq + Sub<Output = Coeff>> Div<&'b Series<Coeff>>
+    for &'a Series<Coeff>
+where for<'c> &'c Series<Coeff>: Mul<Output = Series<Coeff>>,
+    for<'d> &'d Coeff: Div<Output = Coeff> + Mul<Output = Coeff>
+{
+    type Output = Series<Coeff>;
 
-    fn div(self, other: &'b Series) -> Series {
+    fn div(self, other: &'b Series<Coeff>) -> Series<Coeff> {
         assert_eq!(self.var, other.var); // TODO: handle this better
         let inv = other.inverse();
         self * &inv
     }
 }
 
-impl Div for Series {
-    type Output = Series;
+impl<Coeff> Div for Series<Coeff>
+where for<'a> &'a Series<Coeff>: Div<Output = Series<Coeff>>
+{
+    type Output = Series<Coeff>;
 
-    fn div(self, other: Series) -> Series {
+    fn div(self, other: Series<Coeff>) -> Series<Coeff> {
         &self / &other
     }
 }
@@ -204,26 +234,26 @@ mod tests {
         let coeffs = vec!();
         let s = Series::new(var.clone(), min_pow, coeffs);
         assert_eq!(s.min_pow(), min_pow);
-        assert_eq!(s.coeff(-11), Some(Coeff::from(0)));
+        assert_eq!(s.coeff(-11), Some(&0));
         assert_eq!(s.coeff(-10), None);
 
         let min_pow = -3;
         let coeffs = vec!(1.,2.,3.);
         let s = Series::new(var.clone(), min_pow, coeffs);
         assert_eq!(s.min_pow(), min_pow);
-        assert_eq!(s.coeff(-4), Some(Coeff::from(0)));
-        assert_eq!(s.coeff(-3), Some(Coeff::from(1)));
-        assert_eq!(s.coeff(-2), Some(Coeff::from(2)));
-        assert_eq!(s.coeff(-1), Some(Coeff::from(3)));
+        assert_eq!(s.coeff(-4), Some(&0.));
+        assert_eq!(s.coeff(-3), Some(&1.));
+        assert_eq!(s.coeff(-2), Some(&2.));
+        assert_eq!(s.coeff(-1), Some(&3.));
         assert_eq!(s.coeff(0), None);
 
         let min_pow = -2;
         let coeffs = vec!(0.,0.,3.);
         let s = Series::new(var.clone(), min_pow, coeffs);
         assert_eq!(s.min_pow(), min_pow + 2);
-        assert_eq!(s.coeff(-2), Some(Coeff::from(0)));
-        assert_eq!(s.coeff(-1), Some(Coeff::from(0)));
-        assert_eq!(s.coeff(0), Some(Coeff::from(3)));
+        assert_eq!(s.coeff(-2), Some(&0.));
+        assert_eq!(s.coeff(-1), Some(&0.));
+        assert_eq!(s.coeff(0), Some(&3.));
         assert_eq!(s.coeff(1), None);
 
         let s = Series::new(var.clone(), -2, vec!(0.,0.,1.));
@@ -237,8 +267,8 @@ mod tests {
 
     #[test]
     fn tst_display() {
-        let s = Series::new(String::from("x"), -10, vec!());
-        assert_eq!(format!("{}", s), "O(x^-10)");
+        // let s = Series::new(String::from("x"), -10, vec!());
+        // assert_eq!(format!("{}", s), "O(x^-10)");
         let s = Series::new(String::from("x"), -3, vec!(1.,0.,-3.));
         assert_eq!(format!("{}", s), "(1)*x^-3 + (-3)*x^-1 + O(x^0)");
     }
