@@ -99,7 +99,11 @@ impl<Var: fmt::Display, Coeff: From<i32> + PartialEq + fmt::Display> fmt::Displa
             if *coeff == Coeff::from(0) { continue; }
             let cur_pow = self.min_pow() + Pow::from(i as i32);
             if i > 0 { write!(f, " + ")?; }
-            write!(f, "({})*{}^{}", coeff, self.var, cur_pow)?;
+            write!(f, "({})", coeff)?;
+            if cur_pow != 0 {
+                write!(f, "*{}", self.var)?;
+                if cur_pow != 1 { write!(f, "^{}", cur_pow)?; }
+            }
         }
         if ! self.coeffs.is_empty() { write!(f, " + ")?; }
         write!(f, "O({}^{})", self.var, self.max_pow())
@@ -295,6 +299,8 @@ mod tests {
         // assert_eq!(format!("{}", s), "O(x^-10)");
         let s = Series::new("x", -3, vec!(1.,0.,-3.));
         assert_eq!(format!("{}", s), "(1)*x^-3 + (-3)*x^-1 + O(x^0)");
+        let s = Series::new("x", -1, vec!(1.,2.,-3.));
+        assert_eq!(format!("{}", s), "(1)*x^-1 + (2) + (-3)*x + O(x^2)");
     }
 
     #[test]
