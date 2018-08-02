@@ -3,19 +3,18 @@ use std::ops::{Add,Sub,Mul,Div};
 use std::convert::From;
 use std::cmp::min;
 
-type Var = String;
 type Pow = i32;
 
 #[derive(PartialEq,Debug,Clone)]
-struct Series<Coeff> {
+struct Series<Var, Coeff> {
     var: Var,
     min_pow: Pow,
     coeffs: Vec<Coeff>,
     zero: Coeff // TODO: evil hack, learn how to do this better
 }
 
-impl<Coeff: From<i32> + PartialEq> Series<Coeff> {
-    pub fn new(var: Var, min_pow: Pow, coeffs: Vec<Coeff>) -> Series<Coeff> {
+impl<Var, Coeff: From<i32> + PartialEq> Series<Var, Coeff> {
+    pub fn new(var: Var, min_pow: Pow, coeffs: Vec<Coeff>) -> Series<Var, Coeff> {
         let mut res = Series{var, min_pow, coeffs, zero: Coeff::from(0)};
         res.trim();
         res
@@ -42,10 +41,12 @@ impl<Coeff: From<i32> + PartialEq> Series<Coeff> {
     }
 }
 
-impl<Coeff: From<i32> + PartialEq + Sub<Output = Coeff>> Series<Coeff> where
+impl<
+        Var: Clone, Coeff: From<i32> + PartialEq + Sub<Output = Coeff>
+    > Series<Var, Coeff> where
     for<'a> &'a Coeff: Div<Output = Coeff> + Mul<Output = Coeff>
 {
-    pub fn inverse(&self) -> Series<Coeff> {
+    pub fn inverse(&self) -> Series<Var, Coeff> {
         let a : Vec<_> = self.coeffs.iter().map(|c| c/&self.coeffs[0]).collect();
         let mut b = Vec::with_capacity(a.len());
         b.push(Coeff::from(1));
@@ -62,7 +63,7 @@ impl<Coeff: From<i32> + PartialEq + Sub<Output = Coeff>> Series<Coeff> where
     }
 }
 
-impl<Coeff: From<i32> + PartialEq> Series<Coeff> {
+impl<Var, Coeff: From<i32> + PartialEq> Series<Var, Coeff> {
     fn trim(& mut self) {
         let idx = {
             let non_zero = self.coeffs.iter().enumerate().
@@ -87,8 +88,8 @@ impl<Coeff: From<i32> + PartialEq> Series<Coeff> {
     }
 }
 
-impl<Coeff: From<i32> + PartialEq + fmt::Display> fmt::Display
-    for Series<Coeff>
+impl<Var: fmt::Display, Coeff: From<i32> + PartialEq + fmt::Display> fmt::Display
+    for Series<Var, Coeff>
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         for (i, coeff) in self.coeffs.iter().enumerate() {
@@ -102,13 +103,18 @@ impl<Coeff: From<i32> + PartialEq + fmt::Display> fmt::Display
     }
 }
 
-impl<'a, 'b, Coeff: From<i32> + PartialEq> Add<&'b Series<Coeff>>
-    for &'a Series<Coeff>
+impl<
+    'a, 'b,
+    Var: Clone + PartialEq + fmt::Debug,
+    Coeff: From<i32> + PartialEq
+>
+    Add<&'b Series<Var, Coeff>>
+    for &'a Series<Var, Coeff>
     where for<'c> &'c Coeff: Add<Output = Coeff>
 {
-    type Output = Series<Coeff>;
+    type Output = Series<Var, Coeff>;
 
-    fn add(self, other: &'b Series<Coeff>) -> Series<Coeff> {
+    fn add(self, other: &'b Series<Var, Coeff>) -> Series<Var, Coeff> {
         assert_eq!(self.var, other.var); // TODO: handle this better
         let res_min_pow = min(self.min_pow(), other.min_pow());
         let res_max_pow = min(self.max_pow(), other.max_pow());
@@ -124,23 +130,28 @@ impl<'a, 'b, Coeff: From<i32> + PartialEq> Add<&'b Series<Coeff>>
     }
 }
 
-impl<Coeff> Add for Series<Coeff>
-where for<'a> &'a Series<Coeff>: Add<Output = Series<Coeff>>
+impl<Var, Coeff> Add for Series<Var, Coeff>
+where for<'a> &'a Series<Var, Coeff>: Add<Output = Series<Var, Coeff>>
 {
-    type Output = Series<Coeff>;
+    type Output = Series<Var, Coeff>;
 
-    fn add(self, other: Series<Coeff>) -> Series<Coeff> {
+    fn add(self, other: Series<Var, Coeff>) -> Series<Var, Coeff> {
         &self + &other
     }
 }
 
-impl<'a, 'b, Coeff: From<i32> + PartialEq> Sub<&'b Series<Coeff>>
-    for &'a Series<Coeff>
+impl<
+    'a, 'b,
+    Var: Clone + PartialEq + fmt::Debug,
+    Coeff: From<i32> + PartialEq
+>
+    Sub<&'b Series<Var, Coeff>>
+    for &'a Series<Var, Coeff>
     where for<'c> &'c Coeff: Sub<Output = Coeff>
 {
-    type Output = Series<Coeff>;
+    type Output = Series<Var, Coeff>;
 
-    fn sub(self, other: &'b Series<Coeff>) -> Series<Coeff> {
+    fn sub(self, other: &'b Series<Var, Coeff>) -> Series<Var, Coeff> {
         assert_eq!(self.var, other.var); // TODO: handle this better
         let res_min_pow = min(self.min_pow(), other.min_pow());
         let res_max_pow = min(self.max_pow(), other.max_pow());
@@ -156,23 +167,28 @@ impl<'a, 'b, Coeff: From<i32> + PartialEq> Sub<&'b Series<Coeff>>
     }
 }
 
-impl<Coeff> Sub for Series<Coeff>
-where for<'a> &'a Series<Coeff>: Sub<Output = Series<Coeff>>
+impl<Var, Coeff> Sub for Series<Var, Coeff>
+where for<'a> &'a Series<Var, Coeff>: Sub<Output = Series<Var, Coeff>>
 {
-    type Output = Series<Coeff>;
+    type Output = Series<Var, Coeff>;
 
-    fn sub(self, other: Series<Coeff>) -> Series<Coeff> {
+    fn sub(self, other: Series<Var, Coeff>) -> Series<Var, Coeff> {
         &self - &other
     }
 }
 
-impl<'a, 'b, Coeff: From<i32> + PartialEq + Add<Output = Coeff>> Mul<&'b Series<Coeff>>
-    for &'a Series<Coeff>
+impl<
+    'a, 'b,
+    Var: Clone + PartialEq + fmt::Debug,
+    Coeff: From<i32> + PartialEq + Add<Output = Coeff>
+>
+    Mul<&'b Series<Var, Coeff>>
+    for &'a Series<Var, Coeff>
     where for<'c> &'c Coeff: Mul<Output = Coeff>
 {
-    type Output = Series<Coeff>;
+    type Output = Series<Var, Coeff>;
 
-    fn mul(self, other: &'b Series<Coeff>) -> Series<Coeff> {
+    fn mul(self, other: &'b Series<Var, Coeff>) -> Series<Var, Coeff> {
         assert_eq!(self.var, other.var); // TODO: handle this better
         let res_min_pow = self.min_pow() + other.min_pow();
         let num_coeffs = min(self.coeffs.len(), other.coeffs.len());
@@ -189,36 +205,41 @@ impl<'a, 'b, Coeff: From<i32> + PartialEq + Add<Output = Coeff>> Mul<&'b Series<
     }
 }
 
-impl<Coeff> Mul for Series<Coeff>
-where for<'a> &'a Series<Coeff>: Mul<Output = Series<Coeff>>
+impl<Var, Coeff> Mul for Series<Var, Coeff>
+where for<'a> &'a Series<Var, Coeff>: Mul<Output = Series<Var, Coeff>>
 {
-    type Output = Series<Coeff>;
+    type Output = Series<Var, Coeff>;
 
-    fn mul(self, other: Series<Coeff>) -> Series<Coeff> {
+    fn mul(self, other: Series<Var, Coeff>) -> Series<Var, Coeff> {
         &self * &other
     }
 }
 
-impl<'a, 'b, Coeff: From<i32> + PartialEq + Sub<Output = Coeff>> Div<&'b Series<Coeff>>
-    for &'a Series<Coeff>
-where for<'c> &'c Series<Coeff>: Mul<Output = Series<Coeff>>,
-    for<'d> &'d Coeff: Div<Output = Coeff> + Mul<Output = Coeff>
+impl<
+    'a, 'b,
+    Var: Clone + PartialEq + fmt::Debug,
+    Coeff: From<i32> + PartialEq + Sub<Output = Coeff>
+>
+    Div<&'b Series<Var, Coeff>>
+    for &'a Series<Var, Coeff>
+    where for<'c> &'c Series<Var, Coeff>: Mul<Output = Series<Var, Coeff>>,
+          for<'d> &'d Coeff: Div<Output = Coeff> + Mul<Output = Coeff>
 {
-    type Output = Series<Coeff>;
+    type Output = Series<Var, Coeff>;
 
-    fn div(self, other: &'b Series<Coeff>) -> Series<Coeff> {
+    fn div(self, other: &'b Series<Var, Coeff>) -> Series<Var, Coeff> {
         assert_eq!(self.var, other.var); // TODO: handle this better
         let inv = other.inverse();
         self * &inv
     }
 }
 
-impl<Coeff> Div for Series<Coeff>
-where for<'a> &'a Series<Coeff>: Div<Output = Series<Coeff>>
+impl<Var, Coeff> Div for Series<Var, Coeff>
+where for<'a> &'a Series<Var, Coeff>: Div<Output = Series<Var, Coeff>>
 {
-    type Output = Series<Coeff>;
+    type Output = Series<Var, Coeff>;
 
-    fn div(self, other: Series<Coeff>) -> Series<Coeff> {
+    fn div(self, other: Series<Var, Coeff>) -> Series<Var, Coeff> {
         &self / &other
     }
 }
@@ -267,35 +288,35 @@ mod tests {
 
     #[test]
     fn tst_display() {
-        // let s = Series::new(String::from("x"), -10, vec!());
+        // let s = Series::new("x", -10, vec!());
         // assert_eq!(format!("{}", s), "O(x^-10)");
-        let s = Series::new(String::from("x"), -3, vec!(1.,0.,-3.));
+        let s = Series::new("x", -3, vec!(1.,0.,-3.));
         assert_eq!(format!("{}", s), "(1)*x^-3 + (-3)*x^-1 + O(x^0)");
     }
 
     #[test]
     fn tst_add() {
-        let s = Series::new(String::from("x"), -3, vec!(1.,0.,-3.));
-        let res = Series::new(String::from("x"), -3, vec!(2.,0.,-6.));
+        let s = Series::new("x", -3, vec!(1.,0.,-3.));
+        let res = Series::new("x", -3, vec!(2.,0.,-6.));
         assert_eq!(res, &s + &s);
         assert_eq!(res, s.clone() + s.clone());
 
-        let s = Series::new(String::from("x"), -3, vec!(1.,0.,-3.));
-        let t = Series::new(String::from("x"), -1, vec!(3., 4., 5.));
-        let res = Series::new(String::from("x"), -3, vec!(1.,0.,0.));
+        let s = Series::new("x", -3, vec!(1.,0.,-3.));
+        let t = Series::new("x", -1, vec!(3., 4., 5.));
+        let res = Series::new("x", -3, vec!(1.,0.,0.));
         assert_eq!(res, &s + &t);
         assert_eq!(res, &t + &s);
         assert_eq!(res, s + t);
 
-        let s = Series::new(String::from("x"), -3, vec!(1.,0.,-3.));
-        let t = Series::new(String::from("x"), 1, vec!(3., 4., 5.));
+        let s = Series::new("x", -3, vec!(1.,0.,-3.));
+        let t = Series::new("x", 1, vec!(3., 4., 5.));
         assert_eq!(s, &s + &t);
         assert_eq!(s, &t + &s);
         assert_eq!(s, s.clone() + t);
 
-        let s = Series::new(String::from("x"), -3, vec!(1.,0.,-3.));
-        let t = Series::new(String::from("x"), -3, vec!(-1., 0., 3.));
-        let res = Series::new(String::from("x"), 0, vec!());
+        let s = Series::new("x", -3, vec!(1.,0.,-3.));
+        let t = Series::new("x", -3, vec!(-1., 0., 3.));
+        let res = Series::new("x", 0, vec!());
         assert_eq!(res, &s + &t);
         assert_eq!(res, &t + &s);
         assert_eq!(res, s + t);
@@ -303,40 +324,40 @@ mod tests {
 
     #[test]
     fn tst_sub() {
-        let s = Series::new(String::from("x"), -3, vec!(1.,0.,-3.));
-        let res = Series::new(String::from("x"), 0, vec!());
+        let s = Series::new("x", -3, vec!(1.,0.,-3.));
+        let res = Series::new("x", 0, vec!());
         assert_eq!(res, &s - &s);
         assert_eq!(res, s.clone() - s.clone());
 
-        let s = Series::new(String::from("x"), -3, vec!(1.,0.,-3.));
-        let t = Series::new(String::from("x"), -1, vec!(-3., 4., 5.));
-        let res = Series::new(String::from("x"), -3, vec!(1.,0.,0.));
+        let s = Series::new("x", -3, vec!(1.,0.,-3.));
+        let t = Series::new("x", -1, vec!(-3., 4., 5.));
+        let res = Series::new("x", -3, vec!(1.,0.,0.));
         assert_eq!(res, &s - &t);
         assert_eq!(res, s - t);
 
-        let s = Series::new(String::from("x"), -3, vec!(1.,0.,-3.));
-        let t = Series::new(String::from("x"), 1, vec!(3., 4., 5.));
+        let s = Series::new("x", -3, vec!(1.,0.,-3.));
+        let t = Series::new("x", 1, vec!(3., 4., 5.));
         assert_eq!(s, &s - &t);
         assert_eq!(s, s.clone() - t);
     }
 
     #[test]
     fn tst_mul() {
-        let s = Series::new(String::from("x"), -3, vec!(1.,0.,-3.));
-        let res = Series::new(String::from("x"), -6, vec!(1.,0.,-6.));
+        let s = Series::new("x", -3, vec!(1.,0.,-3.));
+        let res = Series::new("x", -6, vec!(1.,0.,-6.));
         assert_eq!(res, &s * &s);
         assert_eq!(res, s.clone() * s.clone());
 
-        let s = Series::new(String::from("x"), -3, vec!(1.,0.,-3.));
-        let t = Series::new(String::from("x"), -1, vec!(3., 4., 5., 7.));
-        let res = Series::new(String::from("x"), -4, vec!(3.,4.,-4.));
+        let s = Series::new("x", -3, vec!(1.,0.,-3.));
+        let t = Series::new("x", -1, vec!(3., 4., 5., 7.));
+        let res = Series::new("x", -4, vec!(3.,4.,-4.));
         assert_eq!(res, &s * &t);
         assert_eq!(res, &t * &s);
         assert_eq!(res, s * t);
 
-        let s = Series::new(String::from("x"), -3, vec!(1., 7.,-3.));
-        let t = Series::new(String::from("x"), 3, vec!(1., -7., 52.));
-        let res = Series::new(String::from("x"), 0, vec!(1.,0., 0.));
+        let s = Series::new("x", -3, vec!(1., 7.,-3.));
+        let t = Series::new("x", 3, vec!(1., -7., 52.));
+        let res = Series::new("x", 0, vec!(1.,0., 0.));
         assert_eq!(res, &s * &t);
         assert_eq!(res, &t * &s);
         assert_eq!(res, s * t);
@@ -344,25 +365,63 @@ mod tests {
 
     #[test]
     fn tst_div() {
-        let s = Series::new(String::from("x"), -3, vec!(1.,0.,-3.));
-        let res = Series::new(String::from("x"), 0, vec!(1.,0.,0.));
+        let s = Series::new("x", -3, vec!(1.,0.,-3.));
+        let res = Series::new("x", 0, vec!(1.,0.,0.));
         assert_eq!(res, &s / &s);
         assert_eq!(res, s.clone() / s.clone());
 
         // disabled for floating-point inaccuracy
-        // let s = Series::new(String::from("x"), -3, vec!(1.,0.,-3.));
-        // let t = Series::new(String::from("x"), -1, vec!(3., 4., 5., 7.));
-        // let res = Series::new(String::from("x"), -2, vec!(1./3.,-4./9.,-26./27.));
+        // let s = Series::new("x", -3, vec!(1.,0.,-3.));
+        // let t = Series::new("x", -1, vec!(3., 4., 5., 7.));
+        // let res = Series::new("x", -2, vec!(1./3.,-4./9.,-26./27.));
         // assert_eq!(res, &s / &t);
         // assert_eq!(res, &t / &s);
         // assert_eq!(res, s / t);
 
-        let s = Series::new(String::from("x"), -3, vec!(1., 7.,-3.));
-        let t = Series::new(String::from("x"), 3, vec!(1., -7., 52.));
-        let res = Series::new(String::from("x"), -6, vec!(1.,14., 43.));
+        let s = Series::new("x", -3, vec!(1., 7.,-3.));
+        let t = Series::new("x", 3, vec!(1., -7., 52.));
+        let res = Series::new("x", -6, vec!(1.,14., 43.));
         assert_eq!(res, &s / &t);
         assert_eq!(res.inverse(), &t / &s);
         assert_eq!(res, s / t);
     }
 
+    #[test]
+    fn tst_var() {
+        let _ = Series::new(String::from("x"), -3, vec!(1.,0.,-3.));
+        let _ = Series::new('j', -3, vec!(1.,0.,-3.));
+        let _ = Series::new(8, -3, vec!(1.,0.,-3.));
+    }
+
+    #[test]
+    #[should_panic]
+    fn tst_bad_add() {
+        let s = Series::new("x", -3, vec!(1.,0.,-3.));
+        let t = Series::new("y", -3, vec!(1.,0.,-3.));
+        s + t;
+    }
+
+    #[test]
+    #[should_panic]
+    fn tst_bad_sub() {
+        let s = Series::new("x", -3, vec!(1.,0.,-3.));
+        let t = Series::new("y", -3, vec!(1.,0.,-3.));
+        s - t;
+    }
+
+    #[test]
+    #[should_panic]
+    fn tst_bad_mul() {
+        let s = Series::new("x", -3, vec!(1.,0.,-3.));
+        let t = Series::new("y", -3, vec!(1.,0.,-3.));
+        s * t;
+    }
+
+    #[test]
+    #[should_panic]
+    fn tst_bad_div() {
+        let s = Series::new("x", -3, vec!(1.,0.,-3.));
+        let t = Series::new("y", -3, vec!(1.,0.,-3.));
+        s / t;
+    }
 }
