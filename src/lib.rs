@@ -47,6 +47,10 @@ impl<
     for<'a> &'a Coeff: Div<Output = Coeff> + Mul<Output = Coeff>
 {
     pub fn inverse(&self) -> Series<Var, Coeff> {
+        let inv_min_pow = -self.min_pow;
+        if self.coeffs.is_empty() {
+            return Series::new(self.var.clone(), inv_min_pow, vec!())
+        }
         let a : Vec<_> = self.coeffs.iter().map(|c| c/&self.coeffs[0]).collect();
         let mut b = Vec::with_capacity(a.len());
         b.push(Coeff::from(1));
@@ -57,7 +61,6 @@ impl<
             }
             b.push(b_n);
         }
-        let inv_min_pow = -self.min_pow;
         let inv_coeffs : Vec<_> = b.iter().map(|b| b/&self.coeffs[0]).collect();
         Series::new(self.var.clone(), inv_min_pow, inv_coeffs)
     }
@@ -381,6 +384,13 @@ mod tests {
         let s = Series::new("x", -3, vec!(1., 7.,-3.));
         let t = Series::new("x", 3, vec!(1., -7., 52.));
         let res = Series::new("x", -6, vec!(1.,14., 43.));
+        assert_eq!(res, &s / &t);
+        assert_eq!(res.inverse(), &t / &s);
+        assert_eq!(res, s / t);
+
+        let s = Series::new("x", 1, vec!(1., 7.,-3.));
+        let t = Series::new("x", 5, vec!());
+        let res = Series::new("x", -4, vec!());
         assert_eq!(res, &s / &t);
         assert_eq!(res.inverse(), &t / &s);
         assert_eq!(res, s / t);
