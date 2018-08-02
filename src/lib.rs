@@ -1,5 +1,5 @@
 use std::fmt;
-use std::ops::{Add,Sub,Mul,Div,Neg};
+use std::ops::{Add,AddAssign,Sub,SubAssign,Mul,Div,Neg};
 use std::convert::From;
 use std::cmp::min;
 
@@ -42,7 +42,7 @@ impl<Var, Coeff: From<i32> + PartialEq> Series<Var, Coeff> {
 }
 
 impl<
-        Var: Clone, Coeff: From<i32> + PartialEq + Sub<Output = Coeff>
+        Var: Clone, Coeff: From<i32> + PartialEq + SubAssign
     > Series<Var, Coeff> where
     for<'a> &'a Coeff: Div<Output = Coeff> + Mul<Output = Coeff>
 {
@@ -57,7 +57,7 @@ impl<
         for n in 1..a.len() {
             let mut b_n = Coeff::from(0);
             for i in 0..n {
-                b_n = b_n - &a[n-i] * &b[i];
+                b_n -= &a[n-i] * &b[i];
             }
             b.push(b_n);
         }
@@ -213,7 +213,7 @@ where for<'a> &'a Series<Var, Coeff>: Sub<Output = Series<Var, Coeff>>
 impl<
     'a, 'b,
     Var: Clone + PartialEq + fmt::Debug,
-    Coeff: From<i32> + PartialEq + Add<Output = Coeff>
+    Coeff: From<i32> + PartialEq + AddAssign
 >
     Mul<&'b Series<Var, Coeff>>
     for &'a Series<Var, Coeff>
@@ -230,7 +230,7 @@ impl<
         for k in 0..num_coeffs {
             let mut c_k = &self.coeffs[0] * &other.coeffs[k];
             for i in 1..(k+1) {
-                c_k = c_k + &self.coeffs[i] * &other.coeffs[k-i];
+                c_k += &self.coeffs[i] * &other.coeffs[k-i];
             }
             res_coeff.push(c_k);
         }
@@ -251,7 +251,7 @@ where for<'a> &'a Series<Var, Coeff>: Mul<Output = Series<Var, Coeff>>
 impl<
     'a, 'b,
     Var: Clone + PartialEq + fmt::Debug,
-    Coeff: From<i32> + PartialEq + Sub<Output = Coeff>
+    Coeff: From<i32> + PartialEq + SubAssign
 >
     Div<&'b Series<Var, Coeff>>
     for &'a Series<Var, Coeff>
