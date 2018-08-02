@@ -1,5 +1,5 @@
 use std::fmt;
-use std::ops::{Add,Sub,Mul,Div};
+use std::ops::{Add,Sub,Mul,Div,Neg};
 use std::convert::From;
 use std::cmp::min;
 
@@ -107,6 +107,32 @@ impl<Var: fmt::Display, Coeff: From<i32> + PartialEq + fmt::Display> fmt::Displa
         }
         if ! self.coeffs.is_empty() { write!(f, " + ")?; }
         write!(f, "O({}^{})", self.var, self.max_pow())
+    }
+}
+
+impl<
+    Var, Coeff: From<i32> + PartialEq
+>
+    Neg for Series<Var, Coeff>
+    where for<'c> &'c Coeff: Neg<Output = Coeff>
+{
+    type Output = Series<Var, Coeff>;
+
+    fn neg(self) -> Series<Var, Coeff> {
+        let neg_coeff = self.coeffs.iter().map(|c| -c).collect();
+        Series::new(self.var, self.min_pow, neg_coeff)
+    }
+}
+
+impl<'a, Var: Clone, Coeff: From<i32> + PartialEq>
+    Neg for &'a Series<Var, Coeff>
+    where for<'c> &'c Coeff: Neg<Output = Coeff>
+{
+    type Output = Series<Var, Coeff>;
+
+    fn neg(self) -> Series<Var, Coeff> {
+        let neg_coeff = self.coeffs.iter().map(|c| -c).collect();
+        Series::new(self.var.clone(), self.min_pow, neg_coeff)
     }
 }
 
@@ -301,6 +327,14 @@ mod tests {
         assert_eq!(format!("{}", s), "(1)*x^-3 + (-3)*x^-1 + O(x^0)");
         let s = Series::new("x", -1, vec!(1.,2.,-3.));
         assert_eq!(format!("{}", s), "(1)*x^-1 + (2) + (-3)*x + O(x^2)");
+    }
+
+    #[test]
+    fn tst_neg() {
+        let s = Series::new("x", -3, vec!(1.,0.,-3.));
+        let res = Series::new("x", -3, vec!(-1.,0.,3.));
+        assert_eq!(res, -&s);
+        assert_eq!(res, -s);
     }
 
     #[test]
