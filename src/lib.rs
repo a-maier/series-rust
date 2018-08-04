@@ -148,7 +148,7 @@ impl<
     type Output = Series<Var, Coeff>;
 
     fn add(self, other: &'b Series<Var, Coeff>) -> Series<Var, Coeff> {
-        assert_eq!(self.var, other.var); // TODO: handle this better
+        assert_eq!(self.var, other.var);
         let res_min_pow = min(self.min_pow(), other.min_pow());
         let res_max_pow = min(self.max_pow(), other.max_pow());
         assert!(res_max_pow >= res_min_pow);
@@ -170,6 +170,45 @@ where for<'a> &'a Series<Var, Coeff>: Add<Output = Series<Var, Coeff>>
 
     fn add(self, other: Series<Var, Coeff>) -> Series<Var, Coeff> {
         &self + &other
+    }
+}
+
+impl<
+    'a,
+    Var: PartialEq + fmt::Debug,
+    Coeff: From<i32> + PartialEq + Clone
+>
+    AddAssign<&'a Series<Var, Coeff>>
+    for Series<Var, Coeff>
+    where for<'c> Coeff: AddAssign<&'c Coeff>
+{
+    fn add_assign(& mut self, other: &'a Series<Var, Coeff>) {
+        assert_eq!(self.var, other.var);
+        if other.max_pow() < self.max_pow() {
+            let to_remove = (self.max_pow() + other.max_pow()) as usize;
+            let new_size = self.coeffs.len() - to_remove;
+            self.coeffs.truncate(new_size);
+        }
+        let offset = self.min_pow();
+        for (i, c) in self.coeffs.iter_mut().enumerate() {
+            let power = offset + i as i32;
+            *c += other.coeff(power).unwrap();
+        }
+        if other.min_pow() < self.min_pow() {
+            let num_leading = (self.min_pow() - other.min_pow()) as usize;
+            let leading_coeff = other.coeffs[0..num_leading].iter().cloned();
+            self.coeffs.splice(0..0, leading_coeff);
+        }
+        self.trim();
+    }
+}
+
+impl<Var, Coeff>
+    AddAssign<Series<Var, Coeff>> for Series<Var, Coeff>
+    where for<'c> Series<Var, Coeff>: AddAssign<&'c Series<Var, Coeff>>
+{
+    fn add_assign(& mut self, other: Series<Var, Coeff>) {
+        self.add_assign(&other)
     }
 }
 
@@ -363,6 +402,41 @@ mod tests {
         assert_eq!(res, &s + &t);
         assert_eq!(res, &t + &s);
         assert_eq!(res, s + t);
+    }
+
+    #[test]
+    fn tst_add_assign() {
+        let mut s = Series::new("x", -3, vec!(1.,0.,-3.));
+        let res = Series::new("x", -3, vec!(2.,0.,-6.));
+        s += s.clone();
+        assert_eq!(res, s);
+
+        let mut s = Series::new("x", -3, vec!(1.,0.,-3.));
+        let t = Series::new("x", -1, vec!(3., 4., 5.));
+        let res = Series::new("x", -3, vec!(1.,0.,0.));
+        s += &t;
+        assert_eq!(res, s);
+        let mut s = Series::new("x", -3, vec!(1.,0.,-3.));
+        s += t;
+        assert_eq!(res, s);
+
+        let mut s = Series::new("x", -3, vec!(1.,0.,-3.));
+        let res = s.clone();
+        let t = Series::new("x", 1, vec!(3., 4., 5.));
+        s += &t;
+        assert_eq!(s, res);
+        let mut s = Series::new("x", -3, vec!(1.,0.,-3.));
+        s += t;
+        assert_eq!(s, res);
+
+        let mut s = Series::new("x", -3, vec!(1.,0.,-3.));
+        let t = Series::new("x", -3, vec!(-1., 0., 3.));
+        let res = Series::new("x", 0, vec!());
+        s += &t;
+        assert_eq!(res, s);
+        let mut s = Series::new("x", -3, vec!(1.,0.,-3.));
+        s += t;
+        assert_eq!(res, s);
     }
 
     #[test]
