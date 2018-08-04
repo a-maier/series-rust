@@ -249,6 +249,28 @@ where for<'a> &'a Series<Var, Coeff>: Sub<Output = Series<Var, Coeff>>
     }
 }
 
+impl<'a, Var, Coeff>
+    SubAssign<&'a Series<Var, Coeff>>
+    for Series<Var, Coeff>
+where
+    for<'c> &'c Series<Var, Coeff>: Neg<Output=Series<Var, Coeff>>,
+    Series<Var, Coeff>: AddAssign<Series<Var, Coeff>>
+{
+    fn sub_assign(& mut self, other: &'a Series<Var, Coeff>) {
+        self.add_assign(-other);
+    }
+}
+
+impl<Var, Coeff>
+    SubAssign<Series<Var, Coeff>> for Series<Var, Coeff>
+    where for<'c> Series<Var, Coeff>: SubAssign<&'c Series<Var, Coeff>>
+{
+    fn sub_assign(& mut self, other: Series<Var, Coeff>) {
+        self.sub_assign(&other);
+    }
+}
+
+
 impl<
     'a, 'b,
     Var: Clone + PartialEq + fmt::Debug,
@@ -456,6 +478,32 @@ mod tests {
         let t = Series::new("x", 1, vec!(3., 4., 5.));
         assert_eq!(s, &s - &t);
         assert_eq!(s, s.clone() - t);
+    }
+
+    #[test]
+    fn tst_sub_assign() {
+        let mut s = Series::new("x", -3, vec!(1.,0.,-3.));
+        let res = Series::new("x", 0, vec!());
+        s -= s.clone();
+        assert_eq!(res, s);
+
+        let mut s = Series::new("x", -3, vec!(1.,0.,-3.));
+        let t = Series::new("x", -1, vec!(-3., 4., 5.));
+        let res = Series::new("x", -3, vec!(1.,0.,0.));
+        s -= &t;
+        assert_eq!(res, s);
+        let mut s = Series::new("x", -3, vec!(1.,0.,-3.));
+        s -= t;
+        assert_eq!(res, s);
+
+        let mut s = Series::new("x", -3, vec!(1.,0.,-3.));
+        let res = s.clone();
+        let t = Series::new("x", 1, vec!(3., 4., 5.));
+        s -= &t;
+        assert_eq!(res, s);
+        let mut s = Series::new("x", -3, vec!(1.,0.,-3.));
+        s -= t;
+        assert_eq!(res, s);
     }
 
     #[test]
