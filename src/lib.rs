@@ -187,9 +187,15 @@ impl<
     fn add_assign(& mut self, other: &'a Series<Var, Coeff>) {
         assert_eq!(self.var, other.var);
         if other.max_pow() < self.max_pow() {
-            let to_remove = (self.max_pow() + other.max_pow()) as usize;
+            let to_remove = min(
+                (self.max_pow() - other.max_pow()) as usize,
+                self.coeffs.len()
+            );
             let new_size = self.coeffs.len() - to_remove;
             self.coeffs.truncate(new_size);
+            debug_assert!(
+                self.coeffs.is_empty() || other.max_pow() == self.max_pow()
+            );
         }
         let offset = self.min_pow();
         for (i, c) in self.coeffs.iter_mut().enumerate() {
@@ -197,10 +203,15 @@ impl<
             *c += other.coeff(power).unwrap();
         }
         if other.min_pow() < self.min_pow() {
-            let num_leading = (self.min_pow() - other.min_pow()) as usize;
+            let num_leading = min(
+                (self.min_pow() - other.min_pow()) as usize,
+                other.coeffs.len()
+            );
             let leading_coeff = other.coeffs[0..num_leading].iter().cloned();
             self.coeffs.splice(0..0, leading_coeff);
+            self.min_pow = other.min_pow;
         }
+        debug_assert!(other.max_pow() >= self.max_pow());
         self.trim();
     }
 }
@@ -483,6 +494,10 @@ mod tests {
         s += &t;
         assert_eq!(res, s);
         let mut s = Series::new("x", -3, vec!(1.,0.,-3.));
+        s += t;
+        assert_eq!(res, s);
+        let mut s = Series::new("x", -1, vec!(3.,4.,5.));
+        let t = Series::new("x", -3, vec!(1.,0.,-3.));
         s += t;
         assert_eq!(res, s);
 
