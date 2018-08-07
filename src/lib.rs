@@ -139,43 +139,6 @@ impl<'a, Var: Clone, Coeff: From<i32> + PartialEq>
 }
 
 impl<
-    'a, 'b,
-    Var: Clone + PartialEq + fmt::Debug,
-    Coeff: From<i32> + PartialEq
->
-    Add<&'b Series<Var, Coeff>>
-    for &'a Series<Var, Coeff>
-    where for<'c> &'c Coeff: Add<Output = Coeff>
-{
-    type Output = Series<Var, Coeff>;
-
-    fn add(self, other: &'b Series<Var, Coeff>) -> Series<Var, Coeff> {
-        assert_eq!(self.var, other.var);
-        let res_min_pow = min(self.min_pow(), other.min_pow());
-        let res_max_pow = min(self.max_pow(), other.max_pow());
-        assert!(res_max_pow >= res_min_pow);
-        let num_coeffs = (res_max_pow - res_min_pow) as usize;
-        let mut res_coeff = Vec::with_capacity(num_coeffs);
-        for idx in res_min_pow..res_max_pow {
-            res_coeff.push(
-                self.coeff(idx).unwrap() +  other.coeff(idx).unwrap()
-            );
-        }
-        Series::new(self.var.clone(), res_min_pow, res_coeff)
-    }
-}
-
-impl<Var, Coeff> Add for Series<Var, Coeff>
-where for<'a> &'a Series<Var, Coeff>: Add<Output = Series<Var, Coeff>>
-{
-    type Output = Series<Var, Coeff>;
-
-    fn add(self, other: Series<Var, Coeff>) -> Series<Var, Coeff> {
-        &self + &other
-    }
-}
-
-impl<
     'a,
     Var: PartialEq + fmt::Debug,
     Coeff: From<i32> + PartialEq + Clone
@@ -225,40 +188,50 @@ impl<Var, Coeff>
     }
 }
 
-impl<
-    'a, 'b,
-    Var: Clone + PartialEq + fmt::Debug,
-    Coeff: From<i32> + PartialEq
->
-    Sub<&'b Series<Var, Coeff>>
+impl<'a, 'b, Var: Clone, Coeff: Clone> Add<&'b Series<Var, Coeff>>
     for &'a Series<Var, Coeff>
-    where for<'c> &'c Coeff: Sub<Output = Coeff>
+    where for<'c> Series<Var, Coeff>: AddAssign<&'c Series<Var, Coeff>>
+{
+    type Output = Series<Var, Coeff>;
+
+    fn add(self, other: &'b Series<Var, Coeff>) -> Series<Var, Coeff> {
+        let mut res = self.clone();
+        res += other;
+        res
+    }
+}
+
+impl<Var, Coeff> Add for Series<Var, Coeff>
+    where Series<Var, Coeff>: AddAssign<Series<Var,Coeff>>
+{
+    type Output = Series<Var, Coeff>;
+
+    fn add(mut self, other: Series<Var, Coeff>) -> Series<Var, Coeff> {
+        self += other;
+        self
+    }
+}
+
+impl<'a, 'b, Var, Coeff>
+    Sub<&'b Series<Var, Coeff>> for &'a Series<Var, Coeff>
+    where for<'c> &'c Series<Var, Coeff>:
+    Add<Output = Series<Var, Coeff>> + Neg<Output = Series<Var,Coeff>>
 {
     type Output = Series<Var, Coeff>;
 
     fn sub(self, other: &'b Series<Var, Coeff>) -> Series<Var, Coeff> {
-        assert_eq!(self.var, other.var); // TODO: handle this better
-        let res_min_pow = min(self.min_pow(), other.min_pow());
-        let res_max_pow = min(self.max_pow(), other.max_pow());
-        assert!(res_max_pow >= res_min_pow);
-        let num_coeffs = (res_max_pow - res_min_pow) as usize;
-        let mut res_coeff = Vec::with_capacity(num_coeffs);
-        for idx in res_min_pow..res_max_pow {
-            res_coeff.push(
-                self.coeff(idx).unwrap() -  other.coeff(idx).unwrap()
-            );
-        }
-        Series::new(self.var.clone(), res_min_pow, res_coeff)
+        self + &(-other)
     }
 }
 
 impl<Var, Coeff> Sub for Series<Var, Coeff>
-where for<'a> &'a Series<Var, Coeff>: Sub<Output = Series<Var, Coeff>>
+   where Series<Var, Coeff>: SubAssign<Series<Var, Coeff>>
 {
     type Output = Series<Var, Coeff>;
 
-    fn sub(self, other: Series<Var, Coeff>) -> Series<Var, Coeff> {
-        &self - &other
+    fn sub(mut self, other: Series<Var, Coeff>) -> Series<Var, Coeff> {
+        self -= other;
+        self
     }
 }
 
@@ -270,7 +243,7 @@ where
     Series<Var, Coeff>: AddAssign<Series<Var, Coeff>>
 {
     fn sub_assign(& mut self, other: &'a Series<Var, Coeff>) {
-        self.add_assign(-other);
+        *self += -other;
     }
 }
 
@@ -279,7 +252,7 @@ impl<Var, Coeff>
     where for<'c> Series<Var, Coeff>: SubAssign<&'c Series<Var, Coeff>>
 {
     fn sub_assign(& mut self, other: Series<Var, Coeff>) {
-        self.sub_assign(&other);
+        *self -= &other;
     }
 }
 
