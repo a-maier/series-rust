@@ -4,7 +4,7 @@ use std::convert::From;
 use std::cmp::min;
 
 pub mod ops;
-use self::ops::Ln;
+use self::ops::{Ln,Exp};
 
 type Pow = i32;
 
@@ -371,7 +371,41 @@ impl<Var, Coeff: fmt::Display>
 
 impl<
     Var: Clone,
-    Coeff: fmt::Debug + Clone + PartialEq + From<i32> + From<Var>
+    Coeff: Clone + PartialEq + From<i32>
+        + Add<Output=Coeff> + AddAssign<Coeff>
+        + Mul<Output=Coeff> + Div<Output=Coeff> + Exp
+     > Exp for Series<Var, Coeff>
+where
+    for <'c> &'c Coeff: Mul<Output=Coeff>,
+    for <'c> Coeff: MulAssign<&'c Coeff>,
+{
+    fn exp(self) -> Series<Var, Coeff>{
+        assert!(self.min_pow() >= 0);
+        let mut b = Vec::with_capacity(min(self.coeffs.len(), 1));
+        b.push(Coeff::from(1));
+        debug_assert!(self.max_pow() >= 0);
+        for n in 1..self.max_pow() as usize {
+            let mut b_n = Coeff::from(0);
+            for i in 1..n+1 {
+                let num_factor = Coeff::from(i as i32)/Coeff::from(n as i32);
+                let a_i = self.coeff(i as i32).unwrap();
+                b_n += num_factor*(a_i * &b[n-i]);
+            }
+            b.push(b_n);
+        }
+        if self.min_pow() == 0 {
+            let exp_a_0 = self.coeff(0).unwrap().clone().exp();
+            for mut b_n in & mut b {
+                *b_n *= &exp_a_0;
+            }
+        }
+        Series::new(self.var, 0, b)
+    }
+}
+
+impl<
+    Var: Clone,
+    Coeff: Clone + PartialEq + From<i32> + From<Var>
         + Add<Output=Coeff> + SubAssign<Coeff>
         + Mul<Output=Coeff> + Div<Output=Coeff> + Ln
     > Ln for Series<Var, Coeff>
@@ -710,6 +744,22 @@ mod tests {
         let s = Series::new(Mystr("x"), 0, vec!(4., 7.,-3.));
         let res = Series::new(Mystr("x"), 0, vec!(4_f64.ln(),7./4.,-73./32.));
         assert_eq!(res, s.ln());
+    }
+
+    #[test]
+    fn tst_exp() {
+        let s = Series::new("x", 1, vec!(7.,-3.));
+        let res = Series::new("x", 0, vec!(1., 7.,43./2.));
+        assert_eq!(res, s.exp());
+
+        let s = Series::new("x", 2, vec!(0.));
+        let res = Series::new("x", 0, vec!(1.,0.,0.));
+        assert_eq!(res, s.exp());
+
+        let s = Series::new("x", 0, vec!(5., 11., -7.));
+        let e5 = 5_f64.exp();
+        let res = Series::new("x", 0, vec!(e5,e5*11.,e5*107./2.));
+        assert_eq!(res, s.exp());
     }
 
     #[test]
