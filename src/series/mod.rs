@@ -442,6 +442,23 @@ where
     }
 }
 
+impl<Var, Coeff> Series<Var, Coeff>
+where Series<Var, Coeff>: Ln + Exp + Mul<Output=Series<Var, Coeff>>
+{
+    pub fn pow(self, exponent: Series<Var, Coeff>) -> Series<Var, Coeff> {
+        (exponent * self.ln()).exp()
+    }
+}
+
+impl<Var, Coeff> Series<Var, Coeff>
+where
+    for<'c> &'c Series<Var, Coeff>: Ln + Mul<Output=Series<Var, Coeff>>,
+    Series<Var, Coeff>: Exp
+{
+    pub fn pow(self, exponent: & Series<Var, Coeff>) -> Series<Var, Coeff> {
+        (exponent * self.ln()).exp()
+    }
+}
 
 #[cfg(test)]
 mod tests {
@@ -760,6 +777,32 @@ mod tests {
         let e5 = 5_f64.exp();
         let res = Series::new("x", 0, vec!(e5,e5*11.,e5*107./2.));
         assert_eq!(res, s.exp());
+    }
+
+    #[test]
+    fn tst_pow() {
+        let base = Series::new(Mystr("x"), 0, vec!(1., 7., 0.));
+        let exp = Series::new(Mystr("x"), -1, vec!(1., -5., 43.));
+        let e7 = 7_f64.exp();
+        let res = Series::new(Mystr("x"), 0, vec!(e7, -119./2.*e7));
+        assert_eq!(res, base.pow(exp));
+
+        let base = Series::new(Mystr("x"), 0, vec!(2., 7., 0.));
+        let exp = Series::new(Mystr("x"), 0, vec!(3., -5., 11.));
+        // rescale result so we can use round and still get decent precision
+        let rescale = Series::new(Mystr("x"), 0, vec!(1e13, 0., 0., 0.));
+        let test = &rescale * &base.pow(exp);
+        let ln2 = 2_f64.ln();
+        let res = Series::new(Mystr("x"), 0, vec!(8., 84.-40.*ln2, 154.+ln2*(-332.+100.*ln2)));
+        let res = rescale * res;
+        assert_eq!(res.min_pow(), test.min_pow());
+        assert_eq!(res.max_pow(), test.max_pow());
+        for i in res.min_pow()..res.max_pow() {
+            assert_eq!(
+                res.coeff(i).unwrap().round(),
+                test.coeff(i).unwrap().round()
+            );
+        }
     }
 
     #[test]
