@@ -68,6 +68,9 @@
 //! let t = s.clone();
 //! println!("s^s = {}", s.pow(t));
 //! ```
+#[cfg(feature = "serde")]
+#[macro_use]
+extern crate serde;
 use std::fmt;
 use std::ops::{Add,AddAssign,Sub,SubAssign,Mul,MulAssign,Div,DivAssign,Neg};
 use std::convert::From;
@@ -79,7 +82,8 @@ use self::ops::{Ln,Exp};
 type Pow = i32;
 
 /// Laurent series in a single variable up to some power
-#[derive(PartialEq,Debug,Clone)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(PartialEq,Eq,Debug,Clone)]
 pub struct Series<Var, Coeff> {
     var: Var,
     min_pow: Pow,

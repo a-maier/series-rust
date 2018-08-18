@@ -4,3 +4,4 @@ version = "0.1.0"
 authors = ["Andreas Maier <andreas.maier@durham.ac.uk>"]
 
 [dependencies]
+serde = { version = "1.0", optional = true, features = ["derive"] }
