@@ -104,6 +104,18 @@ impl<Var, Coeff: From<i32> + PartialEq> Series<Var, Coeff> {
         res
     }
 
+    /// Get the expansion variable
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// let s = series::Series::new("x", -1, vec!(1,2,3));
+    /// assert_eq!(s.var(), &"x");
+    /// ```
+    pub fn var(&self) -> &Var {
+        &self.var
+    }
+
     /// Get the series coefficient of the expansion variable to the
     /// given power.
     ///
