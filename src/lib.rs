@@ -13,7 +13,7 @@
 //! have to calculate the logarithm of both the leading coefficient and
 //! the expansion variable if we take the logarithm of a Laurent
 //! series. This crate is therefore most useful in combination with a
-//! crate providing at least basic symbolic math.
+//! library providing at least basic symbolic math.
 //!
 //! # Examples
 //!
@@ -44,14 +44,14 @@
 //!
 //! // More advanced operations in general require the variable type to be
 //! // convertible to the coefficient type by implementing the From trait.
-//! // In the examples shown here, this conversion is actually not required,
+//! // In the examples shown here, this conversion is actually never used,
 //! // so we can get away with a dummy implementation.
 //! #[derive(Debug,Clone,PartialEq)]
 //! struct Variable<'a>(&'a str);
 //!
 //! impl<'a> From<Variable<'a>> for f64 {
 //!     fn from(_s: Variable<'a>) -> f64 {
-//!         panic!("Can't convert variable into f64")
+//!         panic!("Can't convert variable to f64")
 //!     }
 //! }
 //!
@@ -78,6 +78,7 @@ use self::ops::{Ln,Exp};
 
 type Pow = i32;
 
+/// Laurent series in a single variable up to some power
 #[derive(PartialEq,Debug,Clone)]
 pub struct Series<Var, Coeff> {
     var: Var,
@@ -86,24 +87,41 @@ pub struct Series<Var, Coeff> {
     zero: Coeff // TODO: evil hack, learn how to do this better
 }
 
-impl<Var, Coeff> Series<Var, Coeff> {
-    pub fn min_pow(&self) -> Pow {
-        self.min_pow
-    }
-
-    pub fn max_pow(&self) -> Pow {
-        // TODO: replace i32 by bigger type
-        self.min_pow + Pow::from(self.coeffs.len() as i32)
-    }
-}
-
 impl<Var, Coeff: From<i32> + PartialEq> Series<Var, Coeff> {
+    /// Create a new series
+    ///
+    /// # Example
+    ///
+    /// This creates a series in the variable "x", starting at "x"^-1
+    /// with coefficients 1, 2, 3. In other words, the series x^-1 + 2 +
+    /// 3*x + O(x^2).
+    /// ```rust
+    /// let s = series::Series::new("x", -1, vec!(1,2,3));
+    /// ```
     pub fn new(var: Var, min_pow: Pow, coeffs: Vec<Coeff>) -> Series<Var, Coeff> {
         let mut res = Series{var, min_pow, coeffs, zero: Coeff::from(0)};
         res.trim();
         res
     }
 
+    /// Get the series coefficient of the expansion variable to the
+    /// given power.
+    ///
+    /// Returns None if the requested power is above the highest known
+    /// power. Coefficients below the leading power are zero.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// let s = series::Series::new("x", -1, vec!(1,2,3));
+    /// assert_eq!(s.coeff(-5), Some(&0));
+    /// assert_eq!(s.coeff(-2), Some(&0));
+    /// assert_eq!(s.coeff(-1), Some(&1));
+    /// assert_eq!(s.coeff(0), Some(&2));
+    /// assert_eq!(s.coeff(1), Some(&3));
+    /// assert_eq!(s.coeff(2), None);
+    /// assert_eq!(s.coeff(5), None);
+    /// ```
     pub fn coeff(&self, pow: Pow) -> Option<&Coeff> {
         if pow < self.min_pow() {
             return Some(&self.zero) // TODO this is a bad hack
@@ -116,11 +134,50 @@ impl<Var, Coeff: From<i32> + PartialEq> Series<Var, Coeff> {
     }
 }
 
+impl<Var, Coeff> Series<Var, Coeff> {
+    /// Get the leading power of the series expansion variable
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// let s = series::Series::new("x", -1, vec!(1,2,3));
+    /// assert_eq!(s.min_pow(), -1);
+    /// ```
+    pub fn min_pow(&self) -> Pow {
+        self.min_pow
+    }
+
+    /// Get the power of the expansion variable where the series is
+    /// truncated, that is \\( N \\) in a series of the form \\(
+    /// \sum_{n=n_0}^{N-1} a_n x^n + O(x^N), \\)
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// let s = series::Series::new("x", -1, vec!(1,2,3));
+    /// assert_eq!(s.max_pow(), 2);
+    /// ```
+    pub fn max_pow(&self) -> Pow {
+        // TODO: replace i32 by bigger type
+        self.min_pow + Pow::from(self.coeffs.len() as i32)
+    }
+}
+
 impl<
         Var: Clone, Coeff: From<i32> + PartialEq + SubAssign
     > Series<Var, Coeff> where
     for<'a> &'a Coeff: Div<Output = Coeff> + Mul<Output = Coeff>
 {
+    /// Compute 1/s for a series s
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// let s = series::Series::new("x", -1, vec!(1,2,3));
+    /// let s_inv = s.inverse();
+    /// let one = series::Series::new("x", 0, vec!(1,0,0));
+    /// assert_eq!(s * s_inv, one);
+    /// ```
     pub fn inverse(&self) -> Series<Var, Coeff> {
         let inv_min_pow = -self.min_pow;
         if self.coeffs.is_empty() {
@@ -193,6 +250,15 @@ impl<
 {
     type Output = Series<Var, Coeff>;
 
+    /// Compute -s for a series s
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// let s = series::Series::new("x", -3, vec!(1.,0.,-3.));
+    /// let minus_s = series::Series::new("x", -3, vec!(-1.,0.,3.));
+    /// assert_eq!(-s, minus_s);
+    /// ```
     fn neg(self) -> Series<Var, Coeff> {
         let neg_coeff = self.coeffs.iter().map(|c| -c).collect();
         Series::new(self.var, self.min_pow, neg_coeff)
@@ -205,6 +271,15 @@ impl<'a, Var: Clone, Coeff: From<i32> + PartialEq>
 {
     type Output = Series<Var, Coeff>;
 
+    /// Compute -s for a series s
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// let s = series::Series::new("x", -3, vec!(1.,0.,-3.));
+    /// let minus_s = series::Series::new("x", -3, vec!(-1.,0.,3.));
+    /// assert_eq!(-&s, minus_s);
+    /// ```
     fn neg(self) -> Series<Var, Coeff> {
         let neg_coeff = self.coeffs.iter().map(|c| -c).collect();
         Series::new(self.var.clone(), self.min_pow, neg_coeff)
@@ -220,6 +295,22 @@ impl<
     for Series<Var, Coeff>
     where for<'c> Coeff: AddAssign<&'c Coeff>
 {
+    /// Set s = s + t for two series s and t
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use series::Series;
+    /// let mut s = Series::new("x", -3, vec!(1.,0.,-3.));
+    /// let t = Series::new("x", -1, vec!(3., 4., 5.));
+    /// let res = Series::new("x", -3, vec!(1.,0.,0.));
+    /// s += &t;
+    /// assert_eq!(res, s);
+    /// ```
+    ///
+    /// # Panics
+    ///
+    /// Panics if the series have different expansion variables.
     fn add_assign(& mut self, other: &'a Series<Var, Coeff>) {
         assert_eq!(self.var, other.var);
         if other.max_pow() < self.max_pow() {
@@ -256,6 +347,22 @@ impl<Var, Coeff>
     AddAssign<Series<Var, Coeff>> for Series<Var, Coeff>
     where for<'c> Series<Var, Coeff>: AddAssign<&'c Series<Var, Coeff>>
 {
+    /// Set s = s + t for two series s and t
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use series::Series;
+    /// let mut s = Series::new("x", -3, vec!(1.,0.,-3.));
+    /// let t = Series::new("x", -1, vec!(3., 4., 5.));
+    /// let res = Series::new("x", -3, vec!(1.,0.,0.));
+    /// s += t;
+    /// assert_eq!(res, s);
+    /// ```
+    ///
+    /// # Panics
+    ///
+    /// Panics if the series have different expansion variables.
     fn add_assign(& mut self, other: Series<Var, Coeff>) {
         self.add_assign(&other)
     }
@@ -267,6 +374,21 @@ impl<'a, 'b, Var: Clone, Coeff: Clone> Add<&'b Series<Var, Coeff>>
 {
     type Output = Series<Var, Coeff>;
 
+    /// Adds two series
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use series::Series;
+    /// let s = Series::new("x", -3, vec!(1.,0.,-3.));
+    /// let t = Series::new("x", -1, vec!(3., 4., 5.));
+    /// let res = Series::new("x", -3, vec!(1.,0.,0.));
+    /// assert_eq!(res, s + t);
+    /// ```
+    ///
+    /// # Panics
+    ///
+    /// Panics if the series have different expansion variables.
     fn add(self, other: &'b Series<Var, Coeff>) -> Series<Var, Coeff> {
         let mut res = self.clone();
         res += other;
@@ -279,6 +401,21 @@ impl<Var, Coeff> Add for Series<Var, Coeff>
 {
     type Output = Series<Var, Coeff>;
 
+    /// Adds two series
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use series::Series;
+    /// let s = Series::new("x", -3, vec!(1.,0.,-3.));
+    /// let t = Series::new("x", -1, vec!(3., 4., 5.));
+    /// let res = Series::new("x", -3, vec!(1.,0.,0.));
+    /// assert_eq!(res, &s + &t);
+    /// ```
+    ///
+    /// # Panics
+    ///
+    /// Panics if the series have different expansion variables.
     fn add(mut self, other: Series<Var, Coeff>) -> Series<Var, Coeff> {
         self += other;
         self
@@ -292,6 +429,21 @@ impl<'a, 'b, Var, Coeff>
 {
     type Output = Series<Var, Coeff>;
 
+    /// Subtract two series
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use series::Series;
+    /// let s = Series::new("x", -3, vec!(1.,0.,-3.));
+    /// let t = s.clone();
+    /// let res = Series::new("x", 0, vec!());
+    /// assert_eq!(res, &s - &t);
+    /// ```
+    ///
+    /// # Panics
+    ///
+    /// Panics if the series have different expansion variables.
     fn sub(self, other: &'b Series<Var, Coeff>) -> Series<Var, Coeff> {
         self + &(-other)
     }
@@ -302,6 +454,21 @@ impl<Var, Coeff> Sub for Series<Var, Coeff>
 {
     type Output = Series<Var, Coeff>;
 
+    /// Subtract two series
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use series::Series;
+    /// let s = Series::new("x", -3, vec!(1.,0.,-3.));
+    /// let t = s.clone();
+    /// let res = Series::new("x", 0, vec!());
+    /// assert_eq!(res, &s - &t);
+    /// ```
+    ///
+    /// # Panics
+    ///
+    /// Panics if the series have different expansion variables.
     fn sub(mut self, other: Series<Var, Coeff>) -> Series<Var, Coeff> {
         self -= other;
         self
@@ -315,6 +482,21 @@ where
     for<'c> &'c Series<Var, Coeff>: Neg<Output=Series<Var, Coeff>>,
     Series<Var, Coeff>: AddAssign<Series<Var, Coeff>>
 {
+    /// Set s = s - t for two series s and t
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use series::Series;
+    /// let mut s = Series::new("x", -3, vec!(1.,0.,-3.));
+    /// let res = Series::new("x", 0, vec!());
+    /// s -= &s.clone();
+    /// assert_eq!(res, s);
+    /// ```
+    ///
+    /// # Panics
+    ///
+    /// Panics if the series have different expansion variables.
     fn sub_assign(& mut self, other: &'a Series<Var, Coeff>) {
         *self += -other;
     }
@@ -324,6 +506,21 @@ impl<Var, Coeff>
     SubAssign<Series<Var, Coeff>> for Series<Var, Coeff>
     where for<'c> Series<Var, Coeff>: SubAssign<&'c Series<Var, Coeff>>
 {
+    /// Set s = s - t for two series s and t
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use series::Series;
+    /// let mut s = Series::new("x", -3, vec!(1.,0.,-3.));
+    /// let res = Series::new("x", 0, vec!());
+    /// s -= s.clone();
+    /// assert_eq!(res, s);
+    /// ```
+    ///
+    /// # Panics
+    ///
+    /// Panics if the series have different expansion variables.
     fn sub_assign(& mut self, other: Series<Var, Coeff>) {
         *self -= &other;
     }
@@ -341,6 +538,20 @@ impl<
 {
     type Output = Series<Var, Coeff>;
 
+    /// Multiply two series
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use series::Series;
+    /// let s = Series::new("x", -3, vec!(1.,0.,-3.));
+    /// let res = Series::new("x", -6, vec!(1.,0.,-6.));
+    /// assert_eq!(res, &s * &s);
+    /// ```
+    ///
+    /// # Panics
+    ///
+    /// Panics if the series have different expansion variables.
     fn mul(self, other: &'b Series<Var, Coeff>) -> Series<Var, Coeff> {
         assert_eq!(self.var, other.var); // TODO: handle this better
         let res_min_pow = self.min_pow() + other.min_pow();
@@ -363,6 +574,20 @@ where for<'a> &'a Series<Var, Coeff>: Mul<Output = Series<Var, Coeff>>
 {
     type Output = Series<Var, Coeff>;
 
+    /// Multiply two series
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use series::Series;
+    /// let s = Series::new("x", -3, vec!(1.,0.,-3.));
+    /// let res = Series::new("x", -6, vec!(1.,0.,-6.));
+    /// assert_eq!(res, s.clone() * s.clone());
+    /// ```
+    ///
+    /// # Panics
+    ///
+    /// Panics if the series have different expansion variables.
     fn mul(self, other: Series<Var, Coeff>) -> Series<Var, Coeff> {
         &self * &other
     }
@@ -373,6 +598,21 @@ impl<'a, Var, Coeff>
     for Series<Var, Coeff>
 where for<'c> &'c Series<Var, Coeff>: Mul<Output=Series<Var, Coeff>>
 {
+    /// Set s = s * t for two series s,t
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use series::Series;
+    /// let mut s = Series::new("x", -3, vec!(1.,0.,-3.));
+    /// s *= &s.clone();
+    /// let res = Series::new("x", -6, vec!(1.,0.,-6.));
+    /// assert_eq!(res, s);
+    /// ```
+    ///
+    /// # Panics
+    ///
+    /// Panics if the series have different expansion variables.
     fn mul_assign(& mut self, other: &'a Series<Var, Coeff>) {
         let res = &*self * other;
         *self = res
@@ -384,6 +624,21 @@ impl<Var, Coeff: fmt::Display>
     for Series<Var, Coeff>
     where for <'c> Series<Var, Coeff>: MulAssign<&'c Series<Var, Coeff>>
 {
+    /// Set s = s * t for two series s,t
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use series::Series;
+    /// let mut s = Series::new("x", -3, vec!(1.,0.,-3.));
+    /// s *= s.clone();
+    /// let res = Series::new("x", -6, vec!(1.,0.,-6.));
+    /// assert_eq!(res, s);
+    /// ```
+    ///
+    /// # Panics
+    ///
+    /// Panics if the series have different expansion variables.
     fn mul_assign(& mut self, other: Series<Var, Coeff>) {
         *self *= &other;
     }
@@ -401,6 +656,20 @@ impl<
 {
     type Output = Series<Var, Coeff>;
 
+    /// Divides two series
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use series::Series;
+    /// let s = Series::new("x", -3, vec!(1.,0.,-3.));
+    /// let res = Series::new("x", 0, vec!(1.,0.,0.));
+    /// assert_eq!(res, &s / &s);
+    /// ```
+    ///
+    /// # Panics
+    ///
+    /// Panics if the series have different expansion variables.
     fn div(self, other: &'b Series<Var, Coeff>) -> Series<Var, Coeff> {
         assert_eq!(self.var, other.var); // TODO: handle this better
         let inv = other.inverse();
@@ -413,6 +682,20 @@ where for<'a> &'a Series<Var, Coeff>: Div<Output = Series<Var, Coeff>>
 {
     type Output = Series<Var, Coeff>;
 
+    /// Divides two series
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use series::Series;
+    /// let s = Series::new("x", -3, vec!(1.,0.,-3.));
+    /// let res = Series::new("x", 0, vec!(1.,0.,0.));
+    /// assert_eq!(res, s.clone() / s.clone());
+    /// ```
+    ///
+    /// # Panics
+    ///
+    /// Panics if the series have different expansion variables.
     fn div(self, other: Series<Var, Coeff>) -> Series<Var, Coeff> {
         &self / &other
     }
@@ -423,6 +706,21 @@ impl<'a, Var, Coeff>
     for Series<Var, Coeff>
 where for<'c> &'c Series<Var, Coeff>: Div<Output=Series<Var, Coeff>>
 {
+    /// Sets s = s / t for two series s,t
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use series::Series;
+    /// let mut s = Series::new("x", -3, vec!(1.,0.,-3.));
+    /// s /= &s.clone();
+    /// let res = Series::new("x", 0, vec!(1.,0.,0.));
+    /// assert_eq!(res, s);
+    /// ```
+    ///
+    /// # Panics
+    ///
+    /// Panics if the series have different expansion variables.
     fn div_assign(& mut self, other: &'a Series<Var, Coeff>) {
         let res = &*self / other;
         *self = res
@@ -434,6 +732,21 @@ impl<Var, Coeff: fmt::Display>
     for Series<Var, Coeff>
     where for <'c> Series<Var, Coeff>: DivAssign<&'c Series<Var, Coeff>>
 {
+    /// Sets s = s / t for two series s,t
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use series::Series;
+    /// let mut s = Series::new("x", -3, vec!(1.,0.,-3.));
+    /// s /= s.clone();
+    /// let res = Series::new("x", 0, vec!(1.,0.,0.));
+    /// assert_eq!(res, s);
+    /// ```
+    ///
+    /// # Panics
+    ///
+    /// Panics if the series have different expansion variables.
     fn div_assign(& mut self, other: Series<Var, Coeff>) {
         *self /= &other;
     }
@@ -449,6 +762,12 @@ where
     for <'c> &'c Coeff: Mul<Output=Coeff>,
     for <'c> Coeff: MulAssign<&'c Coeff>,
 {
+    /// Computes the exponential of a series
+    ///
+    /// # Panics
+    ///
+    /// Panics if the series contains negative powers of the expansion
+    /// variable
     fn exp(self) -> Series<Var, Coeff>{
         assert!(self.min_pow() >= 0);
         let mut b = Vec::with_capacity(min(self.coeffs.len(), 1));
@@ -483,6 +802,7 @@ where
     for <'c> Coeff: DivAssign<&'c Coeff>,
     for <'c> &'c Coeff: Mul<Output=Coeff>,
 {
+    /// Computes the logarithm of a series
     fn ln(mut self) -> Series<Var, Coeff> {
         assert!(!self.coeffs.is_empty());
         let k0 = self.min_pow();
@@ -515,6 +835,11 @@ where
 impl<Var, Coeff> Series<Var, Coeff>
 where Series<Var, Coeff>: Ln + Exp + Mul<Output=Series<Var, Coeff>>
 {
+    /// Computes s^t for two series s,t
+    ///
+    /// # Panics
+    ///
+    /// Panics if the series have different expansion variables.
     pub fn pow(self, exponent: Series<Var, Coeff>) -> Series<Var, Coeff> {
         (exponent * self.ln()).exp()
     }
@@ -525,6 +850,11 @@ where
     for<'c> &'c Series<Var, Coeff>: Ln + Mul<Output=Series<Var, Coeff>>,
     Series<Var, Coeff>: Exp
 {
+    /// Computes s^t for two series s,t
+    ///
+    /// # Panics
+    ///
+    /// Panics if the series have different expansion variables.
     pub fn pow(self, exponent: & Series<Var, Coeff>) -> Series<Var, Coeff> {
         (exponent * self.ln()).exp()
     }

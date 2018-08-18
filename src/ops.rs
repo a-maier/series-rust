@@ -1,4 +1,5 @@
 
+/// Trait for the natural logarithm
 pub trait Ln {
     fn ln(self) -> Self;
 }
@@ -15,6 +16,7 @@ impl Ln for f32 {
     }
 }
 
+/// Trait for the exponential function
 pub trait Exp {
     fn exp(self) -> Self;
 }
