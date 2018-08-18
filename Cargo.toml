@@ -2,6 +2,11 @@
 name = "series"
 version = "0.1.0"
 authors = ["Andreas Maier <andreas.maier@durham.ac.uk>"]
+description = "Laurent series in a single variable"
+license = "GPL-3.0-or-later"
+readme = "Readme.md"
+categories = ["science"]
+repository = "https://github.com/a-maier/series-rust"
 
 [dependencies]
 serde = { version = "1.0", optional = true, features = ["derive"] }
