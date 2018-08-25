@@ -13,7 +13,7 @@ type Pow = i32;
 
 /// Laurent series in a single variable up to some power
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(PartialEq,Eq,Debug,Clone)]
+#[derive(PartialEq,Eq,Debug,Clone,Hash)]
 pub struct Series<Var, Coeff> {
     var: Var,
     min_pow: Pow,
