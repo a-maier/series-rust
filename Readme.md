@@ -1,3 +1,5 @@
+# Series
+
 This is a crate for handling truncated Laurent series in a single
 variable about zero, i.e. expressions of the form
 
