@@ -1,12 +1,12 @@
-This is a crate for handling Laurent series in a single variable
-about zero, i.e. expressions of the form
+This is a crate for handling truncated Laurent series in a single
+variable about zero, i.e. expressions of the form
 
-\\[ s = \sum_{n=n_0}^N a_n x^n + O(x^{N+1}), \\]
+`s = a_n0*x^n0 + ... + a_N*x^N + O(x^{N+1}),`
 
-where \\( n_0 \\) and \\( N \\) are integers. Such series can be
-added, subtracted, multiplied, and divided. Some simple functions
-like powers of series, natural logarithms and exponentials are also
-implemented.
+where `n0` and `N` are integers and `^` denotes exponentiation. Such
+series can be added, subtracted, multiplied, and divided. Some
+simple functions like powers of series, natural logarithms and
+exponentials are also implemented.
 
 The kinds of operations that can be performed depends on the data
 type of the variable and the coefficients. For example, we usually
