@@ -15,6 +15,20 @@ the expansion variable if we take the logarithm of a Laurent
 series. This crate is therefore most useful in combination with a
 library providing at least basic symbolic math.
 
+# Usage
+
+Add this to your Cargo.toml:
+
+```toml
+[dependencies]
+series = "0.1.0"
+```
+
+and this to your crate root:
+```rust
+extern crate series;
+```
+
 # Examples
 
 ```rust
