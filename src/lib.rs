@@ -112,13 +112,17 @@ impl<Var, C: Coeff> Series<Var, C> {
 
 // Multiplicative inverse
 pub trait MulInverse {
-    fn mul_inverse(&self) -> Self;
+    type Output;
+
+    fn mul_inverse(self) -> Self::Output;
 }
 
-impl<Var: Clone, C: Coeff + SubAssign> MulInverse for Series<Var, C>
+impl<'a, Var: Clone, C: Coeff + SubAssign> MulInverse for &'a Series<Var, C>
 where
-    for<'a> &'a C: Div<Output = C> + Mul<Output = C>
+    for<'b> &'b C: Div<Output = C> + Mul<Output = C>
 {
+    type Output = Series<Var, C>;
+
     /// Compute 1/s for a series s
     ///
     /// # Example
@@ -130,7 +134,7 @@ where
     /// let one = series::Series::new("x", 0, vec!(1.,0.,0.));
     /// assert_eq!(s * s_inv, one);
     /// ```
-    fn mul_inverse(&self) -> Self {
+    fn mul_inverse(self) -> Series<Var, C> {
         let inv_min_pow = -self.min_pow;
         if self.coeffs.is_empty() {
             return Series::new(self.var.clone(), inv_min_pow, vec!())
