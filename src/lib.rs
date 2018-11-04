@@ -110,7 +110,12 @@ impl<Var, C: Coeff> Series<Var, C> {
     }
 }
 
-impl<Var: Clone, C: Coeff + SubAssign> Series<Var, C>
+// Multiplicative inverse
+pub trait MulInverse {
+    fn mul_inverse(&self) -> Self;
+}
+
+impl<Var: Clone, C: Coeff + SubAssign> MulInverse for Series<Var, C>
 where
     for<'a> &'a C: Div<Output = C> + Mul<Output = C>
 {
@@ -119,12 +124,13 @@ where
     /// # Example
     ///
     /// ```rust
-    /// let s = series::Series::new("x", -1, vec!(1,2,3));
-    /// let s_inv = s.inverse();
-    /// let one = series::Series::new("x", 0, vec!(1,0,0));
-    /// //assert_eq!(s * s_inv, one);
+    /// use series::MulInverse;
+    /// let s = series::Series::new("x", -1, vec!(1.,2.,3.));
+    /// let s_inv = s.mul_inverse();
+    /// let one = series::Series::new("x", 0, vec!(1.,0.,0.));
+    /// assert_eq!(s * s_inv, one);
     /// ```
-    pub fn inverse(&self) -> Series<Var, C> {
+    fn mul_inverse(&self) -> Self {
         let inv_min_pow = -self.min_pow;
         if self.coeffs.is_empty() {
             return Series::new(self.var.clone(), inv_min_pow, vec!())
@@ -609,7 +615,7 @@ impl<'a, 'b, Var: Clone + PartialEq + fmt::Debug,
     Mul<&'b Series<Var, C>>
     for &'a Series<Var, C>
 where
-    for<'c> C: Mul<&'c C,Output=C>
+    for<'c, 'd> &'c C: Mul<&'d C,Output=C>
 {
     type Output = Series<Var, C>;
 
@@ -634,11 +640,11 @@ where
         let num_coeffs = min(self.coeffs.len(), other.coeffs.len());
         // compute Cauchy product
         let mut c: Vec<_> = self.coeffs.iter().take(num_coeffs)
-            .map(|c| c.clone() * &other.coeffs[0])
+            .map(|c| c * &other.coeffs[0])
             .collect();
         for (k,c) in c.iter_mut().enumerate() {
             for i in 1..=k {
-                *c += self.coeffs[k-i].clone() * &other.coeffs[i]
+                *c += &self.coeffs[k-i] * &other.coeffs[i]
             }
         }
         Series::new(self.var.clone(), product_min_pow, c)
