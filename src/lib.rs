@@ -11,17 +11,20 @@ use self::ops::{Ln,Exp};
 
 type Pow = i32;
 
+pub trait Coeff: From<i32> + PartialEq {}
+impl<T: From<i32> + PartialEq> Coeff for T {}
+
 /// Laurent series in a single variable up to some power
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(PartialEq,Eq,Debug,Clone,Hash)]
-pub struct Series<Var, Coeff> {
+pub struct Series<Var, C: Coeff> {
     var: Var,
     min_pow: Pow,
-    coeffs: Vec<Coeff>,
-    zero: Coeff // TODO: evil hack, learn how to do this better
+    coeffs: Vec<C>,
+    zero: C // TODO: evil hack, learn how to do this better
 }
 
-impl<Var, Coeff: From<i32> + PartialEq> Series<Var, Coeff> {
+impl<Var, C: Coeff> Series<Var, C> {
     /// Create a new series
     ///
     /// # Example
@@ -32,8 +35,8 @@ impl<Var, Coeff: From<i32> + PartialEq> Series<Var, Coeff> {
     /// ```rust
     /// let s = series::Series::new("x", -1, vec!(1,2,3));
     /// ```
-    pub fn new(var: Var, min_pow: Pow, coeffs: Vec<Coeff>) -> Series<Var, Coeff> {
-        let mut res = Series{var, min_pow, coeffs, zero: Coeff::from(0)};
+    pub fn new(var: Var, min_pow: Pow, coeffs: Vec<C>) -> Series<Var, C> {
+        let mut res = Series{var, min_pow, coeffs, zero: C::from(0)};
         res.trim();
         res
     }
@@ -68,7 +71,7 @@ impl<Var, Coeff: From<i32> + PartialEq> Series<Var, Coeff> {
     /// assert_eq!(s.coeff(2), None);
     /// assert_eq!(s.coeff(5), None);
     /// ```
-    pub fn coeff(&self, pow: Pow) -> Option<&Coeff> {
+    pub fn coeff(&self, pow: Pow) -> Option<&C> {
         if pow < self.min_pow() {
             return Some(&self.zero) // TODO this is a bad hack
         }
@@ -78,9 +81,7 @@ impl<Var, Coeff: From<i32> + PartialEq> Series<Var, Coeff> {
         let idx = (pow - self.min_pow()) as usize;
         Some(&self.coeffs[idx])
     }
-}
 
-impl<Var, Coeff> Series<Var, Coeff> {
     /// Get the leading power of the series expansion variable
     ///
     /// # Example
@@ -109,10 +110,9 @@ impl<Var, Coeff> Series<Var, Coeff> {
     }
 }
 
-impl<
-        Var: Clone, Coeff: From<i32> + PartialEq + SubAssign
-    > Series<Var, Coeff> where
-    for<'a> &'a Coeff: Div<Output = Coeff> + Mul<Output = Coeff>
+impl<Var: Clone, C: Coeff + SubAssign> Series<Var, C>
+where
+    for<'a> &'a C: Div<Output = C> + Mul<Output = C>
 {
     /// Compute 1/s for a series s
     ///
@@ -124,16 +124,16 @@ impl<
     /// let one = series::Series::new("x", 0, vec!(1,0,0));
     /// //assert_eq!(s * s_inv, one);
     /// ```
-    pub fn inverse(&self) -> Series<Var, Coeff> {
+    pub fn inverse(&self) -> Series<Var, C> {
         let inv_min_pow = -self.min_pow;
         if self.coeffs.is_empty() {
             return Series::new(self.var.clone(), inv_min_pow, vec!())
         }
         let a : Vec<_> = self.coeffs.iter().map(|c| c/&self.coeffs[0]).collect();
         let mut b = Vec::with_capacity(a.len());
-        b.push(Coeff::from(1));
+        b.push(C::from(1));
         for n in 1..a.len() {
-            let mut b_n = Coeff::from(0);
+            let mut b_n = C::from(0);
             for i in 0..n {
                 b_n -= &a[n-i] * &b[i];
             }
@@ -144,11 +144,11 @@ impl<
     }
 }
 
-impl<Var, Coeff: From<i32> + PartialEq> Series<Var, Coeff> {
+impl<Var, C: Coeff> Series<Var, C> {
     fn trim(& mut self) {
         let idx = {
             let non_zero = self.coeffs.iter().enumerate().
-                find(|&(_, c)| *c != Coeff::from(0));
+                find(|&(_, c)| *c != C::from(0));
             match non_zero {
                 Some((idx, _)) => Some(idx),
                 _ => None
@@ -169,12 +169,11 @@ impl<Var, Coeff: From<i32> + PartialEq> Series<Var, Coeff> {
     }
 }
 
-impl<Var: fmt::Display, Coeff: From<i32> + PartialEq + fmt::Display> fmt::Display
-    for Series<Var, Coeff>
+impl<Var: fmt::Display, C: Coeff + fmt::Display> fmt::Display for Series<Var, C>
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         for (i, coeff) in self.coeffs.iter().enumerate() {
-            if *coeff == Coeff::from(0) { continue; }
+            if *coeff == C::from(0) { continue; }
             let cur_pow = self.min_pow() + Pow::from(i as i32);
             if i > 0 { write!(f, " + ")?; }
             write!(f, "({})", coeff)?;
