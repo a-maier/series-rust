@@ -187,49 +187,43 @@ impl<Var: fmt::Display, C: Coeff + fmt::Display> fmt::Display for Series<Var, C>
     }
 }
 
-// impl<
-//     Var, Coeff: From<i32> + PartialEq
-// >
-//     Neg for Series<Var, Coeff>
-//     where for<'c> &'c Coeff: Neg<Output = Coeff>
-// {
-//     type Output = Series<Var, Coeff>;
+impl<Var, C: Coeff + Neg<Output=C>> Neg for Series<Var, C> {
+    type Output = Series<Var, C>;
 
-//     /// Compute -s for a series s
-//     ///
-//     /// # Example
-//     ///
-//     /// ```rust
-//     /// let s = series::Series::new("x", -3, vec!(1.,0.,-3.));
-//     /// let minus_s = series::Series::new("x", -3, vec!(-1.,0.,3.));
-//     /// assert_eq!(-s, minus_s);
-//     /// ```
-//     fn neg(self) -> Series<Var, Coeff> {
-//         let neg_coeff = self.coeffs.iter().map(|c| -c).collect();
-//         Series::new(self.var, self.min_pow, neg_coeff)
-//     }
-// }
+    /// Compute -s for a series s
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// let s = series::Series::new("x", -3, vec!(1.,0.,-3.));
+    /// let minus_s = series::Series::new("x", -3, vec!(-1.,0.,3.));
+    /// assert_eq!(-s, minus_s);
+    /// ```
+    fn neg(self) -> Self::Output {
+        let neg_coeff = self.coeffs.into_iter().map(|c| -c).collect();
+        Series::new(self.var, self.min_pow, neg_coeff)
+    }
+}
 
-// impl<'a, Var: Clone, Coeff: From<i32> + PartialEq>
-//     Neg for &'a Series<Var, Coeff>
-//     where for<'c> &'c Coeff: Neg<Output = Coeff>
-// {
-//     type Output = Series<Var, Coeff>;
+impl<'a, Var: Clone, C: Coeff> Neg for &'a Series<Var, C>
+    where for<'c> &'c C: Neg<Output=C>
+{
+    type Output = Series<Var, C>;
 
-//     /// Compute -s for a series s
-//     ///
-//     /// # Example
-//     ///
-//     /// ```rust
-//     /// let s = series::Series::new("x", -3, vec!(1.,0.,-3.));
-//     /// let minus_s = series::Series::new("x", -3, vec!(-1.,0.,3.));
-//     /// assert_eq!(-&s, minus_s);
-//     /// ```
-//     fn neg(self) -> Series<Var, Coeff> {
-//         let neg_coeff = self.coeffs.iter().map(|c| -c).collect();
-//         Series::new(self.var.clone(), self.min_pow, neg_coeff)
-//     }
-// }
+    /// Compute -s for a series s
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// let s = series::Series::new("x", -3, vec!(1.,0.,-3.));
+    /// let minus_s = series::Series::new("x", -3, vec!(-1.,0.,3.));
+    /// assert_eq!(-&s, minus_s);
+    /// ```
+    fn neg(self) -> Self::Output {
+        let neg_coeff = self.coeffs.iter().map(|c| -c).collect();
+        Series::new(self.var.clone(), self.min_pow, neg_coeff)
+    }
+}
 
 // impl<
 //     'a,
@@ -857,13 +851,13 @@ mod tests {
         assert_eq!(format!("{}", s), "(1)*x^-1 + (2) + (-3)*x + O(x^2)");
     }
 
-    // #[test]
-    // fn tst_neg() {
-    //     let s = Series::new("x", -3, vec!(1.,0.,-3.));
-    //     let res = Series::new("x", -3, vec!(-1.,0.,3.));
-    //     assert_eq!(res, -&s);
-    //     assert_eq!(res, -s);
-    // }
+    #[test]
+    fn tst_neg() {
+        let s = Series::new("x", -3, vec!(1.,0.,-3.));
+        let res = Series::new("x", -3, vec!(-1.,0.,3.));
+        assert_eq!(res, -&s);
+        assert_eq!(res, -s);
+    }
 
     // #[test]
     // fn tst_add() {
