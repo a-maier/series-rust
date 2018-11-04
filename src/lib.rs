@@ -110,7 +110,7 @@ impl<Var, C: Coeff> Series<Var, C> {
     }
 }
 
-// Multiplicative inverse
+/// Multiplicative inverse
 pub trait MulInverse {
     type Output;
 
@@ -130,11 +130,11 @@ where
     /// ```rust
     /// use series::MulInverse;
     /// let s = series::Series::new("x", -1, vec!(1.,2.,3.));
-    /// let s_inv = s.mul_inverse();
+    /// let s_inv = (&s).mul_inverse();
     /// let one = series::Series::new("x", 0, vec!(1.,0.,0.));
     /// assert_eq!(s * s_inv, one);
     /// ```
-    fn mul_inverse(self) -> Series<Var, C> {
+    fn mul_inverse(self) -> Self::Output {
         let inv_min_pow = -self.min_pow;
         if self.coeffs.is_empty() {
             return Series::new(self.var.clone(), inv_min_pow, vec!())
@@ -151,6 +151,28 @@ where
         }
         let inv_coeffs : Vec<_> = b.iter().map(|b| b/&self.coeffs[0]).collect();
         Series::new(self.var.clone(), inv_min_pow, inv_coeffs)
+    }
+}
+
+impl<Var: Clone, C: Coeff + SubAssign> MulInverse for Series<Var, C>
+where
+    for<'a> &'a Series<Var, C>: MulInverse<Output=Series<Var, C>>
+{
+    type Output = Series<Var, C>;
+
+    /// Compute 1/s for a series s
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use series::MulInverse;
+    /// let s = series::Series::new("x", -1, vec!(1.,2.,3.));
+    /// let s_inv = s.clone().mul_inverse();
+    /// let one = series::Series::new("x", 0, vec!(1.,0.,0.));
+    /// assert_eq!(s * s_inv, one);
+    /// ```
+    fn mul_inverse(self) -> Self::Output {
+        (&self).mul_inverse()
     }
 }
 
