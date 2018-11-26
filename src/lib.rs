@@ -913,45 +913,103 @@ where
     }
 }
 
-// impl<
-//     Var: Clone,
-//     Coeff: Clone + PartialEq + From<i32> + From<Var>
-//         + Add<Output=Coeff> + SubAssign<Coeff>
-//         + Mul<Output=Coeff> + Div<Output=Coeff> + Ln
-//     > Ln for Series<Var, Coeff>
-// where
-//     for <'c> Coeff: DivAssign<&'c Coeff>,
-//     for <'c> &'c Coeff: Mul<Output=Coeff>,
-// {
-//     /// Computes the logarithm of a series
-//     fn ln(mut self) -> Series<Var, Coeff> {
-//         assert!(!self.coeffs.is_empty());
-//         let k0 = self.min_pow();
-//         let c_k0 = self.coeffs[0].clone();
-//         self.coeffs[0] = Coeff::from(1);
-//         for i in 1..self.coeffs.len() {
-//             self.coeffs[i] /= &c_k0;
-//         }
-//         let a = self.coeffs;
-//         let mut b = Vec::with_capacity(a.len());
-//         let b_0 = if k0 != 0 {
-//            let var = self.var.clone();
-//             c_k0.ln() + Coeff::from(k0)*Coeff::from(var).ln()
-//         }
-//         else {
-//             c_k0.ln()
-//         };
-//         b.push(b_0);
-//         for n in 1..a.len() {
-//             b.push(a[n].clone());
-//             for i in 1..n {
-//                 let num_factor = Coeff::from(i as i32)/Coeff::from(n as i32);
-//                 b[n] -= num_factor * (&a[n-i] * &b[i]);
-//             }
-//         }
-//         Series::new(self.var, 0, b)
-//     }
-// }
+impl<Var, C: Coeff> Ln for Series<Var, C>
+where
+    for <'a> C: DivAssign<&'a C>,
+    for <'a> &'a C: Mul<Output=C>,
+    C: Clone + From<i32>
+    + SubAssign
+    + Add<Output=C>
+    + Mul<Output=C>
+    + Div<Output=C>
+    + Ln<Output=C>
+    + From<Var>,
+    Var: Clone,
+{
+    type Output = Self;
+
+    /// Computes the logarithm of a series
+    ///
+    /// # Panics
+    ///
+    /// Panics if the series has no (non-zero) coefficients
+    fn ln(mut self) -> Self {
+        assert!(!self.coeffs.is_empty());
+        let k0 = self.min_pow();
+        let c_k0 = self.coeffs[0].clone();
+        self.coeffs[0] = C::from(1);
+        for i in 1..self.coeffs.len() {
+            self.coeffs[i] /= &c_k0;
+        }
+        let a = self.coeffs;
+        let mut b = Vec::with_capacity(a.len());
+        let b_0 = if k0 != 0 {
+           let var = self.var.clone();
+            c_k0.ln() + C::from(k0)*C::from(var).ln()
+        }
+        else {
+            c_k0.ln()
+        };
+        b.push(b_0);
+        for n in 1..a.len() {
+            b.push(a[n].clone());
+            for i in 1..n {
+                let num_factor = C::from(i as i32)/C::from(n as i32);
+                b[n] -= num_factor * (&a[n-i] * &b[i]);
+            }
+        }
+        Series::new(self.var, 0, b)
+    }
+}
+
+impl<'a, Var, C: Coeff> Ln for &'a Series<Var, C>
+where
+    for <'b> C: Div<&'b C, Output=C>,
+    for <'b> &'b C: Mul<Output=C> + Ln<Output=C>,
+    C: Clone + From<i32>
+    + SubAssign
+    + Add<Output=C>
+    + Mul<Output=C>
+    + Div<Output=C>
+    + From<Var>,
+    Var: Clone,
+{
+    type Output = Series<Var, C>;
+
+    /// Computes the logarithm of a series
+    ///
+    /// # Panics
+    ///
+    /// Panics if the series has no (non-zero) coefficients
+    fn ln(self) -> Self::Output {
+        assert!(!self.coeffs.is_empty());
+        let k0 = self.min_pow();
+        let c_k0 = &self.coeffs[0];
+        // self.coeffs[0] = C::from(1);
+        // for i in 1..self.coeffs.len() {
+        //     self.coeffs[i] /= &c_k0;
+        // }
+        let a = &self.coeffs;
+        let mut b = Vec::with_capacity(a.len());
+        let b_0 = if k0 != 0 {
+           let var = self.var.clone();
+            c_k0.ln() + C::from(k0)*C::from(var).ln()
+        }
+        else {
+            c_k0.ln()
+        };
+        b.push(b_0);
+        for n in 1..a.len() {
+            b.push(a[n].clone()/c_k0);
+            for i in 1..n {
+                let num_factor = C::from(i as i32)/C::from(n as i32);
+                b[n] -= num_factor * (&a[n-i] * &b[i])/c_k0;
+            }
+        }
+        Series::new(self.var.clone(), 0, b)
+    }
+}
+
 
 // impl<Var, Coeff> Series<Var, Coeff>
 // where Series<Var, Coeff>: Ln + Exp + Mul<Output=Series<Var, Coeff>>
@@ -1264,25 +1322,27 @@ mod tests {
     //     let _ = Series::new(8, -3, vec!(1.,0.,-3.));
     // }
 
-    // #[derive(Debug,Clone,PartialEq)]
-    // struct Mystr<'a>(&'a str);
+    #[derive(Debug,Clone,PartialEq)]
+    struct Mystr<'a>(&'a str);
 
-    // impl<'a> From<Mystr<'a>> for f64 {
-    //     fn from(_s: Mystr<'a>) -> f64 {
-    //         panic!("can't turn str to f64")
-    //     }
-    // }
+    impl<'a> From<Mystr<'a>> for f64 {
+        fn from(_s: Mystr<'a>) -> f64 {
+            panic!("can't turn str to f64")
+        }
+    }
 
-    // #[test]
-    // fn tst_ln() {
-    //     let s = Series::new(Mystr("x"), 0, vec!(1., 7.,-3.));
-    //     let res = Series::new(Mystr("x"), 1, vec!(7.,-55./2.));
-    //     assert_eq!(res, s.ln());
+    #[test]
+    fn tst_ln() {
+        let s = Series::new(Mystr("x"), 0, vec!(1., 7.,-3.));
+        let res = Series::new(Mystr("x"), 1, vec!(7.,-55./2.));
+        assert_eq!(res, (&s).ln());
+        //assert_eq!(res, s.ln());
 
-    //     let s = Series::new(Mystr("x"), 0, vec!(4., 7.,-3.));
-    //     let res = Series::new(Mystr("x"), 0, vec!(4_f64.ln(),7./4.,-73./32.));
-    //     assert_eq!(res, s.ln());
-    // }
+        let s = Series::new(Mystr("x"), 0, vec!(4., 7.,-3.));
+        let res = Series::new(Mystr("x"), 0, vec!(4_f64.ln(),7./4.,-73./32.));
+        assert_eq!(res, (&s).ln());
+        //assert_eq!(res, s.ln());
+    }
 
     #[test]
     fn tst_exp() {
