@@ -7,9 +7,7 @@ use std::convert::From;
 use std::cmp::min;
 
 pub mod ops;
-use self::ops::{Ln,Exp};
-
-type Pow = i32;
+use self::ops::{Ln,Exp,Pow};
 
 pub trait Coeff: From<i32> + PartialEq {}
 impl<T: From<i32> + PartialEq> Coeff for T {}
@@ -19,7 +17,7 @@ impl<T: From<i32> + PartialEq> Coeff for T {}
 #[derive(PartialEq,Eq,Debug,Clone,Hash)]
 pub struct Series<Var, C: Coeff> {
     var: Var,
-    min_pow: Pow,
+    min_pow: i32,
     coeffs: Vec<C>,
     zero: C // TODO: evil hack, learn how to do this better
 }
@@ -35,7 +33,7 @@ impl<Var, C: Coeff> Series<Var, C> {
     /// ```rust
     /// let s = series::Series::new("x", -1, vec!(1,2,3));
     /// ```
-    pub fn new(var: Var, min_pow: Pow, coeffs: Vec<C>) -> Series<Var, C> {
+    pub fn new(var: Var, min_pow: i32, coeffs: Vec<C>) -> Series<Var, C> {
         let mut res = Series{var, min_pow, coeffs, zero: C::from(0)};
         res.trim();
         res
@@ -71,7 +69,7 @@ impl<Var, C: Coeff> Series<Var, C> {
     /// assert_eq!(s.coeff(2), None);
     /// assert_eq!(s.coeff(5), None);
     /// ```
-    pub fn coeff(&self, pow: Pow) -> Option<&C> {
+    pub fn coeff(&self, pow: i32) -> Option<&C> {
         if pow < self.min_pow() {
             return Some(&self.zero) // TODO this is a bad hack
         }
@@ -90,7 +88,7 @@ impl<Var, C: Coeff> Series<Var, C> {
     /// let s = series::Series::new("x", -1, vec!(1,2,3));
     /// assert_eq!(s.min_pow(), -1);
     /// ```
-    pub fn min_pow(&self) -> Pow {
+    pub fn min_pow(&self) -> i32 {
         self.min_pow
     }
 
@@ -104,9 +102,9 @@ impl<Var, C: Coeff> Series<Var, C> {
     /// let s = series::Series::new("x", -1, vec!(1,2,3));
     /// assert_eq!(s.max_pow(), 2);
     /// ```
-    pub fn max_pow(&self) -> Pow {
+    pub fn max_pow(&self) -> i32 {
         // TODO: replace i32 by bigger type
-        self.min_pow + Pow::from(self.coeffs.len() as i32)
+        self.min_pow + i32::from(self.coeffs.len() as i32)
     }
 }
 
@@ -189,12 +187,12 @@ impl<Var, C: Coeff> Series<Var, C> {
         match idx {
             Some(idx) => {
                 if idx > 0 {
-                    self.min_pow += Pow::from(idx as i32);
+                    self.min_pow += i32::from(idx as i32);
                     self.coeffs.drain(0..idx);
                 }
             },
             None => {
-                self.min_pow += Pow::from(self.coeffs.len() as i32);
+                self.min_pow += i32::from(self.coeffs.len() as i32);
                 self.coeffs = vec!();
             }
         }
@@ -206,7 +204,7 @@ impl<Var: fmt::Display, C: Coeff + fmt::Display> fmt::Display for Series<Var, C>
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         for (i, coeff) in self.coeffs.iter().enumerate() {
             if *coeff == C::from(0) { continue; }
-            let cur_pow = self.min_pow() + Pow::from(i as i32);
+            let cur_pow = self.min_pow() + i32::from(i as i32);
             if i > 0 { write!(f, " + ")?; }
             write!(f, "({})", coeff)?;
             if cur_pow != 0 {
@@ -1011,33 +1009,77 @@ where
 }
 
 
-// impl<Var, Coeff> Series<Var, Coeff>
-// where Series<Var, Coeff>: Ln + Exp + Mul<Output=Series<Var, Coeff>>
-// {
-//     /// Computes s^t for two series s,t
-//     ///
-//     /// # Panics
-//     ///
-//     /// Panics if the series have different expansion variables.
-//     pub fn pow(self, exponent: Series<Var, Coeff>) -> Series<Var, Coeff> {
-//         (exponent * self.ln()).exp()
-//     }
-// }
+impl<Var, C: Coeff> Pow<Series<Var, C>> for Series<Var, C>
+where Series<Var, C>: Ln<Output=Self> + Exp<Output=Self> + Mul<Output=Self>
+{
+    type Output = Self;
 
-// impl<Var, Coeff> Series<Var, Coeff>
-// where
-//     for<'c> &'c Series<Var, Coeff>: Ln + Mul<Output=Series<Var, Coeff>>,
-//     Series<Var, Coeff>: Exp
-// {
-//     /// Computes s^t for two series s,t
-//     ///
-//     /// # Panics
-//     ///
-//     /// Panics if the series have different expansion variables.
-//     pub fn pow(self, exponent: & Series<Var, Coeff>) -> Series<Var, Coeff> {
-//         (exponent * self.ln()).exp()
-//     }
-// }
+    /// Computes s^t for two series s,t
+    ///
+    /// # Panics
+    ///
+    /// Panics if the series have different expansion variables, s is
+    /// zero, or t contains negative powers of the expansion variable
+    fn pow(self, exponent: Series<Var, C>) -> Self {
+        (exponent * self.ln()).exp()
+    }
+}
+
+impl<'a, Var, C: Coeff> Pow<Series<Var, C>> for &'a Series<Var, C>
+where
+    for <'b> &'b Series<Var, C>: Ln<Output=Series<Var, C>>,
+    Series<Var, C>: Exp<Output=Series<Var, C>> + Mul<Output=Series<Var, C>>
+{
+    type Output = Series<Var, C>;
+
+    /// Computes s^t for two series s,t
+    ///
+    /// # Panics
+    ///
+    /// Panics if the series have different expansion variables, s is
+    /// zero, or t contains negative powers of the expansion variable
+    fn pow(self, exponent: Series<Var, C>) -> Self::Output {
+        (exponent * self.ln()).exp()
+    }
+}
+
+impl<'a, Var, C: Coeff> Pow<&'a Series<Var, C>> for Series<Var, C>
+where
+    for <'b> &'b Series<Var, C>: Mul<Series<Var, C>, Output=Series<Var, C>>,
+    Series<Var, C>: Ln<Output=Self> + Exp<Output=Self>
+{
+    type Output = Self;
+
+    /// Computes s^t for two series s,t
+    ///
+    /// # Panics
+    ///
+    /// Panics if the series have different expansion variables, s is
+    /// zero, or t contains negative powers of the expansion variable
+    fn pow(self, exponent: &'a Series<Var, C>) -> Self {
+        (exponent * self.ln()).exp()
+    }
+}
+
+impl<'a, 'b, Var, C: Coeff> Pow<&'a Series<Var, C>> for &'b Series<Var, C>
+where
+    for <'c> &'c Series<Var, C>:
+    Ln<Output=Series<Var, C>>
+    + Mul<Series<Var, C>, Output=Series<Var, C>>,
+    Series<Var, C>: Exp<Output=Series<Var, C>>
+{
+    type Output = Series<Var, C>;
+
+    /// Computes s^t for two series s,t
+    ///
+    /// # Panics
+    ///
+    /// Panics if the series have different expansion variables, s is
+    /// zero, or t contains negative powers of the expansion variable
+    fn pow(self, exponent: &'a Series<Var, C>) -> Self::Output {
+        (exponent * self.ln()).exp()
+    }
+}
 
 #[cfg(test)]
 mod tests {
@@ -1363,31 +1405,34 @@ mod tests {
         assert_eq!(res, s.exp());
     }
 
-    // #[test]
-    // fn tst_pow() {
-    //     let base = Series::new(Mystr("x"), 0, vec!(1., 7., 0.));
-    //     let exp = Series::new(Mystr("x"), -1, vec!(1., -5., 43.));
-    //     let e7 = 7_f64.exp();
-    //     let res = Series::new(Mystr("x"), 0, vec!(e7, -119./2.*e7));
-    //     assert_eq!(res, base.pow(exp));
+    #[test]
+    fn tst_pow() {
+        let base = Series::new(Mystr("x"), 0, vec!(1., 7., 0.));
+        let exp = Series::new(Mystr("x"), -1, vec!(1., -5., 43.));
+        let e7 = 7_f64.exp();
+        let res = Series::new(Mystr("x"), 0, vec!(e7, -119./2.*e7));
+        assert_eq!(res, (&base).pow(&exp));
+        assert_eq!(res, (&base).pow(exp.clone()));
+        assert_eq!(res, base.clone().pow(&exp));
+        assert_eq!(res, base.pow(exp));
 
-    //     let base = Series::new(Mystr("x"), 0, vec!(2., 7., 0.));
-    //     let exp = Series::new(Mystr("x"), 0, vec!(3., -5., 11.));
-    //     // rescale result so we can use round and still get decent precision
-    //     let rescale = Series::new(Mystr("x"), 0, vec!(1e13, 0., 0., 0.));
-    //     let test = &rescale * &base.pow(exp);
-    //     let ln2 = 2_f64.ln();
-    //     let res = Series::new(Mystr("x"), 0, vec!(8., 84.-40.*ln2, 154.+ln2*(-332.+100.*ln2)));
-    //     let res = rescale * res;
-    //     assert_eq!(res.min_pow(), test.min_pow());
-    //     assert_eq!(res.max_pow(), test.max_pow());
-    //     for i in res.min_pow()..res.max_pow() {
-    //         assert_eq!(
-    //             res.coeff(i).unwrap().round(),
-    //             test.coeff(i).unwrap().round()
-    //         );
-    //     }
-    // }
+        let base = Series::new(Mystr("x"), 0, vec!(2., 7., 0.));
+        let exp = Series::new(Mystr("x"), 0, vec!(3., -5., 11.));
+        // rescale result so we can use round and still get decent precision
+        let rescale = Series::new(Mystr("x"), 0, vec!(1e13, 0., 0., 0.));
+        let test = &rescale * &base.pow(exp);
+        let ln2 = 2_f64.ln();
+        let res = Series::new(Mystr("x"), 0, vec!(8., 84.-40.*ln2, 154.+ln2*(-332.+100.*ln2)));
+        let res = rescale * res;
+        assert_eq!(res.min_pow(), test.min_pow());
+        assert_eq!(res.max_pow(), test.max_pow());
+        for i in res.min_pow()..res.max_pow() {
+            assert_eq!(
+                res.coeff(i).unwrap().round(),
+                test.coeff(i).unwrap().round()
+            );
+        }
+    }
 
     // #[test]
     // #[should_panic]
