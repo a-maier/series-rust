@@ -1357,12 +1357,12 @@ mod tests {
         assert_eq!(res, s);
     }
 
-    // #[test]
-    // fn tst_var() {
-    //     let _ = Series::new(String::from("x"), -3, vec!(1.,0.,-3.));
-    //     let _ = Series::new('j', -3, vec!(1.,0.,-3.));
-    //     let _ = Series::new(8, -3, vec!(1.,0.,-3.));
-    // }
+    #[test]
+    fn tst_var() {
+        let _ = Series::new(String::from("x"), -3, vec!(1.,0.,-3.));
+        let _ = Series::new('j', -3, vec!(1.,0.,-3.));
+        let _ = Series::new(8, -3, vec!(1.,0.,-3.));
+    }
 
     #[derive(Debug,Clone,PartialEq)]
     struct Mystr<'a>(&'a str);
@@ -1434,35 +1434,35 @@ mod tests {
         }
     }
 
-    // #[test]
-    // #[should_panic]
-    // fn tst_bad_add() {
-    //     let s = Series::new("x", -3, vec!(1.,0.,-3.));
-    //     let t = Series::new("y", -3, vec!(1.,0.,-3.));
-    //     s + t;
-    // }
+    #[test]
+    #[should_panic]
+    fn tst_bad_add() {
+        let s = Series::new("x", -3, vec!(1.,0.,-3.));
+        let t = Series::new("y", -3, vec!(1.,0.,-3.));
+        s + t;
+    }
 
-    // #[test]
-    // #[should_panic]
-    // fn tst_bad_sub() {
-    //     let s = Series::new("x", -3, vec!(1.,0.,-3.));
-    //     let t = Series::new("y", -3, vec!(1.,0.,-3.));
-    //     s - t;
-    // }
+    #[test]
+    #[should_panic]
+    fn tst_bad_sub() {
+        let s = Series::new("x", -3, vec!(1.,0.,-3.));
+        let t = Series::new("y", -3, vec!(1.,0.,-3.));
+        s - t;
+    }
 
-    // #[test]
-    // #[should_panic]
-    // fn tst_bad_mul() {
-    //     let s = Series::new("x", -3, vec!(1.,0.,-3.));
-    //     let t = Series::new("y", -3, vec!(1.,0.,-3.));
-    //     s * t;
-    // }
+    #[test]
+    #[should_panic]
+    fn tst_bad_mul() {
+        let s = Series::new("x", -3, vec!(1.,0.,-3.));
+        let t = Series::new("y", -3, vec!(1.,0.,-3.));
+        s * t;
+    }
 
-    // #[test]
-    // #[should_panic]
-    // fn tst_bad_div() {
-    //     let s = Series::new("x", -3, vec!(1.,0.,-3.));
-    //     let t = Series::new("y", -3, vec!(1.,0.,-3.));
-    //     s / t;
-    // }
+    #[test]
+    #[should_panic]
+    fn tst_bad_div() {
+        let s = Series::new("x", -3, vec!(1.,0.,-3.));
+        let t = Series::new("y", -3, vec!(1.,0.,-3.));
+        s / t;
+    }
 }
