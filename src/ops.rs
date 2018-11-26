@@ -18,17 +18,23 @@ impl Ln for f32 {
 
 /// Trait for the exponential function
 pub trait Exp {
-    fn exp(self) -> Self;
+    type Output;
+
+    fn exp(self) -> Self::Output;
 }
 
 impl Exp for f64 {
-    fn exp(self) -> Self {
+    type Output = Self;
+
+    fn exp(self) -> Self::Output {
         <f64>::exp(self)
     }
 }
 
 impl Exp for f32 {
-    fn exp(self) -> Self {
+    type Output = Self;
+
+    fn exp(self) -> Self::Output {
         <f32>::exp(self)
     }
 }

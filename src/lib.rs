@@ -831,45 +831,87 @@ where
     }
 }
 
-// impl<
-//     Var: Clone,
-//     Coeff: Clone + PartialEq + From<i32>
-//         + Add<Output=Coeff> + AddAssign<Coeff>
-//         + Mul<Output=Coeff> + Div<Output=Coeff> + Exp
-//      > Exp for Series<Var, Coeff>
-// where
-//     for <'c> &'c Coeff: Mul<Output=Coeff>,
-//     for <'c> Coeff: MulAssign<&'c Coeff>,
-// {
-//     /// Computes the exponential of a series
-//     ///
-//     /// # Panics
-//     ///
-//     /// Panics if the series contains negative powers of the expansion
-//     /// variable
-//     fn exp(self) -> Series<Var, Coeff>{
-//         assert!(self.min_pow() >= 0);
-//         let mut b = Vec::with_capacity(min(self.coeffs.len(), 1));
-//         b.push(Coeff::from(1));
-//         debug_assert!(self.max_pow() >= 0);
-//         for n in 1..self.max_pow() as usize {
-//             let mut b_n = Coeff::from(0);
-//             for i in 1..n+1 {
-//                 let num_factor = Coeff::from(i as i32)/Coeff::from(n as i32);
-//                 let a_i = self.coeff(i as i32).unwrap();
-//                 b_n += num_factor*(a_i * &b[n-i]);
-//             }
-//             b.push(b_n);
-//         }
-//         if self.min_pow() == 0 {
-//             let exp_a_0 = self.coeff(0).unwrap().clone().exp();
-//             for mut b_n in & mut b {
-//                 *b_n *= &exp_a_0;
-//             }
-//         }
-//         Series::new(self.var, 0, b)
-//     }
-// }
+// TODO: understand why there is a compiler error when removing this trait
+//       and just implementing the method
+trait ExpCoeff {
+    type Output;
+    fn exp_coeff(&self) -> Self::Output;
+}
+
+impl<Var, C: Coeff> ExpCoeff for Series<Var, C>
+where
+    for<'a> &'a C: Mul<Output=C>,
+    for<'a> C: MulAssign<&'a C>,
+    C: Clone + From<i32> + Div<Output=C> + Mul<Output=C>
+    + AddAssign + Exp<Output=C>
+{
+    type Output = Vec<C>;
+
+    fn exp_coeff(&self) -> Vec<C> {
+        assert!(self.min_pow() >= 0);
+        let mut b = Vec::with_capacity(min(self.coeffs.len(), 1));
+        b.push(C::from(1));
+        debug_assert!(self.max_pow() >= 0);
+        for n in 1..self.max_pow() as usize {
+            let mut b_n = C::from(0);
+            for i in 1..n+1 {
+                let num_factor = C::from(i as i32)/C::from(n as i32);
+                let a_i = self.coeff(i as i32).unwrap();
+                b_n += num_factor*(a_i * &b[n-i]);
+            }
+            b.push(b_n);
+        }
+        if self.min_pow() == 0 {
+            let exp_a_0 = self.coeff(0).unwrap().clone().exp();
+            for mut b_n in & mut b {
+                *b_n *= &exp_a_0;
+            }
+        }
+        b
+    }
+}
+
+impl<Var, C: Coeff> Exp for Series<Var, C>
+where
+    for<'a> &'a C: Mul<Output=C>,
+    for<'a> C: MulAssign<&'a C>,
+    C: Clone + From<i32> + Div<Output=C> + Mul<Output=C>
+    + AddAssign + Exp<Output=C>
+{
+    type Output = Self;
+
+    /// Computes the exponential of a series
+    ///
+    /// # Panics
+    ///
+    /// Panics if the series contains negative powers of the expansion
+    /// variable
+    fn exp(self) -> Self::Output {
+        let coeff = self.exp_coeff();
+        Series::new(self.var, 0, coeff)
+    }
+}
+
+impl<'a, Var, C: Coeff> Exp for &'a Series<Var, C>
+where
+    for<'b> &'b C: Mul<Output=C>,
+    for<'b> C: MulAssign<&'b C>,
+    Var: Clone,
+    C: Clone + From<i32> + Div<Output=C> + Mul<Output=C>
+    + AddAssign + Exp<Output=C>
+{
+    type Output = Series<Var, C>;
+
+    /// Computes the exponential of a series
+    ///
+    /// # Panics
+    ///
+    /// Panics if the series contains negative powers of the expansion
+    /// variable
+    fn exp(self) -> Self::Output {
+        Series::new(self.var.clone(), 0,  self.exp_coeff())
+    }
+}
 
 // impl<
 //     Var: Clone,
@@ -1242,21 +1284,24 @@ mod tests {
     //     assert_eq!(res, s.ln());
     // }
 
-    // #[test]
-    // fn tst_exp() {
-    //     let s = Series::new("x", 1, vec!(7.,-3.));
-    //     let res = Series::new("x", 0, vec!(1., 7.,43./2.));
-    //     assert_eq!(res, s.exp());
+    #[test]
+    fn tst_exp() {
+        let s = Series::new("x", 1, vec!(7.,-3.));
+        let res = Series::new("x", 0, vec!(1., 7.,43./2.));
+        assert_eq!(res, (&s).exp());
+        assert_eq!(res, s.exp());
 
-    //     let s = Series::new("x", 2, vec!(0.));
-    //     let res = Series::new("x", 0, vec!(1.,0.,0.));
-    //     assert_eq!(res, s.exp());
+        let s = Series::new("x", 2, vec!(0.));
+        let res = Series::new("x", 0, vec!(1.,0.,0.));
+        assert_eq!(res, (&s).exp());
+        assert_eq!(res, s.exp());
 
-    //     let s = Series::new("x", 0, vec!(5., 11., -7.));
-    //     let e5 = 5_f64.exp();
-    //     let res = Series::new("x", 0, vec!(e5,e5*11.,e5*107./2.));
-    //     assert_eq!(res, s.exp());
-    // }
+        let s = Series::new("x", 0, vec!(5., 11., -7.));
+        let e5 = 5_f64.exp();
+        let res = Series::new("x", 0, vec!(e5,e5*11.,e5*107./2.));
+        assert_eq!(res, (&s).exp());
+        assert_eq!(res, s.exp());
+    }
 
     // #[test]
     // fn tst_pow() {
