@@ -1,3 +1,5 @@
+/// Laurent series with support for usual arithmetic operations and some
+/// common functions
 #[cfg(feature = "serde")]
 #[macro_use]
 extern crate serde;
@@ -9,6 +11,7 @@ use std::cmp::min;
 pub mod ops;
 use self::ops::{Ln,Exp,Pow};
 
+/// Minimum requirements on series coefficients
 pub trait Coeff: From<i32> + PartialEq {}
 impl<T: From<i32> + PartialEq> Coeff for T {}
 

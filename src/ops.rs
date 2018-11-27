@@ -1,3 +1,4 @@
+/// Traits for common functions
 
 /// Trait for the natural logarithm
 pub trait Ln {
