@@ -20,7 +20,7 @@ impl<T: From<i32> + PartialEq> Coeff for T {}
 #[derive(PartialEq,Eq,Debug,Clone,Hash)]
 pub struct Series<Var, C: Coeff> {
     var: Var,
-    min_pow: i32,
+    min_pow: isize,
     coeffs: Vec<C>,
     zero: C // TODO: evil hack, learn how to do this better
 }
@@ -36,7 +36,7 @@ impl<Var, C: Coeff> Series<Var, C> {
     /// ```rust
     /// let s = series::Series::new("x", -1, vec!(1,2,3));
     /// ```
-    pub fn new(var: Var, min_pow: i32, coeffs: Vec<C>) -> Series<Var, C> {
+    pub fn new(var: Var, min_pow: isize, coeffs: Vec<C>) -> Series<Var, C> {
         let mut res = Series{var, min_pow, coeffs, zero: C::from(0)};
         res.trim();
         res
@@ -72,7 +72,7 @@ impl<Var, C: Coeff> Series<Var, C> {
     /// assert_eq!(s.coeff(2), None);
     /// assert_eq!(s.coeff(5), None);
     /// ```
-    pub fn coeff(&self, pow: i32) -> Option<&C> {
+    pub fn coeff(&self, pow: isize) -> Option<&C> {
         if pow < self.min_pow() {
             return Some(&self.zero) // TODO this is a bad hack
         }
@@ -91,7 +91,7 @@ impl<Var, C: Coeff> Series<Var, C> {
     /// let s = series::Series::new("x", -1, vec!(1,2,3));
     /// assert_eq!(s.min_pow(), -1);
     /// ```
-    pub fn min_pow(&self) -> i32 {
+    pub fn min_pow(&self) -> isize {
         self.min_pow
     }
 
@@ -105,9 +105,8 @@ impl<Var, C: Coeff> Series<Var, C> {
     /// let s = series::Series::new("x", -1, vec!(1,2,3));
     /// assert_eq!(s.max_pow(), 2);
     /// ```
-    pub fn max_pow(&self) -> i32 {
-        // TODO: replace i32 by bigger type
-        self.min_pow + i32::from(self.coeffs.len() as i32)
+    pub fn max_pow(&self) -> isize {
+        self.min_pow + (self.coeffs.len() as isize)
     }
 }
 
@@ -190,12 +189,12 @@ impl<Var, C: Coeff> Series<Var, C> {
         match idx {
             Some(idx) => {
                 if idx > 0 {
-                    self.min_pow += i32::from(idx as i32);
+                    self.min_pow += idx as isize;
                     self.coeffs.drain(0..idx);
                 }
             },
             None => {
-                self.min_pow += i32::from(self.coeffs.len() as i32);
+                self.min_pow += self.coeffs.len() as isize;
                 self.coeffs = vec!();
             }
         }
@@ -207,7 +206,7 @@ impl<Var: fmt::Display, C: Coeff + fmt::Display> fmt::Display for Series<Var, C>
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         for (i, coeff) in self.coeffs.iter().enumerate() {
             if *coeff == C::from(0) { continue; }
-            let cur_pow = self.min_pow() + i32::from(i as i32);
+            let cur_pow = self.min_pow() + i as isize;
             if i > 0 { write!(f, " + ")?; }
             write!(f, "({})", coeff)?;
             if cur_pow != 0 {
@@ -286,7 +285,7 @@ where for<'c> C: AddAssign<&'c C>
     fn add_overlap(&mut self, other: &Self){
         let offset = self.min_pow();
         for (i, c) in self.coeffs.iter_mut().enumerate() {
-            let power = offset + i as i32;
+            let power = offset + i as isize;
             *c += other.coeff(power).unwrap();
         }
     }
@@ -1002,7 +1001,7 @@ where
             let mut b_n = C::from(0);
             for i in 1..n+1 {
                 let num_factor = C::from(i as i32)/C::from(n as i32);
-                let a_i = self.coeff(i as i32).unwrap();
+                let a_i = self.coeff(i as isize).unwrap();
                 b_n += num_factor*(a_i * &b[n-i]);
             }
             b.push(b_n);
@@ -1091,7 +1090,7 @@ where
         let mut b = Vec::with_capacity(a.len());
         let b_0 = if k0 != 0 {
            let var = self.var.clone();
-            c_k0.ln() + C::from(k0)*C::from(var).ln()
+            c_k0.ln() + C::from(k0 as i32)*C::from(var).ln()
         }
         else {
             c_k0.ln()
@@ -1139,7 +1138,7 @@ where
         let mut b = Vec::with_capacity(a.len());
         let b_0 = if k0 != 0 {
            let var = self.var.clone();
-            c_k0.ln() + C::from(k0)*C::from(var).ln()
+            c_k0.ln() + C::from(k0 as i32)*C::from(var).ln()
         }
         else {
             c_k0.ln()
