@@ -23,7 +23,7 @@ Add this to your Cargo.toml:
 
 ```toml
 [dependencies]
-series = "0.1.0"
+series = "0.2.0"
 ```
 
 and this to your crate root:
@@ -35,7 +35,7 @@ extern crate series;
 
 ```rust
 use series::Series;
-use series::ops::{Ln,Exp};
+use series::ops::{Ln,Exp,Pow};
 
 // Create a new series in x, starting at order x^2 with coefficients 1, 2, 3,
 // i.e. s = 1*x^2 + 2*x^3 + 3*x^4 + O(x^5).
