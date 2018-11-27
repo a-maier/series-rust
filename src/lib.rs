@@ -1425,6 +1425,8 @@ mod tests {
         let s = Series::new("x", -3, vec!(1.,0.,-3.));
         let res = Series::new("x", -6, vec!(1.,0.,-6.));
         assert_eq!(res, &s * &s);
+        assert_eq!(res, &s * s.clone());
+        assert_eq!(res, s.clone() * &s);
         assert_eq!(res, s.clone() * s.clone());
 
         let s = Series::new("x", -3, vec!(1.,0.,-3.));
@@ -1432,6 +1434,11 @@ mod tests {
         let res = Series::new("x", -4, vec!(3.,4.,-4.));
         assert_eq!(res, &s * &t);
         assert_eq!(res, &t * &s);
+        assert_eq!(res, &s * t.clone());
+        assert_eq!(res, &t * s.clone());
+        assert_eq!(res, &s * t.clone());
+        assert_eq!(res, &t * s.clone());
+        assert_eq!(res, t.clone() * s.clone());
         assert_eq!(res, s * t);
 
         let s = Series::new("x", -3, vec!(1., 7.,-3.));
@@ -1439,6 +1446,11 @@ mod tests {
         let res = Series::new("x", 0, vec!(1.,0., 0.));
         assert_eq!(res, &s * &t);
         assert_eq!(res, &t * &s);
+        assert_eq!(res, &s * t.clone());
+        assert_eq!(res, &t * s.clone());
+        assert_eq!(res, s.clone() * &t);
+        assert_eq!(res, t.clone() * &s);
+        assert_eq!(res, t.clone() * s.clone());
         assert_eq!(res, s * t);
     }
 
