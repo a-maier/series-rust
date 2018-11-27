@@ -255,6 +255,47 @@ impl<'a, Var: Clone, C: Coeff> Neg for &'a Series<Var, C>
     }
 }
 
+// Spurious trait, needed for rust 1.28
+// direct implementation used to work in 1.24
+trait AddAssignHelper {
+    fn truncate_max_pow(&mut self, other: &Self);
+    fn add_overlap(&mut self, other: &Self);
+    fn num_leading(&mut self, other: &Self) -> usize;
+}
+
+impl<Var, C: Coeff> AddAssignHelper for Series<Var, C>
+where for<'c> C: AddAssign<&'c C>
+{
+    fn truncate_max_pow(&mut self, other: &Self){
+        if other.max_pow() < self.max_pow() {
+            let to_remove = min(
+                (self.max_pow() - other.max_pow()) as usize,
+                self.coeffs.len()
+            );
+            let new_size = self.coeffs.len() - to_remove;
+            self.coeffs.truncate(new_size);
+            debug_assert!(
+                self.coeffs.is_empty() || other.max_pow() == self.max_pow()
+            );
+        }
+    }
+
+    fn add_overlap(&mut self, other: &Self){
+        let offset = self.min_pow();
+        for (i, c) in self.coeffs.iter_mut().enumerate() {
+            let power = offset + i as i32;
+            *c += other.coeff(power).unwrap();
+        }
+    }
+
+    fn num_leading(&mut self, other: &Self) -> usize {
+        min(
+            (self.min_pow() - other.min_pow()) as usize,
+            other.coeffs.len()
+        )
+    }
+}
+
 impl<'a, Var: PartialEq + fmt::Debug, C: Coeff + Clone>
     AddAssign<&'a Series<Var, C>>
     for Series<Var, C>
@@ -278,27 +319,10 @@ impl<'a, Var: PartialEq + fmt::Debug, C: Coeff + Clone>
     /// Panics if the series have different expansion variables.
     fn add_assign(& mut self, other: &'a Series<Var, C>) {
         assert_eq!(self.var, other.var);
-        if other.max_pow() < self.max_pow() {
-            let to_remove = min(
-                (self.max_pow() - other.max_pow()) as usize,
-                self.coeffs.len()
-            );
-            let new_size = self.coeffs.len() - to_remove;
-            self.coeffs.truncate(new_size);
-            debug_assert!(
-                self.coeffs.is_empty() || other.max_pow() == self.max_pow()
-            );
-        }
-        let offset = self.min_pow();
-        for (i, c) in self.coeffs.iter_mut().enumerate() {
-            let power = offset + i as i32;
-            *c += other.coeff(power).unwrap();
-        }
+        self.truncate_max_pow(other);
+        self.add_overlap(other);
         if other.min_pow() < self.min_pow() {
-            let num_leading = min(
-                (self.min_pow() - other.min_pow()) as usize,
-                other.coeffs.len()
-            );
+            let num_leading = self.num_leading(other);
             let leading_coeff = other.coeffs[0..num_leading].iter().cloned();
             self.coeffs.splice(0..0, leading_coeff);
             self.min_pow = other.min_pow;
@@ -310,7 +334,9 @@ impl<'a, Var: PartialEq + fmt::Debug, C: Coeff + Clone>
 
 impl<Var, C: Coeff>
     AddAssign<Series<Var, C>> for Series<Var, C>
-    where for<'c> Series<Var, C>: AddAssign<&'c Series<Var, C>>
+where
+    for<'c> C: AddAssign<&'c C>,
+    Var: PartialEq + fmt::Debug
 {
     /// Set s = s + t for two series s and t
     ///
@@ -328,8 +354,17 @@ impl<Var, C: Coeff>
     /// # Panics
     ///
     /// Panics if the series have different expansion variables.
-    fn add_assign(& mut self, other: Series<Var, C>) {
-        self.add_assign(&other)
+    fn add_assign(& mut self, mut other: Series<Var, C>) {
+        assert_eq!(self.var, other.var);
+        self.truncate_max_pow(&other);
+        self.add_overlap(&other);
+        if other.min_pow() < self.min_pow() {
+            let num_leading = self.num_leading(&other);
+            let leading_coeff = other.coeffs.drain(0..num_leading);
+            self.coeffs.splice(0..0, leading_coeff);
+            self.min_pow = other.min_pow;
+        }
+        self.trim();
     }
 }
 
@@ -1146,6 +1181,8 @@ mod tests {
         let s = Series::new("x", -3, vec!(1.,0.,-3.));
         let res = Series::new("x", -3, vec!(2.,0.,-6.));
         assert_eq!(res, &s + &s);
+        // assert_eq!(res, &s + s.clone());
+        // assert_eq!(res, s.clone() + &s);
         assert_eq!(res, s.clone() + s.clone());
 
         let s = Series::new("x", -3, vec!(1.,0.,-3.));
