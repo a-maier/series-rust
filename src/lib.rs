@@ -1625,7 +1625,7 @@ mod tests {
     fn tst_bad_add() {
         let s = Series::new("x", -3, vec!(1.,0.,-3.));
         let t = Series::new("y", -3, vec!(1.,0.,-3.));
-        s + t;
+        let _ = s + t;
     }
 
     #[test]
@@ -1633,7 +1633,7 @@ mod tests {
     fn tst_bad_sub() {
         let s = Series::new("x", -3, vec!(1.,0.,-3.));
         let t = Series::new("y", -3, vec!(1.,0.,-3.));
-        s - t;
+        let _ = s - t;
     }
 
     #[test]
@@ -1641,7 +1641,7 @@ mod tests {
     fn tst_bad_mul() {
         let s = Series::new("x", -3, vec!(1.,0.,-3.));
         let t = Series::new("y", -3, vec!(1.,0.,-3.));
-        s * t;
+        let _ = s * t;
     }
 
     #[test]
@@ -1649,6 +1649,6 @@ mod tests {
     fn tst_bad_div() {
         let s = Series::new("x", -3, vec!(1.,0.,-3.));
         let t = Series::new("y", -3, vec!(1.,0.,-3.));
-        s / t;
+        let _ = s / t;
     }
 }
