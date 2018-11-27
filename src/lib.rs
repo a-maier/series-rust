@@ -778,12 +778,8 @@ where Series<Var, C>: MulAssign<&'a Series<Var, C>> {
     }
 }
 
-// TODO: remove all the clones
-// with rustc 1.28 there is a compiler bug(?)
-// leading to E0275 (infinite recursion)
-// used to work with 1.24
 impl<'a, 'b, Var: Clone + PartialEq + fmt::Debug,
-     C: Coeff + Clone + Mul<Output=C> + AddAssign>
+     C: Coeff + Mul<Output=C> + AddAssign>
     Mul<&'b Series<Var, C>>
     for &'a Series<Var, C>
 where
