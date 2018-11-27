@@ -974,7 +974,8 @@ where
 }
 
 // TODO: understand why there is a compiler error when removing this trait
-//       and just implementing the method
+//       (with rust 1.28, ok with 1.24)
+//       and just implement the method
 trait ExpCoeff {
     type Output;
     fn exp_coeff(&self) -> Self::Output;
@@ -1485,6 +1486,8 @@ mod tests {
         let s = Series::new("x", -3, vec!(1.,0.,-3.));
         let res = Series::new("x", 0, vec!(1.,0.,0.));
         assert_eq!(res, &s / &s);
+        assert_eq!(res, &s / s.clone());
+        assert_eq!(res, s.clone() / &s);
         assert_eq!(res, s.clone() / s.clone());
 
         // disabled for floating-point inaccuracy
@@ -1499,6 +1502,8 @@ mod tests {
         let t = Series::new("x", 3, vec!(1., -7., 52.));
         let res = Series::new("x", -6, vec!(1.,14., 43.));
         assert_eq!(res, &s / &t);
+        assert_eq!(res, s.clone() / &t);
+        assert_eq!(res, &s / t.clone());
         assert_eq!((&res).mul_inverse(), &t / &s);
         assert_eq!(res, s / t);
 
@@ -1506,6 +1511,8 @@ mod tests {
         let t = Series::new("x", 5, vec!());
         let res = Series::new("x", -4, vec!());
         assert_eq!(res, &s / &t);
+        assert_eq!(res, s.clone() / &t);
+        assert_eq!(res, &s / t.clone());
         assert_eq!((&res).mul_inverse(), &t / &s);
         assert_eq!(res, s / t);
     }
