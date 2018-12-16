@@ -17,7 +17,7 @@ impl<T: From<i32> + PartialEq> Coeff for T {}
 
 /// Laurent series in a single variable up to some power
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(PartialEq,Eq,Debug,Clone,Hash)]
+#[derive(PartialEq,Eq,Debug,Clone,Hash,Ord,PartialOrd)]
 pub struct Series<Var, C: Coeff> {
     var: Var,
     min_pow: isize,
