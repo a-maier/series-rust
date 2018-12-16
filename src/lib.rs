@@ -370,108 +370,26 @@ where
     }
 }
 
-impl<'a, 'b, Var: Clone, C: Coeff + Clone> Add<&'b Series<Var, C>>
+impl<'a, Var: Clone, C: Coeff + Clone, Rhs> Add<Rhs>
     for &'a Series<Var, C>
-    where for<'c> Series<Var, C>: AddAssign<&'c Series<Var, C>>
+    where Series<Var, C>: AddAssign<Rhs>
 {
     type Output = Series<Var, C>;
 
-    /// Adds two series
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use series::Series;
-    /// let s = Series::new("x", -3, vec!(1.,0.,-3.));
-    /// let t = Series::new("x", -1, vec!(3., 4., 5.));
-    /// let res = Series::new("x", -3, vec!(1.,0.,0.));
-    /// assert_eq!(res, &s + &t);
-    /// ```
-    ///
-    /// # Panics
-    ///
-    /// Panics if the series have different expansion variables.
-    fn add(self, other: &'b Series<Var, C>) -> Self::Output {
+    fn add(self, other: Rhs) -> Self::Output {
         let mut res = self.clone();
         res += other;
         res
     }
 }
 
-impl<'a, Var: Clone, C: Coeff + Clone> Add<&'a Series<Var, C>>
+impl<Var: Clone, C: Coeff + Clone, Rhs> Add<Rhs>
     for Series<Var, C>
-    where for<'b> Series<Var, C>: AddAssign<&'b Series<Var, C>>
+    where Series<Var, C>: AddAssign<Rhs>
 {
     type Output = Series<Var, C>;
 
-    /// Adds two series
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use series::Series;
-    /// let s = Series::new("x", -3, vec!(1.,0.,-3.));
-    /// let t = Series::new("x", -1, vec!(3., 4., 5.));
-    /// let res = Series::new("x", -3, vec!(1.,0.,0.));
-    /// assert_eq!(res, s + &t);
-    /// ```
-    ///
-    /// # Panics
-    ///
-    /// Panics if the series have different expansion variables.
-    fn add(mut self, other: &'a Series<Var, C>) -> Self::Output {
-        self += other;
-        self
-    }
-}
-
-impl<'a, Var: Clone, C: Coeff + Clone> Add<Series<Var, C>>
-    for &'a Series<Var, C>
-    where for<'c> Series<Var, C>: AddAssign<&'c Series<Var, C>>
-{
-    type Output = Series<Var, C>;
-
-    /// Adds two series
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use series::Series;
-    /// let s = Series::new("x", -3, vec!(1.,0.,-3.));
-    /// let t = Series::new("x", -1, vec!(3., 4., 5.));
-    /// let res = Series::new("x", -3, vec!(1.,0.,0.));
-    /// assert_eq!(res, &s + t);
-    /// ```
-    ///
-    /// # Panics
-    ///
-    /// Panics if the series have different expansion variables.
-    fn add(self, other: Series<Var, C>) -> Self::Output {
-        other + self
-    }
-}
-
-impl<Var, C: Coeff> Add for Series<Var, C>
-    where Series<Var, C>: AddAssign<Series<Var,C>>
-{
-    type Output = Series<Var, C>;
-
-    /// Adds two series
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use series::Series;
-    /// let s = Series::new("x", -3, vec!(1.,0.,-3.));
-    /// let t = Series::new("x", -1, vec!(3., 4., 5.));
-    /// let res = Series::new("x", -3, vec!(1.,0.,0.));
-    /// assert_eq!(res, &s + &t);
-    /// ```
-    ///
-    /// # Panics
-    ///
-    /// Panics if the series have different expansion variables.
-    fn add(mut self, other: Series<Var, C>) -> Self::Output {
+    fn add(mut self, other: Rhs) -> Self::Output {
         self += other;
         self
     }
