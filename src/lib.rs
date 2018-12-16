@@ -901,6 +901,58 @@ where
     }
 }
 
+impl<Var, C: Coeff + Clone>
+    AddAssign<C>
+    for Series<Var, C>
+    where C: AddAssign<C>
+{
+    fn add_assign(& mut self, rhs: C) {
+        if self.max_pow() <= 0 || rhs == self.zero {
+            return
+        }
+        if self.min_pow() <= 0 {
+            let idx =  (-self.min_pow()) as usize;
+            self.coeffs[idx] += rhs;
+            if self.min_pow() == 0 {
+                self.trim()
+            }
+        }
+        else {
+            let mut new_coeffs = vec![rhs];
+            new_coeffs.resize(self.min_pow() as usize, self.zero.clone());
+            new_coeffs.extend(self.coeffs.drain(..));
+            self.coeffs = new_coeffs;
+            self.min_pow = 0;
+        }
+    }
+}
+
+impl<Var, C: Coeff + Clone>
+    SubAssign<C>
+    for Series<Var, C>
+    where C: Neg<Output=C> + SubAssign<C>
+{
+    fn sub_assign(& mut self, rhs: C) {
+        if self.max_pow() <= 0 || rhs == self.zero {
+            return
+        }
+        if self.min_pow() <= 0 {
+            let idx =  (-self.min_pow()) as usize;
+            self.coeffs[idx] -= rhs;
+            if self.min_pow() == 0 {
+                self.trim()
+            }
+        }
+        else {
+            let mut new_coeffs = vec![-rhs];
+            new_coeffs.resize(self.min_pow() as usize, self.zero.clone());
+            new_coeffs.extend(self.coeffs.drain(..));
+            self.coeffs = new_coeffs;
+            self.min_pow = 0;
+        }
+    }
+}
+
 impl<'a, Var, C: Coeff>
     MulAssign<&'a C>
     for Series<Var, C>
@@ -1354,6 +1406,36 @@ mod tests {
         let mut s = s;
         s *= 2.;
         assert_eq!(res, s);
+
+        let s = Series::new("x", -3, vec!(1./2.,0.,-1.));
+        assert_eq!(s, &s + 0.);
+        assert_eq!(s, &s + 2.);
+        let s = Series::new("x", -2, vec!(1./2.,0.,-1.));
+        let res = Series::new("x", -2, vec!(1./2.,0.,1.));
+        assert_eq!(s, &s + 0.);
+        assert_eq!(res, s + 2.);
+        let s = Series::new("x", 2, vec!(1./2.,0.,-1.));
+        let res = Series::new("x", 0, vec!(2., 0., 1./2.,0.,-1.));
+        assert_eq!(s, &s + 0.);
+        assert_eq!(res, s + 2.);
+        let s = Series::new("x", 0, vec!(-2.,0.,-1.));
+        let res = Series::new("x", 2, vec!(-1.));
+        assert_eq!(res, s + 2.);
+
+        let s = Series::new("x", -3, vec!(1./2.,0.,-1.));
+        assert_eq!(s, &s - 0.);
+        assert_eq!(s, &s - 2.);
+        let s = Series::new("x", -2, vec!(1./2.,0.,-1.));
+        let res = Series::new("x", -2, vec!(1./2.,0.,-3.));
+        assert_eq!(s, &s - 0.);
+        assert_eq!(res, s - 2.);
+        let s = Series::new("x", 2, vec!(1./2.,0.,-1.));
+        let res = Series::new("x", 0, vec!(-2., 0., 1./2.,0.,-1.));
+        assert_eq!(s, &s - 0.);
+        assert_eq!(res, s - 2.);
+        let s = Series::new("x", 0, vec!(2.,0.,-1.));
+        let res = Series::new("x", 2, vec!(-1.));
+        assert_eq!(res, s - 2.);
     }
 
     #[test]
