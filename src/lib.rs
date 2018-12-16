@@ -621,102 +621,30 @@ where
     }
 }
 
-impl<Var, C: Coeff> Div for Series<Var, C>
-where Series<Var, C>: DivAssign
-{
-    type Output = Series<Var, C>;
-
-    /// Divides two series
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use series::Series;
-    /// let s = Series::new("x", -3, vec!(1.,0.,-3.));
-    /// let res = Series::new("x", 0, vec!(1.,0.,0.));
-    /// assert_eq!(res, s.clone() / s.clone());
-    /// ```
-    ///
-    /// # Panics
-    ///
-    /// Panics if the series have different expansion variables.
-    fn div(mut self, other: Series<Var, C>) -> Series<Var, C> {
-        self /= other;
-        self
-    }
-}
-
-impl<'a, Var, C: Coeff> Div<&'a Series<Var, C>> for Series<Var, C>
-where Series<Var, C>: DivAssign<&'a Series<Var, C>>
-{
-    type Output = Series<Var, C>;
-
-    /// Divides two series
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use series::Series;
-    /// let s = Series::new("x", -3, vec!(1.,0.,-3.));
-    /// let res = Series::new("x", 0, vec!(1.,0.,0.));
-    /// assert_eq!(res, s.clone() / &s.clone());
-    /// ```
-    ///
-    /// # Panics
-    ///
-    /// Panics if the series have different expansion variables.
-    fn div(mut self, other: &'a Series<Var, C>) -> Self::Output {
-        self /= other;
-        self
-    }
-}
-
-impl<'a, Var, C: Coeff> Div<Series<Var, C>> for &'a Series<Var, C>
-where Series<Var, C>: Clone + Div<Output = Series<Var, C>>
-{
-    type Output = Series<Var, C>;
-
-    /// Divides two series
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use series::Series;
-    /// let s = Series::new("x", -3, vec!(1.,0.,-3.));
-    /// let res = Series::new("x", 0, vec!(1.,0.,0.));
-    /// assert_eq!(res, s.clone() / &s.clone());
-    /// ```
-    ///
-    /// # Panics
-    ///
-    /// Panics if the series have different expansion variables.
-    fn div(self, other: Series<Var, C>) -> Self::Output {
-        self.clone() / other
-    }
-}
-
-impl<'a, 'b, Var, C: Coeff> Div<&'b Series<Var, C>> for &'a Series<Var, C>
+impl<'a, Var, C: Coeff, T>
+    Div<T> for &'a Series<Var, C>
 where
-    for<'c> Series<Var, C>: Clone + Div<&'c Series<Var,C>, Output=Series<Var, C>>
+    Series<Var, C>: Clone + DivAssign<T>
 {
     type Output = Series<Var, C>;
 
-    /// Divides two series
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use series::Series;
-    /// let s = Series::new("x", -3, vec!(1.,0.,-3.));
-    /// let res = Series::new("x", 0, vec!(1.,0.,0.));
-    /// assert_eq!(res, &s / &s);
-    /// ```
-    ///
-    /// # Panics
-    ///
-    /// Panics if the series have different expansion variables.
-    fn div(self, other: &'b Series<Var, C>) -> Self::Output {
-        self.clone() / other
+    fn div(self, other: T) -> Self::Output {
+        let mut res = self.clone();
+        res /= other;
+        res
+    }
+}
+
+impl<Var, C: Coeff, T>
+    Div<T> for Series<Var, C>
+where
+    Series<Var, C>: DivAssign<T>
+{
+    type Output = Series<Var, C>;
+
+    fn div(mut self, other: T) -> Self::Output {
+        self /= other;
+        self
     }
 }
 
@@ -1014,59 +942,6 @@ impl<Var, C: Coeff>
 {
     fn div_assign(& mut self, rhs: C) {
         *self /= &rhs
-    }
-}
-
-impl<'a, Var, C: Coeff>
-    Div<&'a C>
-    for Series<Var, C>
-    where C: DivAssign<&'a C>
-{
-    type Output = Self;
-
-    fn div(mut self, rhs: &'a C) -> Self::Output {
-        self /= rhs;
-        self
-    }
-}
-
-impl<'a, 'b, Var, C: Coeff>
-    Div<&'a C>
-    for &'b Series<Var, C>
-where
-    C: DivAssign<&'a C>,
-    Series<Var, C>: Clone
-{
-    type Output = Series<Var, C>;
-
-    fn div(self, rhs: &'a C) -> Self::Output {
-        self.clone() / rhs
-    }
-}
-
-impl<Var, C: Coeff>
-    Div<C>
-    for Series<Var, C>
-    where Series<Var, C>: DivAssign<C>
-{
-    type Output = Self;
-
-    fn div(mut self, rhs: C) -> Self::Output {
-        self /= rhs;
-        self
-    }
-}
-
-impl<'a, Var, C: Coeff>
-    Div<C>
-    for &'a Series<Var, C>
-where
-    Series<Var, C>: Clone + DivAssign<C>
-{
-    type Output = Series<Var, C>;
-
-    fn div(self, rhs: C) -> Self::Output {
-        self.clone() / rhs
     }
 }
 
