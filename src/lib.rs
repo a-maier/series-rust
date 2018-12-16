@@ -1146,6 +1146,156 @@ where
     }
 }
 
+impl<'a, Var, C: Coeff>
+    MulAssign<&'a C>
+    for Series<Var, C>
+    where C: MulAssign<&'a C>
+{
+    fn mul_assign(& mut self, rhs: &'a C) {
+        for mut coeff in &mut self.coeffs {
+            *coeff *= rhs
+        }
+    }
+}
+
+impl<Var, C: Coeff>
+    MulAssign<C>
+    for Series<Var, C>
+    where for <'a> Series<Var, C>: MulAssign<&'a C>
+{
+    fn mul_assign(& mut self, rhs: C) {
+        *self *= &rhs
+    }
+}
+
+impl<'a, Var, C: Coeff>
+    Mul<&'a C>
+    for Series<Var, C>
+    where C: MulAssign<&'a C>
+{
+    type Output = Self;
+
+    fn mul(mut self, rhs: &'a C) -> Self::Output {
+        self *= rhs;
+        self
+    }
+}
+
+impl<'a, 'b, Var, C: Coeff>
+    Mul<&'a C>
+    for &'b Series<Var, C>
+where
+    C: MulAssign<&'a C>,
+    Series<Var, C>: Clone
+{
+    type Output = Series<Var, C>;
+
+    fn mul(self, rhs: &'a C) -> Self::Output {
+        self.clone() * rhs
+    }
+}
+
+impl<Var, C: Coeff>
+    Mul<C>
+    for Series<Var, C>
+    where Series<Var, C>: MulAssign<C>
+{
+    type Output = Self;
+
+    fn mul(mut self, rhs: C) -> Self::Output {
+        self *= rhs;
+        self
+    }
+}
+
+impl<'a, Var, C: Coeff>
+    Mul<C>
+    for &'a Series<Var, C>
+where
+    Series<Var, C>: Clone + MulAssign<C>
+{
+    type Output = Series<Var, C>;
+
+    fn mul(self, rhs: C) -> Self::Output {
+        self.clone() * rhs
+    }
+}
+
+impl<'a, Var, C: Coeff>
+    DivAssign<&'a C>
+    for Series<Var, C>
+    where C: DivAssign<&'a C>
+{
+    fn div_assign(& mut self, rhs: &'a C) {
+        for mut coeff in &mut self.coeffs {
+            *coeff /= rhs
+        }
+    }
+}
+
+impl<Var, C: Coeff>
+    DivAssign<C>
+    for Series<Var, C>
+    where for <'a> Series<Var, C>: DivAssign<&'a C>
+{
+    fn div_assign(& mut self, rhs: C) {
+        *self /= &rhs
+    }
+}
+
+impl<'a, Var, C: Coeff>
+    Div<&'a C>
+    for Series<Var, C>
+    where C: DivAssign<&'a C>
+{
+    type Output = Self;
+
+    fn div(mut self, rhs: &'a C) -> Self::Output {
+        self /= rhs;
+        self
+    }
+}
+
+impl<'a, 'b, Var, C: Coeff>
+    Div<&'a C>
+    for &'b Series<Var, C>
+where
+    C: DivAssign<&'a C>,
+    Series<Var, C>: Clone
+{
+    type Output = Series<Var, C>;
+
+    fn div(self, rhs: &'a C) -> Self::Output {
+        self.clone() / rhs
+    }
+}
+
+impl<Var, C: Coeff>
+    Div<C>
+    for Series<Var, C>
+    where Series<Var, C>: DivAssign<C>
+{
+    type Output = Self;
+
+    fn div(mut self, rhs: C) -> Self::Output {
+        self /= rhs;
+        self
+    }
+}
+
+impl<'a, Var, C: Coeff>
+    Div<C>
+    for &'a Series<Var, C>
+where
+    Series<Var, C>: Clone + DivAssign<C>
+{
+    type Output = Series<Var, C>;
+
+    fn div(self, rhs: C) -> Self::Output {
+        self.clone() / rhs
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1538,6 +1688,23 @@ mod tests {
                 test.coeff(i).unwrap().round()
             );
         }
+    }
+
+    #[test]
+    fn tst_scalar() {
+        let s = Series::new("x", -3, vec!(1.,0.,-2.));
+        let res = Series::new("x", -3, vec!(1./2.,0.,-1.));
+        assert_eq!(res, &s / 2.);
+        let mut s = s;
+        s /= 2.;
+        assert_eq!(res, s);
+
+        let s = Series::new("x", -3, vec!(1./2.,0.,-1.));
+        let res = Series::new("x", -3, vec!(1.,0.,-2.));
+        assert_eq!(res, &s * 2.);
+        let mut s = s;
+        s *= 2.;
+        assert_eq!(res, s);
     }
 
     #[test]
