@@ -56,7 +56,11 @@ println!("1/(1-x) = {}", t);
 println!("s+t = {}", &s + &t);
 println!("s-t = {}", &s - &t);
 println!("s*t = {}", &s * &t);
-println!("s/t = {}", s/t);
+println!("s/t = {}", &s/t);
+
+// We can also multiply or divide each coefficient by a number
+println!("s*3 = {}", &s * 3.);
+println!("s/3 = {}", &s / 3.);
 
 // More advanced operations in general require the variable type to be
 // convertible to the coefficient type by implementing the From trait.
