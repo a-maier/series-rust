@@ -48,7 +48,7 @@ println!("s = {}", s);
 // Now s = 1 - x + O(x^5).
 let s = Series::new("x", 0, vec!(1., -1., 0., 0.));
 // Expand 1/(1-x) up to x^4.
-let t = s.inverse();
+let t = s.mul_inverse();
 println!("1/(1-x) = {}", t);
 
 // Series can be added, subtracted, multiplied, divided.
