@@ -539,118 +539,30 @@ where for<'a> Series<Var, C>: MulAssign<&'a Series<Var, C>>
     }
 }
 
-impl<Var, C: Coeff> Mul for Series<Var, C>
-where Series<Var, C>: MulAssign<Series<Var, C>> {
-    type Output = Series<Var, C>;
-
-    /// Multiply two series
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use series::Series;
-    /// let s = Series::new("x", -3, vec!(1.,0.,-3.));
-    /// let t = s.clone();
-    /// let res = Series::new("x", -6, vec!(1.,0.,-6.));
-    /// assert_eq!(res, s * t);
-    /// ```
-    ///
-    /// # Panics
-    ///
-    /// Panics if the series have different expansion variables.
-    fn mul(mut self, other: Series<Var, C>) -> Self::Output {
-        self *= other;
-        self
-    }
-}
-
-impl<'a, Var, C: Coeff> Mul<&'a Series<Var, C>> for Series<Var, C>
-where Series<Var, C>: MulAssign<&'a Series<Var, C>> {
-    type Output = Series<Var, C>;
-
-    /// Multiply two series
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use series::Series;
-    /// let s = Series::new("x", -3, vec!(1.,0.,-3.));
-    /// let t = s.clone();
-    /// let res = Series::new("x", -6, vec!(1.,0.,-6.));
-    /// assert_eq!(res, s * &t);
-    /// ```
-    ///
-    /// # Panics
-    ///
-    /// Panics if the series have different expansion variables.
-    fn mul(mut self, other: &'a Series<Var, C>) -> Self::Output {
-        self *= other;
-        self
-    }
-}
-
-impl<'a, Var, C: Coeff> Mul<Series<Var, C>> for &'a Series<Var, C>
-where Series<Var, C>: MulAssign<&'a Series<Var, C>> {
-    type Output = Series<Var, C>;
-
-    /// Multiply two series
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use series::Series;
-    /// let s = Series::new("x", -3, vec!(1.,0.,-3.));
-    /// let t = s.clone();
-    /// let res = Series::new("x", -6, vec!(1.,0.,-6.));
-    /// assert_eq!(res, &s * t);
-    /// ```
-    ///
-    /// # Panics
-    ///
-    /// Panics if the series have different expansion variables.
-    fn mul(self, other: Series<Var, C>) -> Self::Output {
-        other * self
-    }
-}
-
-impl<'a, 'b, Var: Clone + PartialEq + fmt::Debug,
-     C: Coeff + Mul<Output=C> + AddAssign>
-    Mul<&'b Series<Var, C>>
-    for &'a Series<Var, C>
+impl<'a, Var, C: Coeff, T>
+    Mul<T> for &'a Series<Var, C>
 where
-    for<'c, 'd> &'c C: Mul<&'d C,Output=C>
+    Series<Var, C>: Clone + MulAssign<T>
 {
     type Output = Series<Var, C>;
 
-    /// Multiply two series
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use series::Series;
-    /// let s = Series::new("x", -3, vec!(1.,0.,-3.));
-    /// let t = s.clone();
-    /// let res = Series::new("x", -6, vec!(1.,0.,-6.));
-    /// assert_eq!(res, &s * &t);
-    /// ```
-    ///
-    /// # Panics
-    ///
-    /// Panics if the series have different expansion variables.
-    fn mul(self, other: &'b Series<Var, C>) -> Self::Output {
-        assert_eq!(self.var, other.var);
-        let product_min_pow = self.min_pow() + other.min_pow();
-        let num_coeffs = min(self.coeffs.len(), other.coeffs.len());
-        // compute Cauchy product
-        let mut c: Vec<_> = self.coeffs.iter().take(num_coeffs)
-            .map(|c| c * &other.coeffs[0])
-            .collect();
-        for (k,c) in c.iter_mut().enumerate() {
-            for i in 1..=k {
-                *c += &self.coeffs[k-i] * &other.coeffs[i]
-            }
-        }
-        Series::new(self.var.clone(), product_min_pow, c)
+    fn mul(self, other: T) -> Self::Output {
+        let mut res = self.clone();
+        res *= other;
+        res
+    }
+}
+
+impl<Var, C: Coeff, T>
+    Mul<T> for Series<Var, C>
+where
+    Series<Var, C>: MulAssign<T>
+{
+    type Output = Series<Var, C>;
+
+    fn mul(mut self, other: T) -> Self::Output {
+        self *= other;
+        self
     }
 }
 
@@ -1080,59 +992,6 @@ impl<Var, C: Coeff>
 {
     fn mul_assign(& mut self, rhs: C) {
         *self *= &rhs
-    }
-}
-
-impl<'a, Var, C: Coeff>
-    Mul<&'a C>
-    for Series<Var, C>
-    where C: MulAssign<&'a C>
-{
-    type Output = Self;
-
-    fn mul(mut self, rhs: &'a C) -> Self::Output {
-        self *= rhs;
-        self
-    }
-}
-
-impl<'a, 'b, Var, C: Coeff>
-    Mul<&'a C>
-    for &'b Series<Var, C>
-where
-    C: MulAssign<&'a C>,
-    Series<Var, C>: Clone
-{
-    type Output = Series<Var, C>;
-
-    fn mul(self, rhs: &'a C) -> Self::Output {
-        self.clone() * rhs
-    }
-}
-
-impl<Var, C: Coeff>
-    Mul<C>
-    for Series<Var, C>
-    where Series<Var, C>: MulAssign<C>
-{
-    type Output = Self;
-
-    fn mul(mut self, rhs: C) -> Self::Output {
-        self *= rhs;
-        self
-    }
-}
-
-impl<'a, Var, C: Coeff>
-    Mul<C>
-    for &'a Series<Var, C>
-where
-    Series<Var, C>: Clone + MulAssign<C>
-{
-    type Output = Series<Var, C>;
-
-    fn mul(self, rhs: C) -> Self::Output {
-        self.clone() * rhs
     }
 }
 
