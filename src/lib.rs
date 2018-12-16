@@ -447,113 +447,28 @@ where
     }
 }
 
-impl<'a, 'b, Var, C: Coeff>
-    Sub<&'b Series<Var, C>> for &'a Series<Var, C>
+impl<'a, Var, C: Coeff, T>
+    Sub<T> for &'a Series<Var, C>
 where
-    for<'c> &'c Series<Var, C>:
-    Add<Series<Var, C>, Output = Series<Var, C>>
-    + Neg<Output = Series<Var,C>>
+    Series<Var, C>: Clone + SubAssign<T>
 {
     type Output = Series<Var, C>;
 
-    /// Subtract two series
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use series::Series;
-    /// let s = Series::new("x", -3, vec!(1.,0.,-3.));
-    /// let t = s.clone();
-    /// let res = Series::new("x", 0, vec!());
-    /// assert_eq!(res, &s - &t);
-    /// ```
-    ///
-    /// # Panics
-    ///
-    /// Panics if the series have different expansion variables.
-    fn sub(self, other: &'b Series<Var, C>) -> Self::Output {
-        self + (-other)
+    fn sub(self, other: T) -> Self::Output {
+        let mut res = self.clone();
+        res -= other;
+        res
     }
 }
 
-impl<'a, Var, C: Coeff>
-    Sub<Series<Var, C>> for &'a Series<Var, C>
+impl<Var, C: Coeff, T>
+    Sub<T> for Series<Var, C>
 where
-    for<'b> &'b Series<Var, C>:
-    Add<Series<Var, C>, Output = Series<Var, C>>,
-    Series<Var, C>: Neg<Output = Series<Var,C>>
+    Series<Var, C>: SubAssign<T>
 {
     type Output = Series<Var, C>;
 
-    /// Subtract two series
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use series::Series;
-    /// let s = Series::new("x", -3, vec!(1.,0.,-3.));
-    /// let t = s.clone();
-    /// let res = Series::new("x", 0, vec!());
-    /// assert_eq!(res, &s - &t);
-    /// ```
-    ///
-    /// # Panics
-    ///
-    /// Panics if the series have different expansion variables.
-    fn sub(self, other: Series<Var, C>) -> Self::Output {
-        self + (-other)
-    }
-}
-
-impl<'a, Var, C: Coeff>
-    Sub<&'a Series<Var, C>> for Series<Var, C>
-where
-    for<'b> Series<Var, C>: SubAssign<&'b Series<Var, C>>
-{
-    type Output = Series<Var, C>;
-
-    /// Subtract two series
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use series::Series;
-    /// let s = Series::new("x", -3, vec!(1.,0.,-3.));
-    /// let t = s.clone();
-    /// let res = Series::new("x", 0, vec!());
-    /// assert_eq!(res, &s - &t);
-    /// ```
-    ///
-    /// # Panics
-    ///
-    /// Panics if the series have different expansion variables.
-    fn sub(mut self, other: &'a Series<Var, C>) -> Self::Output {
-        self -= other;
-        self
-    }
-}
-
-impl<Var, C: Coeff> Sub for Series<Var, C>
-   where Series<Var, C>: SubAssign<Series<Var, C>>
-{
-    type Output = Series<Var, C>;
-
-    /// Subtract two series
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use series::Series;
-    /// let s = Series::new("x", -3, vec!(1.,0.,-3.));
-    /// let t = s.clone();
-    /// let res = Series::new("x", 0, vec!());
-    /// assert_eq!(res, &s - &t);
-    /// ```
-    ///
-    /// # Panics
-    ///
-    /// Panics if the series have different expansion variables.
-    fn sub(mut self, other: Series<Var, C>) -> Series<Var, C> {
+    fn sub(mut self, other: T) -> Self::Output {
         self -= other;
         self
     }
