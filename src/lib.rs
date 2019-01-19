@@ -997,6 +997,66 @@ impl<Var, C: Coeff>
     }
 }
 
+impl<Var, C: Coeff>
+    Pow<C>
+    for Series<Var, C>
+    where Series<Var, C>:
+      Ln<Output=Series<Var, C>>
+      + Mul<C,Output=Series<Var, C>>
+      + Exp<Output=Series<Var, C>>
+{
+    type Output = Series<Var, C>;
+
+    fn pow(self, exponent: C) -> Self::Output {
+        (self.ln() * exponent).exp()
+    }
+}
+
+impl<'a, Var, C: Coeff>
+    Pow<C>
+    for &'a Series<Var, C>
+where
+    for <'c> &'c Series<Var, C>: Ln<Output=Series<Var, C>>,
+    Series<Var, C>: Mul<C,Output=Series<Var, C>> + Exp<Output=Series<Var, C>>
+{
+    type Output = Series<Var, C>;
+
+    fn pow(self, exponent: C) -> Self::Output {
+        (self.ln() * exponent).exp()
+    }
+}
+
+impl<'a, Var, C: Coeff>
+    Pow<&'a C>
+    for Series<Var, C>
+    where for <'c> Series<Var, C>:
+       Ln<Output=Series<Var, C>>
+       + Mul<&'c C,Output=Series<Var, C>>
+       + Exp<Output=Series<Var, C>>
+{
+    type Output = Series<Var, C>;
+
+    fn pow(self, exponent: &C) -> Self::Output {
+        (self.ln() * exponent).exp()
+    }
+}
+
+impl<'a, 'b, Var, C: Coeff>
+    Pow<&'a C>
+    for &'b Series<Var, C>
+where
+    for <'c> &'c Series<Var, C>: Ln<Output=Series<Var, C>>,
+    for <'c> Series<Var, C>:
+      Mul<&'c C,Output=Series<Var, C>>
+      + Exp<Output=Series<Var, C>>
+{
+    type Output = Series<Var, C>;
+
+    fn pow(self, exponent: &C) -> Self::Output {
+        (self.ln() * exponent).exp()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1436,6 +1496,13 @@ mod tests {
         let s = Series::new("x", 0, vec!(2.,0.,-1.));
         let res = Series::new("x", 2, vec!(-1.));
         assert_eq!(res, s - 2.);
+
+        let base = Series::new(Mystr("x"), 0, vec!(1., 7., 0.));
+        assert_eq!(base, (&base).pow(1.));
+        assert_eq!(base, (&base).pow(&1.));
+        let res = Series::new(Mystr("x"), 0, vec!(1., 21., 147.));
+        assert_eq!(res, (&base).pow(3.));
+        assert_eq!(res, base.pow(&3.));
     }
 
     #[test]
