@@ -1289,12 +1289,12 @@ mod tests {
         let s = Series::new(Mystr("x"), 0, vec!(1., 7.,-3.));
         let res = Series::new(Mystr("x"), 1, vec!(7.,-55./2.));
         assert_eq!(res, (&s).ln());
-        //assert_eq!(res, s.ln());
+        assert_eq!(res, s.ln());
 
         let s = Series::new(Mystr("x"), 0, vec!(4., 7.,-3.));
         let res = Series::new(Mystr("x"), 0, vec!(4_f64.ln(),7./4.,-73./32.));
         assert_eq!(res, (&s).ln());
-        //assert_eq!(res, s.ln());
+        assert_eq!(res, s.ln());
     }
 
     #[test]
