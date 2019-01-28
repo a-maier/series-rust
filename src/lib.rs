@@ -76,7 +76,7 @@ impl<Var, C: Coeff> Series<Var, C> {
         if pow < self.min_pow() {
             return Some(&self.zero) // TODO this is a bad hack
         }
-        if pow >= self.max_pow() {
+        if pow >= self.cutoff_pow() {
             return None
         }
         let idx = (pow - self.min_pow()) as usize;
@@ -103,9 +103,9 @@ impl<Var, C: Coeff> Series<Var, C> {
     ///
     /// ```rust
     /// let s = series::Series::new("x", -1, vec!(1,2,3));
-    /// assert_eq!(s.max_pow(), 2);
+    /// assert_eq!(s.cutoff_pow(), 2);
     /// ```
-    pub fn max_pow(&self) -> isize {
+    pub fn cutoff_pow(&self) -> isize {
         self.min_pow + (self.coeffs.len() as isize)
     }
 }
@@ -215,7 +215,7 @@ impl<Var: fmt::Display, C: Coeff + fmt::Display> fmt::Display for Series<Var, C>
             }
         }
         if ! self.coeffs.is_empty() { write!(f, " + ")?; }
-        write!(f, "O({}^{})", self.var, self.max_pow())
+        write!(f, "O({}^{})", self.var, self.cutoff_pow())
     }
 }
 
@@ -260,7 +260,7 @@ impl<'a, Var: Clone, C: Coeff> Neg for &'a Series<Var, C>
 // Spurious trait, needed for rust 1.28
 // direct implementation used to work in 1.24
 trait AddAssignHelper {
-    fn truncate_max_pow(&mut self, other: &Self);
+    fn truncate_cutoff_pow(&mut self, other: &Self);
     fn add_overlap(&mut self, other: &Self);
     fn num_leading(&mut self, other: &Self) -> usize;
 }
@@ -268,16 +268,16 @@ trait AddAssignHelper {
 impl<Var, C: Coeff> AddAssignHelper for Series<Var, C>
 where for<'c> C: AddAssign<&'c C>
 {
-    fn truncate_max_pow(&mut self, other: &Self){
-        if other.max_pow() < self.max_pow() {
+    fn truncate_cutoff_pow(&mut self, other: &Self){
+        if other.cutoff_pow() < self.cutoff_pow() {
             let to_remove = min(
-                (self.max_pow() - other.max_pow()) as usize,
+                (self.cutoff_pow() - other.cutoff_pow()) as usize,
                 self.coeffs.len()
             );
             let new_size = self.coeffs.len() - to_remove;
             self.coeffs.truncate(new_size);
             debug_assert!(
-                self.coeffs.is_empty() || other.max_pow() == self.max_pow()
+                self.coeffs.is_empty() || other.cutoff_pow() == self.cutoff_pow()
             );
         }
     }
@@ -321,7 +321,7 @@ impl<'a, Var: PartialEq + fmt::Debug, C: Coeff + Clone>
     /// Panics if the series have different expansion variables.
     fn add_assign(& mut self, other: &'a Series<Var, C>) {
         assert_eq!(self.var, other.var);
-        self.truncate_max_pow(other);
+        self.truncate_cutoff_pow(other);
         self.add_overlap(other);
         if other.min_pow() < self.min_pow() {
             let num_leading = self.num_leading(other);
@@ -329,7 +329,7 @@ impl<'a, Var: PartialEq + fmt::Debug, C: Coeff + Clone>
             self.coeffs.splice(0..0, leading_coeff);
             self.min_pow = other.min_pow;
         }
-        debug_assert!(other.max_pow() >= self.max_pow());
+        debug_assert!(other.cutoff_pow() >= self.cutoff_pow());
         self.trim();
     }
 }
@@ -358,7 +358,7 @@ where
     /// Panics if the series have different expansion variables.
     fn add_assign(& mut self, mut other: Series<Var, C>) {
         assert_eq!(self.var, other.var);
-        self.truncate_max_pow(&other);
+        self.truncate_cutoff_pow(&other);
         self.add_overlap(&other);
         if other.min_pow() < self.min_pow() {
             let num_leading = self.num_leading(&other);
@@ -669,8 +669,8 @@ where
         assert!(self.min_pow() >= 0);
         let mut b = Vec::with_capacity(min(self.coeffs.len(), 1));
         b.push(C::from(1));
-        debug_assert!(self.max_pow() >= 0);
-        for n in 1..self.max_pow() as usize {
+        debug_assert!(self.cutoff_pow() >= 0);
+        for n in 1..self.cutoff_pow() as usize {
             let mut b_n = C::from(0);
             for i in 1..n+1 {
                 let num_factor = C::from(i as i32)/C::from(n as i32);
@@ -861,7 +861,7 @@ impl<Var, C: Coeff + Clone>
     where C: AddAssign<C>
 {
     fn add_assign(& mut self, rhs: C) {
-        if self.max_pow() <= 0 || rhs == self.zero {
+        if self.cutoff_pow() <= 0 || rhs == self.zero {
             return
         }
         if self.min_pow() <= 0 {
@@ -887,7 +887,7 @@ impl<Var, C: Coeff + Clone>
     where C: Neg<Output=C> + SubAssign<C>
 {
     fn sub_assign(& mut self, rhs: C) {
-        if self.max_pow() <= 0 || rhs == self.zero {
+        if self.cutoff_pow() <= 0 || rhs == self.zero {
             return
         }
         if self.min_pow() <= 0 {
@@ -1336,8 +1336,8 @@ mod tests {
         let res = Series::new(Mystr("x"), 0, vec!(8., 84.-40.*ln2, 154.+ln2*(-332.+100.*ln2)));
         let res = rescale * res;
         assert_eq!(res.min_pow(), test.min_pow());
-        assert_eq!(res.max_pow(), test.max_pow());
-        for i in res.min_pow()..res.max_pow() {
+        assert_eq!(res.cutoff_pow(), test.cutoff_pow());
+        for i in res.min_pow()..res.cutoff_pow() {
             assert_eq!(
                 res.coeff(i).unwrap().round(),
                 test.coeff(i).unwrap().round()
