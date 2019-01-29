@@ -485,6 +485,7 @@ where
     }
 }
 
+// TODO: somehow make addition symmetric?
 impl<'a, Var, C: Coeff, T>
     Sub<T> for &'a Series<Var, C>
 where
@@ -577,6 +578,7 @@ where for<'a> Series<Var, C>: MulAssign<&'a Series<Var, C>>
     }
 }
 
+// TODO: somehow make multiplication symmetric?
 impl<'a, Var, C: Coeff, T>
     Mul<T> for &'a Series<Var, C>
 where
@@ -880,6 +882,8 @@ where
     }
 }
 
+// TODO: rust (1.28) does not seem to find this?
+// (&series).pow(exponent) is rejected by the borrow checker
 impl<'a, Var, C: Coeff, T> Pow<T> for &'a Series<Var, C>
 where
     for<'b> &'b Series<Var, C>: Ln,
