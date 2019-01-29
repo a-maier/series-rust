@@ -1,3 +1,10 @@
+# Version 0.4.0
+
+- Implemented exponentiation with an exponent of the same type as the
+  series coefficients.
+- Renamed `max_pow` method to `cutoff_pow`.
+- Added a constructor with explicit series cutoff power.
+
 # Version 0.3.0
 
 - Implemented multiplication and division by objects with the same type
