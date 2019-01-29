@@ -42,11 +42,15 @@ use series::ops::{Ln,Exp,Pow};
 let s = Series::new("x", 2, vec!(1, 2, 3));
 println!("s = {}", s);
 
+// similar, with a cutoff power of 7
+// s = 1*x^2 + 2*x^3 + 3*x^4 + O(x^7).
+let s = Series::with_cutoff("x", 2, 7, vec!(1, 2, 3));
+
 // To show various kinds of operations we now switch to floating-point
 // coefficients
 
 // Now s = 1 - x + O(x^5).
-let s = Series::new("x", 0, vec!(1., -1., 0., 0.));
+let s = Series::with_cutoff("x", 0, 5, vec!(1., -1.));
 // Expand 1/(1-x) up to x^4.
 let t = s.mul_inverse();
 println!("1/(1-x) = {}", t);

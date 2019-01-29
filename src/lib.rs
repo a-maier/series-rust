@@ -42,6 +42,44 @@ impl<Var, C: Coeff> Series<Var, C> {
         res
     }
 
+    /// Create a new series with a given cutoff power
+    ///
+    /// # Example
+    ///
+    /// This creates a series in the variable "x", starting at "x"^-1
+    /// with coefficients 1, 2, 3. and vanishing coefficients up to
+    /// "x"^5 .In other words, the series
+    /// x^-1 + 2 + 3*x + O(x^5).
+    /// ```rust
+    /// let s = series::Series::with_cutoff("x", -1, 5, vec!(1,2,3));
+    /// ```
+    ///
+    /// # Panics
+    ///
+    /// Panics if the cutoff power is lower than the starting power
+    ///
+    pub fn with_cutoff(
+        var: Var,
+        min_pow: isize,
+        cutoff_pow: isize,
+        mut coeffs: Vec<C>
+    ) -> Series<Var, C> {
+        assert!(cutoff_pow >= min_pow);
+        let len = (cutoff_pow - min_pow) as usize;
+        // can't use resize here, because C is not Clone
+        if len < coeffs.len() {
+            coeffs.truncate(len)
+        }
+        else {
+            let num_missing = len - coeffs.len();
+            coeffs.reserve(num_missing);
+            for _ in 0..num_missing {
+                coeffs.push(C::from(0));
+            }
+        }
+        Series::new(var, min_pow, coeffs)
+    }
+
     /// Get the expansion variable
     ///
     /// # Example
@@ -991,6 +1029,26 @@ mod tests {
         let s = Series::new(var.clone(), -3, vec!(0.,0.,0.));
         let t = Series::new(var.clone(), 0, vec!());
         assert_eq!(s,t);
+    }
+
+    #[test]
+    fn tst_series_with_cutoff() {
+        let s = Series::with_cutoff("x", -10, 1, Vec::<i32>::new());
+        let t = Series::new("x", 1, vec![]);
+        assert_eq!(s, t);
+
+        let s = Series::with_cutoff("x", 0, 5, vec![1,2,3]);
+        let t = Series::new("x", 0, vec![1,2,3,0,0]);
+        assert_eq!(s, t);
+
+        let s = Series::with_cutoff("x", 0, 2, vec![1,2,3]);
+        let t = Series::new("x", 0, vec![1,2]);
+        assert_eq!(s, t);
+    }
+    #[test]
+    #[should_panic]
+    fn tst_bad_cutoff() {
+        let _ = Series::with_cutoff("x", 0, -2, vec![1,2,3]);
     }
 
     #[test]
