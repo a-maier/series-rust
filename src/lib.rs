@@ -882,15 +882,13 @@ where
     }
 }
 
-// TODO: rust (1.28) does not seem to find this?
-// (&series).pow(exponent) is rejected by the borrow checker
 impl<'a, Var, C: Coeff, T> Pow<T> for &'a Series<Var, C>
 where
-    for<'b> &'b Series<Var, C>: Ln,
-    for<'b> <&'b Series<Var, C> as ops::Ln>::Output: Mul<T>,
-    for<'b> <<&'b Series<Var, C> as ops::Ln>::Output as std::ops::Mul<T>>::Output: Exp,
+    for<'b> &'b Series<Var, C>: Ln<Output=Series<Var, C>>,
+    Series<Var, C>: Mul<T>,
+    <Series<Var, C> as Mul<T>>::Output: Exp
 {
-    type Output = <<<&'a Series<Var, C> as ops::Ln>::Output as std::ops::Mul<T>>::Output as ops::Exp>::Output;
+    type Output = <<Series<Var, C> as Mul<T>>::Output as Exp>::Output;
 
     fn pow(self, exponent: T) -> Self::Output {
         (self.ln() * exponent).exp()
@@ -1384,8 +1382,8 @@ mod tests {
         let exp = Series::new(Mystr("x"), -1, vec!(1., -5., 43.));
         let e7 = 7_f64.exp();
         let res = Series::new(Mystr("x"), 0, vec!(e7, -119./2.*e7));
-        // assert_eq!(res, (&base).pow(&exp));
-        // assert_eq!(res, (&base).pow(exp.clone()));
+        assert_eq!(res, (&base).pow(&exp));
+        assert_eq!(res, (&base).pow(exp.clone()));
         assert_eq!(res, base.clone().pow(&exp));
         assert_eq!(res, base.pow(exp));
 
@@ -1454,10 +1452,10 @@ mod tests {
         assert_eq!(res, s - 2.);
 
         let base = Series::new(Mystr("x"), 0, vec!(1., 7., 0.));
-        // assert_eq!(base, (&base).pow(1.));
-        // assert_eq!(base, (&base).pow(&1.));
+        assert_eq!(base, (&base).pow(1.));
+        assert_eq!(base, (&base).pow(&1.));
         let res = Series::new(Mystr("x"), 0, vec!(1., 21., 147.));
-        // assert_eq!(res, (&base).pow(3.));
+        assert_eq!(res, (&base).pow(3.));
         assert_eq!(res, base.pow(&3.));
     }
 
