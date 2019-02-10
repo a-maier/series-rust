@@ -700,7 +700,7 @@ impl<Var, C: Coeff> ExpCoeff for Series<Var, C>
 where
     for<'a> &'a C: Mul<Output=C>,
     for<'a> C: MulAssign<&'a C>,
-    C: Clone + From<i32> + Div<Output=C> + Mul<Output=C>
+    C: Clone + Div<Output=C> + Mul<Output=C>
     + AddAssign + Exp<Output=C>
 {
     type Output = Vec<C>;
@@ -733,7 +733,7 @@ impl<Var, C: Coeff> Exp for Series<Var, C>
 where
     for<'a> &'a C: Mul<Output=C>,
     for<'a> C: MulAssign<&'a C>,
-    C: Clone + From<i32> + Div<Output=C> + Mul<Output=C>
+    C: Clone + Div<Output=C> + Mul<Output=C>
     + AddAssign + Exp<Output=C>
 {
     type Output = Self;
@@ -755,7 +755,7 @@ where
     for<'b> &'b C: Mul<Output=C>,
     for<'b> C: MulAssign<&'b C>,
     Var: Clone,
-    C: Clone + From<i32> + Div<Output=C> + Mul<Output=C>
+    C: Clone + Div<Output=C> + Mul<Output=C>
     + AddAssign + Exp<Output=C>
 {
     type Output = Series<Var, C>;
@@ -775,7 +775,7 @@ impl<Var, C: Coeff> Ln for Series<Var, C>
 where
     for <'a> C: DivAssign<&'a C>,
     for <'a> &'a C: Mul<Output=C>,
-    C: Clone + From<i32>
+    C: Clone
     + SubAssign
     + Add<Output=C>
     + Mul<Output=C>
@@ -824,7 +824,7 @@ impl<'a, Var, C: Coeff> Ln for &'a Series<Var, C>
 where
     for <'b> C: Div<&'b C, Output=C>,
     for <'b> &'b C: Mul<Output=C> + Ln<Output=C>,
-    C: Clone + From<i32>
+    C: Clone
     + SubAssign
     + Add<Output=C>
     + Mul<Output=C>
