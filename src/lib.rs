@@ -1023,6 +1023,74 @@ impl<Var, C: Coeff> From<SeriesParts<Var, C>> for Series<Var, C> {
     }
 }
 
+// logarithm for series starting with var^0
+trait LnVarFree {
+    type Output;
+    fn ln_var_free(self) -> Self::Output;
+}
+
+impl<Var, C: Coeff> LnVarFree for Series<Var, C>
+where
+    for <'a> C: DivAssign<&'a C>,
+    for <'a> &'a C: Mul<Output=C>,
+    C: Clone + SubAssign + Ln<Output=C> + Div<Output=C> + Mul<Output=C>
+{
+    type Output = Self;
+
+    fn ln_var_free(mut self) -> Self {
+        debug_assert!(self.min_pow == 0);
+        assert!(!self.coeffs.is_empty());
+        let c_k0 = self.coeffs[0].clone();
+        self.coeffs[0] = C::from(1);
+        for i in 1..self.coeffs.len() {
+            self.coeffs[i] /= &c_k0;
+        }
+        let a = self.coeffs;
+        let mut b = Vec::with_capacity(a.len());
+        let b_0 = c_k0.ln();
+        b.push(b_0);
+        for n in 1..a.len() {
+            b.push(a[n].clone());
+            for i in 1..n {
+                let num_factor = C::from(i as i32)/C::from(n as i32);
+                b[n] -= num_factor * (&a[n-i] * &b[i]);
+            }
+        }
+        Series::new(self.var, 0, b)
+    }
+}
+
+impl<Var, C: Coeff> Series<Var, C>
+{
+    /// Calculate series to some integer power
+    ///
+    /// In contrast to the more general `pow` method this does _not_ require
+    /// the variable type to be convertible to the coefficient type and gives
+    /// an overall nicer output
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// let s = series::Series::new("x", -1, vec![1.,3.,7.]);
+    /// let s_to_minus_5 = series::Series::new("x", 5, vec![1.,-15.,100.]);
+    /// assert_eq!(s.powi(-5), s_to_minus_5);
+    /// ```
+    pub fn powi(mut self, exp: i32) -> Self
+    where
+        for <'a> C: DivAssign<&'a C>,
+        for <'a> &'a C: Mul<Output=C>,
+        C: Clone + SubAssign + Ln<Output=C> + Div<Output=C> + Mul<Output=C>,
+        Series<Var, C>: Mul<C,Output=Self> + Exp<Output=Self> + MulInverse<Output=Self>,
+
+    {
+        let new_min_pow = self.min_pow * (exp as isize);
+        self.min_pow = 0;
+        let pow = (self.ln_var_free() * C::from(exp)).exp();
+
+        Series::new(pow.var, new_min_pow, pow.coeffs)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
