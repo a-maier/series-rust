@@ -1,3 +1,10 @@
+# Version 0.5.0
+
+- Implemented `powi` as a better method to compute a series to an
+  integer power.
+- Added support for destructuring series via the new `SeriesData` struct.
+- Fixed regression: `pow` method once again works on series references.
+
 # Version 0.4.0
 
 - Implemented exponentiation with an exponent of the same type as the

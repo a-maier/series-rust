@@ -23,7 +23,7 @@ Add this to your Cargo.toml:
 
 ```toml
 [dependencies]
-series = "0.4.0"
+series = "0.5.0"
 ```
 
 and this to your crate root:
