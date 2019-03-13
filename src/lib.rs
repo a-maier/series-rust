@@ -991,6 +991,38 @@ impl<Var, C: Coeff>
     }
 }
 
+/// Data parts of a series
+///
+/// # Example
+///
+/// ```rust
+/// // destructure a series
+/// let s = series::Series::new("x", -1, vec![1,2,3]);
+/// let series::SeriesParts{var, min_pow, coeffs} = s.into();
+/// assert_eq!(var, "x");
+/// assert_eq!(min_pow, -1);
+/// assert_eq!(coeffs, vec![1,2,3]);
+/// ```
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(PartialEq,Eq,Debug,Clone,Hash,Ord,PartialOrd)]
+pub struct SeriesParts<Var, C>{
+    pub var: Var,
+    pub min_pow: isize,
+    pub coeffs: Vec<C>,
+}
+
+impl<Var, C: Coeff> From<Series<Var, C>> for SeriesParts<Var, C> {
+    fn from(s: Series<Var, C>) -> Self {
+        SeriesParts{var: s.var, min_pow: s.min_pow, coeffs: s.coeffs}
+    }
+}
+
+impl<Var, C: Coeff> From<SeriesParts<Var, C>> for Series<Var, C> {
+    fn from(parts: SeriesParts<Var, C>) -> Self {
+        Series::new(parts.var, parts.min_pow, parts.coeffs)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
