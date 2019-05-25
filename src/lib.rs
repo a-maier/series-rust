@@ -3,13 +3,15 @@
 #[cfg(feature = "serde")]
 #[macro_use]
 extern crate serde;
-use std::fmt;
-use std::ops::{Add,AddAssign,Sub,SubAssign,Mul,MulAssign,Div,DivAssign,Neg};
-use std::convert::From;
 use std::cmp::min;
+use std::convert::From;
+use std::fmt;
+use std::ops::{
+    Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign,
+};
 
 pub mod ops;
-use self::ops::{Ln,Exp,Pow};
+use self::ops::{Exp, Ln, Pow};
 
 /// Minimum requirements on series coefficients
 pub trait Coeff: From<i32> + PartialEq {}
@@ -17,12 +19,12 @@ impl<T: From<i32> + PartialEq> Coeff for T {}
 
 /// Laurent series in a single variable up to some power
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(PartialEq,Eq,Debug,Clone,Hash,Ord,PartialOrd)]
+#[derive(PartialEq, Eq, Debug, Clone, Hash, Ord, PartialOrd)]
 pub struct Series<Var, C: Coeff> {
     var: Var,
     min_pow: isize,
     coeffs: Vec<C>,
-    zero: C // TODO: evil hack, learn how to do this better
+    zero: C, // TODO: evil hack, learn how to do this better
 }
 
 impl<Var, C: Coeff> Series<Var, C> {
@@ -37,7 +39,12 @@ impl<Var, C: Coeff> Series<Var, C> {
     /// let s = series::Series::new("x", -1, vec!(1,2,3));
     /// ```
     pub fn new(var: Var, min_pow: isize, coeffs: Vec<C>) -> Series<Var, C> {
-        let mut res = Series{var, min_pow, coeffs, zero: C::from(0)};
+        let mut res = Series {
+            var,
+            min_pow,
+            coeffs,
+            zero: C::from(0),
+        };
         res.trim();
         res
     }
@@ -62,15 +69,14 @@ impl<Var, C: Coeff> Series<Var, C> {
         var: Var,
         min_pow: isize,
         cutoff_pow: isize,
-        mut coeffs: Vec<C>
+        mut coeffs: Vec<C>,
     ) -> Series<Var, C> {
         assert!(cutoff_pow >= min_pow);
         let len = (cutoff_pow - min_pow) as usize;
         // can't use resize here, because C is not Clone
         if len < coeffs.len() {
             coeffs.truncate(len)
-        }
-        else {
+        } else {
             let num_missing = len - coeffs.len();
             coeffs.reserve(num_missing);
             for _ in 0..num_missing {
@@ -112,10 +118,10 @@ impl<Var, C: Coeff> Series<Var, C> {
     /// ```
     pub fn coeff(&self, pow: isize) -> Option<&C> {
         if pow < self.min_pow() {
-            return Some(&self.zero) // TODO this is a bad hack
+            return Some(&self.zero); // TODO this is a bad hack
         }
         if pow >= self.cutoff_pow() {
-            return None
+            return None;
         }
         let idx = (pow - self.min_pow()) as usize;
         Some(&self.coeffs[idx])
@@ -157,7 +163,7 @@ pub trait MulInverse {
 
 impl<'a, Var: Clone, C: Coeff + SubAssign> MulInverse for &'a Series<Var, C>
 where
-    for<'b> &'b C: Div<Output = C> + Mul<Output = C>
+    for<'b> &'b C: Div<Output = C> + Mul<Output = C>,
 {
     type Output = Series<Var, C>;
 
@@ -175,26 +181,28 @@ where
     fn mul_inverse(self) -> Self::Output {
         let inv_min_pow = -self.min_pow;
         if self.coeffs.is_empty() {
-            return Series::new(self.var.clone(), inv_min_pow, vec!())
+            return Series::new(self.var.clone(), inv_min_pow, vec![]);
         }
-        let a : Vec<_> = self.coeffs.iter().map(|c| c/&self.coeffs[0]).collect();
+        let a: Vec<_> =
+            self.coeffs.iter().map(|c| c / &self.coeffs[0]).collect();
         let mut b = Vec::with_capacity(a.len());
         b.push(C::from(1));
         for n in 1..a.len() {
             let mut b_n = C::from(0);
             for i in 0..n {
-                b_n -= &a[n-i] * &b[i];
+                b_n -= &a[n - i] * &b[i];
             }
             b.push(b_n);
         }
-        let inv_coeffs : Vec<_> = b.iter().map(|b| b/&self.coeffs[0]).collect();
+        let inv_coeffs: Vec<_> =
+            b.iter().map(|b| b / &self.coeffs[0]).collect();
         Series::new(self.var.clone(), inv_min_pow, inv_coeffs)
     }
 }
 
 impl<Var: Clone, C: Coeff + SubAssign> MulInverse for Series<Var, C>
 where
-    for<'a> &'a Series<Var, C>: MulInverse<Output=Series<Var, C>>
+    for<'a> &'a Series<Var, C>: MulInverse<Output = Series<Var, C>>,
 {
     type Output = Series<Var, C>;
 
@@ -215,13 +223,16 @@ where
 }
 
 impl<Var, C: Coeff> Series<Var, C> {
-    fn trim(& mut self) {
+    fn trim(&mut self) {
         let idx = {
-            let non_zero = self.coeffs.iter().enumerate().
-                find(|&(_, c)| *c != C::from(0));
+            let non_zero = self
+                .coeffs
+                .iter()
+                .enumerate()
+                .find(|&(_, c)| *c != C::from(0));
             match non_zero {
                 Some((idx, _)) => Some(idx),
-                _ => None
+                _ => None,
             }
         };
         match idx {
@@ -230,34 +241,43 @@ impl<Var, C: Coeff> Series<Var, C> {
                     self.min_pow += idx as isize;
                     self.coeffs.drain(0..idx);
                 }
-            },
+            }
             None => {
                 self.min_pow += self.coeffs.len() as isize;
-                self.coeffs = vec!();
+                self.coeffs = vec![];
             }
         }
     }
 }
 
-impl<Var: fmt::Display, C: Coeff + fmt::Display> fmt::Display for Series<Var, C>
+impl<Var: fmt::Display, C: Coeff + fmt::Display> fmt::Display
+    for Series<Var, C>
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         for (i, coeff) in self.coeffs.iter().enumerate() {
-            if *coeff == C::from(0) { continue; }
+            if *coeff == C::from(0) {
+                continue;
+            }
             let cur_pow = self.min_pow() + i as isize;
-            if i > 0 { write!(f, " + ")?; }
+            if i > 0 {
+                write!(f, " + ")?;
+            }
             write!(f, "({})", coeff)?;
             if cur_pow != 0 {
                 write!(f, "*{}", self.var)?;
-                if cur_pow != 1 { write!(f, "^{}", cur_pow)?; }
+                if cur_pow != 1 {
+                    write!(f, "^{}", cur_pow)?;
+                }
             }
         }
-        if ! self.coeffs.is_empty() { write!(f, " + ")?; }
+        if !self.coeffs.is_empty() {
+            write!(f, " + ")?;
+        }
         write!(f, "O({}^{})", self.var, self.cutoff_pow())
     }
 }
 
-impl<Var, C: Coeff + Neg<Output=C>> Neg for Series<Var, C> {
+impl<Var, C: Coeff + Neg<Output = C>> Neg for Series<Var, C> {
     type Output = Series<Var, C>;
 
     /// Compute -s for a series s
@@ -276,7 +296,8 @@ impl<Var, C: Coeff + Neg<Output=C>> Neg for Series<Var, C> {
 }
 
 impl<'a, Var: Clone, C: Coeff> Neg for &'a Series<Var, C>
-    where for<'c> &'c C: Neg<Output=C>
+where
+    for<'c> &'c C: Neg<Output = C>,
 {
     type Output = Series<Var, C>;
 
@@ -304,23 +325,25 @@ trait AddAssignHelper {
 }
 
 impl<Var, C: Coeff> AddAssignHelper for Series<Var, C>
-where for<'c> C: AddAssign<&'c C>
+where
+    for<'c> C: AddAssign<&'c C>,
 {
-    fn truncate_cutoff_pow(&mut self, other: &Self){
+    fn truncate_cutoff_pow(&mut self, other: &Self) {
         if other.cutoff_pow() < self.cutoff_pow() {
             let to_remove = min(
                 (self.cutoff_pow() - other.cutoff_pow()) as usize,
-                self.coeffs.len()
+                self.coeffs.len(),
             );
             let new_size = self.coeffs.len() - to_remove;
             self.coeffs.truncate(new_size);
             debug_assert!(
-                self.coeffs.is_empty() || other.cutoff_pow() == self.cutoff_pow()
+                self.coeffs.is_empty()
+                    || other.cutoff_pow() == self.cutoff_pow()
             );
         }
     }
 
-    fn add_overlap(&mut self, other: &Self){
+    fn add_overlap(&mut self, other: &Self) {
         let offset = self.min_pow();
         for (i, c) in self.coeffs.iter_mut().enumerate() {
             let power = offset + i as isize;
@@ -331,15 +354,15 @@ where for<'c> C: AddAssign<&'c C>
     fn num_leading(&mut self, other: &Self) -> usize {
         min(
             (self.min_pow() - other.min_pow()) as usize,
-            other.coeffs.len()
+            other.coeffs.len(),
         )
     }
 }
 
 impl<'a, Var: PartialEq + fmt::Debug, C: Coeff + Clone>
-    AddAssign<&'a Series<Var, C>>
-    for Series<Var, C>
-    where for<'c> C: AddAssign<&'c C>
+    AddAssign<&'a Series<Var, C>> for Series<Var, C>
+where
+    for<'c> C: AddAssign<&'c C>,
 {
     /// Set s = s + t for two series s and t
     ///
@@ -357,7 +380,7 @@ impl<'a, Var: PartialEq + fmt::Debug, C: Coeff + Clone>
     /// # Panics
     ///
     /// Panics if the series have different expansion variables.
-    fn add_assign(& mut self, other: &'a Series<Var, C>) {
+    fn add_assign(&mut self, other: &'a Series<Var, C>) {
         assert_eq!(self.var, other.var);
         self.truncate_cutoff_pow(other);
         self.add_overlap(other);
@@ -372,11 +395,10 @@ impl<'a, Var: PartialEq + fmt::Debug, C: Coeff + Clone>
     }
 }
 
-impl<Var, C: Coeff>
-    AddAssign<Series<Var, C>> for Series<Var, C>
+impl<Var, C: Coeff> AddAssign<Series<Var, C>> for Series<Var, C>
 where
     for<'c> C: AddAssign<&'c C>,
-    Var: PartialEq + fmt::Debug
+    Var: PartialEq + fmt::Debug,
 {
     /// Set s = s + t for two series s and t
     ///
@@ -394,7 +416,7 @@ where
     /// # Panics
     ///
     /// Panics if the series have different expansion variables.
-    fn add_assign(& mut self, mut other: Series<Var, C>) {
+    fn add_assign(&mut self, mut other: Series<Var, C>) {
         assert_eq!(self.var, other.var);
         self.truncate_cutoff_pow(&other);
         self.add_overlap(&other);
@@ -408,9 +430,9 @@ where
     }
 }
 
-impl<'a, Var: Clone, C: Coeff + Clone, Rhs> Add<Rhs>
-    for &'a Series<Var, C>
-    where Series<Var, C>: AddAssign<Rhs>
+impl<'a, Var: Clone, C: Coeff + Clone, Rhs> Add<Rhs> for &'a Series<Var, C>
+where
+    Series<Var, C>: AddAssign<Rhs>,
 {
     type Output = Series<Var, C>;
 
@@ -421,9 +443,9 @@ impl<'a, Var: Clone, C: Coeff + Clone, Rhs> Add<Rhs>
     }
 }
 
-impl<Var: Clone, C: Coeff + Clone, Rhs> Add<Rhs>
-    for Series<Var, C>
-    where Series<Var, C>: AddAssign<Rhs>
+impl<Var: Clone, C: Coeff + Clone, Rhs> Add<Rhs> for Series<Var, C>
+where
+    Series<Var, C>: AddAssign<Rhs>,
 {
     type Output = Series<Var, C>;
 
@@ -433,12 +455,10 @@ impl<Var: Clone, C: Coeff + Clone, Rhs> Add<Rhs>
     }
 }
 
-impl<'a, Var, C: Coeff>
-    SubAssign<&'a Series<Var, C>>
-    for Series<Var, C>
+impl<'a, Var, C: Coeff> SubAssign<&'a Series<Var, C>> for Series<Var, C>
 where
-    for<'c> &'c Series<Var, C>: Neg<Output=Series<Var, C>>,
-    Series<Var, C>: AddAssign<Series<Var, C>>
+    for<'c> &'c Series<Var, C>: Neg<Output = Series<Var, C>>,
+    Series<Var, C>: AddAssign<Series<Var, C>>,
 {
     /// Set s = s - t for two series s and t
     ///
@@ -455,15 +475,14 @@ where
     /// # Panics
     ///
     /// Panics if the series have different expansion variables.
-    fn sub_assign(& mut self, other: &'a Series<Var, C>) {
+    fn sub_assign(&mut self, other: &'a Series<Var, C>) {
         *self += -other;
     }
 }
 
-impl<Var, C: Coeff>
-    SubAssign<Series<Var, C>> for Series<Var, C>
+impl<Var, C: Coeff> SubAssign<Series<Var, C>> for Series<Var, C>
 where
-    Series<Var, C>: AddAssign + Neg<Output=Series<Var, C>>
+    Series<Var, C>: AddAssign + Neg<Output = Series<Var, C>>,
 {
     /// Set s = s - t for two series s and t
     ///
@@ -480,16 +499,15 @@ where
     /// # Panics
     ///
     /// Panics if the series have different expansion variables.
-    fn sub_assign(& mut self, other: Series<Var, C>) {
+    fn sub_assign(&mut self, other: Series<Var, C>) {
         *self += -other;
     }
 }
 
 // TODO: somehow make addition symmetric?
-impl<'a, Var, C: Coeff, T>
-    Sub<T> for &'a Series<Var, C>
+impl<'a, Var, C: Coeff, T> Sub<T> for &'a Series<Var, C>
 where
-    Series<Var, C>: Clone + SubAssign<T>
+    Series<Var, C>: Clone + SubAssign<T>,
 {
     type Output = Series<Var, C>;
 
@@ -500,10 +518,9 @@ where
     }
 }
 
-impl<Var, C: Coeff, T>
-    Sub<T> for Series<Var, C>
+impl<Var, C: Coeff, T> Sub<T> for Series<Var, C>
 where
-    Series<Var, C>: SubAssign<T>
+    Series<Var, C>: SubAssign<T>,
 {
     type Output = Series<Var, C>;
 
@@ -514,10 +531,9 @@ where
 }
 
 impl<'a, Var: PartialEq + fmt::Debug, C: Coeff + Clone + AddAssign>
-    MulAssign<&'a Series<Var, C>>
-    for Series<Var, C>
+    MulAssign<&'a Series<Var, C>> for Series<Var, C>
 where
-    for<'b> &'b C: Mul<Output=C>,
+    for<'b> &'b C: Mul<Output = C>,
 {
     /// Set s = s * t for two series s,t
     ///
@@ -534,7 +550,7 @@ where
     /// # Panics
     ///
     /// Panics if the series have different expansion variables.
-    fn mul_assign(& mut self, other: &'a Series<Var, C>) {
+    fn mul_assign(&mut self, other: &'a Series<Var, C>) {
         assert_eq!(self.var, other.var);
         self.min_pow += other.min_pow();
         let num_coeffs = min(self.coeffs.len(), other.coeffs.len());
@@ -542,21 +558,20 @@ where
         // compute Cauchy product
         // cloning here is inefficient, but the borrow checker won't allow us
         // to modify self.coeffs directly
-        let mut c: Vec<_> = self.coeffs.iter()
-            .map(|c| c * &other.coeffs[0])
-            .collect();
-        for (k,c) in c.iter_mut().enumerate() {
+        let mut c: Vec<_> =
+            self.coeffs.iter().map(|c| c * &other.coeffs[0]).collect();
+        for (k, c) in c.iter_mut().enumerate() {
             for i in 1..=k {
-                *c += &self.coeffs[k-i] * &other.coeffs[i]
+                *c += &self.coeffs[k - i] * &other.coeffs[i]
             }
         }
         self.coeffs = c;
     }
 }
 
-impl<Var, C: Coeff> MulAssign
-    for Series<Var, C>
-where for<'a> Series<Var, C>: MulAssign<&'a Series<Var, C>>
+impl<Var, C: Coeff> MulAssign for Series<Var, C>
+where
+    for<'a> Series<Var, C>: MulAssign<&'a Series<Var, C>>,
 {
     /// Set s = s * t for two series s,t
     ///
@@ -573,16 +588,15 @@ where for<'a> Series<Var, C>: MulAssign<&'a Series<Var, C>>
     /// # Panics
     ///
     /// Panics if the series have different expansion variables.
-    fn mul_assign(& mut self, other: Series<Var, C>) {
+    fn mul_assign(&mut self, other: Series<Var, C>) {
         *self *= &other
     }
 }
 
 // TODO: somehow make multiplication symmetric?
-impl<'a, Var, C: Coeff, T>
-    Mul<T> for &'a Series<Var, C>
+impl<'a, Var, C: Coeff, T> Mul<T> for &'a Series<Var, C>
 where
-    Series<Var, C>: Clone + MulAssign<T>
+    Series<Var, C>: Clone + MulAssign<T>,
 {
     type Output = Series<Var, C>;
 
@@ -593,10 +607,9 @@ where
     }
 }
 
-impl<Var, C: Coeff, T>
-    Mul<T> for Series<Var, C>
+impl<Var, C: Coeff, T> Mul<T> for Series<Var, C>
 where
-    Series<Var, C>: MulAssign<T>
+    Series<Var, C>: MulAssign<T>,
 {
     type Output = Series<Var, C>;
 
@@ -606,13 +619,12 @@ where
     }
 }
 
-impl<'a, Var: Clone, C: Coeff + SubAssign>
-    DivAssign<&'a Series<Var, C>>
+impl<'a, Var: Clone, C: Coeff + SubAssign> DivAssign<&'a Series<Var, C>>
     for Series<Var, C>
 where
     Series<Var, C>: MulAssign,
     for<'b> &'b C: Div<Output = C> + Mul<Output = C>,
-    for<'c> &'c Series<Var, C>: MulInverse<Output=Series<Var, C>>
+    for<'c> &'c Series<Var, C>: MulInverse<Output = Series<Var, C>>,
 {
     /// Sets s = s / t for two series s,t
     ///
@@ -629,17 +641,15 @@ where
     /// # Panics
     ///
     /// Panics if the series have different expansion variables.
-    fn div_assign(& mut self, other: &'a Series<Var, C>) {
+    fn div_assign(&mut self, other: &'a Series<Var, C>) {
         *self *= other.mul_inverse();
     }
 }
 
-impl<'a, Var: Clone, C: Coeff + SubAssign>
-    DivAssign
-    for Series<Var, C>
+impl<'a, Var: Clone, C: Coeff + SubAssign> DivAssign for Series<Var, C>
 where
-    Series<Var, C>: MulAssign + MulInverse<Output = Series<Var,C>>,
-    for<'b> &'b C: Div<Output = C> + Mul<Output = C>
+    Series<Var, C>: MulAssign + MulInverse<Output = Series<Var, C>>,
+    for<'b> &'b C: Div<Output = C> + Mul<Output = C>,
 {
     /// Sets s = s / t for two series s,t
     ///
@@ -656,15 +666,14 @@ where
     /// # Panics
     ///
     /// Panics if the series have different expansion variables.
-    fn div_assign(& mut self, other: Series<Var, C>) {
+    fn div_assign(&mut self, other: Series<Var, C>) {
         *self *= other.mul_inverse();
     }
 }
 
-impl<'a, Var, C: Coeff, T>
-    Div<T> for &'a Series<Var, C>
+impl<'a, Var, C: Coeff, T> Div<T> for &'a Series<Var, C>
 where
-    Series<Var, C>: Clone + DivAssign<T>
+    Series<Var, C>: Clone + DivAssign<T>,
 {
     type Output = Series<Var, C>;
 
@@ -675,10 +684,9 @@ where
     }
 }
 
-impl<Var, C: Coeff, T>
-    Div<T> for Series<Var, C>
+impl<Var, C: Coeff, T> Div<T> for Series<Var, C>
 where
-    Series<Var, C>: DivAssign<T>
+    Series<Var, C>: DivAssign<T>,
 {
     type Output = Series<Var, C>;
 
@@ -698,10 +706,9 @@ trait ExpCoeff {
 
 impl<Var, C: Coeff> ExpCoeff for Series<Var, C>
 where
-    for<'a> &'a C: Mul<Output=C>,
+    for<'a> &'a C: Mul<Output = C>,
     for<'a> C: MulAssign<&'a C>,
-    C: Clone + Div<Output=C> + Mul<Output=C>
-    + AddAssign + Exp<Output=C>
+    C: Clone + Div<Output = C> + Mul<Output = C> + AddAssign + Exp<Output = C>,
 {
     type Output = Vec<C>;
 
@@ -713,15 +720,15 @@ where
         for n in 1..self.cutoff_pow() as usize {
             let mut b_n = C::from(0);
             for i in 1..=n {
-                let num_factor = C::from(i as i32)/C::from(n as i32);
+                let num_factor = C::from(i as i32) / C::from(n as i32);
                 let a_i = self.coeff(i as isize).unwrap();
-                b_n += num_factor*(a_i * &b[n-i]);
+                b_n += num_factor * (a_i * &b[n - i]);
             }
             b.push(b_n);
         }
         if self.min_pow() == 0 {
             let exp_a_0 = self.coeff(0).unwrap().clone().exp();
-            for b_n in & mut b {
+            for b_n in &mut b {
                 *b_n *= &exp_a_0;
             }
         }
@@ -731,10 +738,9 @@ where
 
 impl<Var, C: Coeff> Exp for Series<Var, C>
 where
-    for<'a> &'a C: Mul<Output=C>,
+    for<'a> &'a C: Mul<Output = C>,
     for<'a> C: MulAssign<&'a C>,
-    C: Clone + Div<Output=C> + Mul<Output=C>
-    + AddAssign + Exp<Output=C>
+    C: Clone + Div<Output = C> + Mul<Output = C> + AddAssign + Exp<Output = C>,
 {
     type Output = Self;
 
@@ -752,11 +758,10 @@ where
 
 impl<'a, Var, C: Coeff> Exp for &'a Series<Var, C>
 where
-    for<'b> &'b C: Mul<Output=C>,
+    for<'b> &'b C: Mul<Output = C>,
     for<'b> C: MulAssign<&'b C>,
     Var: Clone,
-    C: Clone + Div<Output=C> + Mul<Output=C>
-    + AddAssign + Exp<Output=C>
+    C: Clone + Div<Output = C> + Mul<Output = C> + AddAssign + Exp<Output = C>,
 {
     type Output = Series<Var, C>;
 
@@ -767,21 +772,21 @@ where
     /// Panics if the series contains negative powers of the expansion
     /// variable
     fn exp(self) -> Self::Output {
-        Series::new(self.var.clone(), 0,  self.exp_coeff())
+        Series::new(self.var.clone(), 0, self.exp_coeff())
     }
 }
 
 impl<Var, C: Coeff> Ln for Series<Var, C>
 where
-    for <'a> C: DivAssign<&'a C>,
-    for <'a> &'a C: Mul<Output=C>,
+    for<'a> C: DivAssign<&'a C>,
+    for<'a> &'a C: Mul<Output = C>,
     C: Clone
-    + SubAssign
-    + Add<Output=C>
-    + Mul<Output=C>
-    + Div<Output=C>
-    + Ln<Output=C>
-    + From<Var>,
+        + SubAssign
+        + Add<Output = C>
+        + Mul<Output = C>
+        + Div<Output = C>
+        + Ln<Output = C>
+        + From<Var>,
     Var: Clone,
 {
     type Output = Self;
@@ -802,18 +807,17 @@ where
         let a = self.coeffs;
         let mut b = Vec::with_capacity(a.len());
         let b_0 = if k0 != 0 {
-           let var = self.var.clone();
-            c_k0.ln() + C::from(k0 as i32)*C::from(var).ln()
-        }
-        else {
+            let var = self.var.clone();
+            c_k0.ln() + C::from(k0 as i32) * C::from(var).ln()
+        } else {
             c_k0.ln()
         };
         b.push(b_0);
         for n in 1..a.len() {
             b.push(a[n].clone());
             for i in 1..n {
-                let num_factor = C::from(i as i32)/C::from(n as i32);
-                let tmp = num_factor * (&a[n-i] * &b[i]);
+                let num_factor = C::from(i as i32) / C::from(n as i32);
+                let tmp = num_factor * (&a[n - i] * &b[i]);
                 b[n] -= tmp;
             }
         }
@@ -823,14 +827,14 @@ where
 
 impl<'a, Var, C: Coeff> Ln for &'a Series<Var, C>
 where
-    for <'b> C: Div<&'b C, Output=C>,
-    for <'b> &'b C: Mul<Output=C> + Ln<Output=C>,
+    for<'b> C: Div<&'b C, Output = C>,
+    for<'b> &'b C: Mul<Output = C> + Ln<Output = C>,
     C: Clone
-    + SubAssign
-    + Add<Output=C>
-    + Mul<Output=C>
-    + Div<Output=C>
-    + From<Var>,
+        + SubAssign
+        + Add<Output = C>
+        + Mul<Output = C>
+        + Div<Output = C>
+        + From<Var>,
     Var: Clone,
 {
     type Output = Series<Var, C>;
@@ -851,25 +855,23 @@ where
         let a = &self.coeffs;
         let mut b = Vec::with_capacity(a.len());
         let b_0 = if k0 != 0 {
-           let var = self.var.clone();
-            c_k0.ln() + C::from(k0 as i32)*C::from(var).ln()
-        }
-        else {
+            let var = self.var.clone();
+            c_k0.ln() + C::from(k0 as i32) * C::from(var).ln()
+        } else {
             c_k0.ln()
         };
         b.push(b_0);
         for n in 1..a.len() {
-            b.push(a[n].clone()/c_k0);
+            b.push(a[n].clone() / c_k0);
             for i in 1..n {
-                let num_factor = C::from(i as i32)/C::from(n as i32);
-                let tmp = num_factor * (&a[n-i] * &b[i])/c_k0;
+                let num_factor = C::from(i as i32) / C::from(n as i32);
+                let tmp = num_factor * (&a[n - i] * &b[i]) / c_k0;
                 b[n] -= tmp;
             }
         }
         Series::new(self.var.clone(), 0, b)
     }
 }
-
 
 impl<Var, C: Coeff, T> Pow<T> for Series<Var, C>
 where
@@ -886,9 +888,9 @@ where
 
 impl<'a, Var, C: Coeff, T> Pow<T> for &'a Series<Var, C>
 where
-    for<'b> &'b Series<Var, C>: Ln<Output=Series<Var, C>>,
+    for<'b> &'b Series<Var, C>: Ln<Output = Series<Var, C>>,
     Series<Var, C>: Mul<T>,
-    <Series<Var, C> as Mul<T>>::Output: Exp
+    <Series<Var, C> as Mul<T>>::Output: Exp,
 {
     type Output = <<Series<Var, C> as Mul<T>>::Output as Exp>::Output;
 
@@ -897,23 +899,21 @@ where
     }
 }
 
-impl<Var, C: Coeff + Clone>
-    AddAssign<C>
-    for Series<Var, C>
-    where C: AddAssign<C>
+impl<Var, C: Coeff + Clone> AddAssign<C> for Series<Var, C>
+where
+    C: AddAssign<C>,
 {
-    fn add_assign(& mut self, rhs: C) {
+    fn add_assign(&mut self, rhs: C) {
         if self.cutoff_pow() <= 0 || rhs == self.zero {
-            return
+            return;
         }
         if self.min_pow() <= 0 {
-            let idx =  (-self.min_pow()) as usize;
+            let idx = (-self.min_pow()) as usize;
             self.coeffs[idx] += rhs;
             if self.min_pow() == 0 {
                 self.trim()
             }
-        }
-        else {
+        } else {
             let mut new_coeffs = vec![rhs];
             new_coeffs.resize(self.min_pow() as usize, self.zero.clone());
             new_coeffs.extend(self.coeffs.drain(..));
@@ -923,23 +923,21 @@ impl<Var, C: Coeff + Clone>
     }
 }
 
-impl<Var, C: Coeff + Clone>
-    SubAssign<C>
-    for Series<Var, C>
-    where C: Neg<Output=C> + SubAssign<C>
+impl<Var, C: Coeff + Clone> SubAssign<C> for Series<Var, C>
+where
+    C: Neg<Output = C> + SubAssign<C>,
 {
-    fn sub_assign(& mut self, rhs: C) {
+    fn sub_assign(&mut self, rhs: C) {
         if self.cutoff_pow() <= 0 || rhs == self.zero {
-            return
+            return;
         }
         if self.min_pow() <= 0 {
-            let idx =  (-self.min_pow()) as usize;
+            let idx = (-self.min_pow()) as usize;
             self.coeffs[idx] -= rhs;
             if self.min_pow() == 0 {
                 self.trim()
             }
-        }
-        else {
+        } else {
             let mut new_coeffs = vec![-rhs];
             new_coeffs.resize(self.min_pow() as usize, self.zero.clone());
             new_coeffs.extend(self.coeffs.drain(..));
@@ -949,46 +947,42 @@ impl<Var, C: Coeff + Clone>
     }
 }
 
-impl<'a, Var, C: Coeff>
-    MulAssign<&'a C>
-    for Series<Var, C>
-    where C: MulAssign<&'a C>
+impl<'a, Var, C: Coeff> MulAssign<&'a C> for Series<Var, C>
+where
+    C: MulAssign<&'a C>,
 {
-    fn mul_assign(& mut self, rhs: &'a C) {
+    fn mul_assign(&mut self, rhs: &'a C) {
         for coeff in &mut self.coeffs {
             *coeff *= rhs
         }
     }
 }
 
-impl<Var, C: Coeff>
-    MulAssign<C>
-    for Series<Var, C>
-    where for <'a> Series<Var, C>: MulAssign<&'a C>
+impl<Var, C: Coeff> MulAssign<C> for Series<Var, C>
+where
+    for<'a> Series<Var, C>: MulAssign<&'a C>,
 {
-    fn mul_assign(& mut self, rhs: C) {
+    fn mul_assign(&mut self, rhs: C) {
         *self *= &rhs
     }
 }
 
-impl<'a, Var, C: Coeff>
-    DivAssign<&'a C>
-    for Series<Var, C>
-    where C: DivAssign<&'a C>
+impl<'a, Var, C: Coeff> DivAssign<&'a C> for Series<Var, C>
+where
+    C: DivAssign<&'a C>,
 {
-    fn div_assign(& mut self, rhs: &'a C) {
+    fn div_assign(&mut self, rhs: &'a C) {
         for coeff in &mut self.coeffs {
             *coeff /= rhs
         }
     }
 }
 
-impl<Var, C: Coeff>
-    DivAssign<C>
-    for Series<Var, C>
-    where for <'a> Series<Var, C>: DivAssign<&'a C>
+impl<Var, C: Coeff> DivAssign<C> for Series<Var, C>
+where
+    for<'a> Series<Var, C>: DivAssign<&'a C>,
 {
-    fn div_assign(& mut self, rhs: C) {
+    fn div_assign(&mut self, rhs: C) {
         *self /= &rhs
     }
 }
@@ -1006,8 +1000,8 @@ impl<Var, C: Coeff>
 /// assert_eq!(coeffs, vec![1,2,3]);
 /// ```
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(PartialEq,Eq,Debug,Clone,Hash,Ord,PartialOrd)]
-pub struct SeriesParts<Var, C>{
+#[derive(PartialEq, Eq, Debug, Clone, Hash, Ord, PartialOrd)]
+pub struct SeriesParts<Var, C> {
     pub var: Var,
     pub min_pow: isize,
     pub coeffs: Vec<C>,
@@ -1015,7 +1009,11 @@ pub struct SeriesParts<Var, C>{
 
 impl<Var, C: Coeff> From<Series<Var, C>> for SeriesParts<Var, C> {
     fn from(s: Series<Var, C>) -> Self {
-        SeriesParts{var: s.var, min_pow: s.min_pow, coeffs: s.coeffs}
+        SeriesParts {
+            var: s.var,
+            min_pow: s.min_pow,
+            coeffs: s.coeffs,
+        }
     }
 }
 
@@ -1033,9 +1031,9 @@ trait LnVarFree {
 
 impl<Var, C: Coeff> LnVarFree for Series<Var, C>
 where
-    for <'a> C: DivAssign<&'a C>,
-    for <'a> &'a C: Mul<Output=C>,
-    C: Clone + SubAssign + Ln<Output=C> + Div<Output=C> + Mul<Output=C>
+    for<'a> C: DivAssign<&'a C>,
+    for<'a> &'a C: Mul<Output = C>,
+    C: Clone + SubAssign + Ln<Output = C> + Div<Output = C> + Mul<Output = C>,
 {
     type Output = Self;
 
@@ -1054,8 +1052,8 @@ where
         for n in 1..a.len() {
             b.push(a[n].clone());
             for i in 1..n {
-                let num_factor = C::from(i as i32)/C::from(n as i32);
-                let tmp = num_factor * (&a[n-i] * &b[i]);
+                let num_factor = C::from(i as i32) / C::from(n as i32);
+                let tmp = num_factor * (&a[n - i] * &b[i]);
                 b[n] -= tmp;
             }
         }
@@ -1063,8 +1061,7 @@ where
     }
 }
 
-impl<Var, C: Coeff> Series<Var, C>
-{
+impl<Var, C: Coeff> Series<Var, C> {
     /// Calculate series to some integer power
     ///
     /// In contrast to the more general `pow` method this does _not_ require
@@ -1080,11 +1077,16 @@ impl<Var, C: Coeff> Series<Var, C>
     /// ```
     pub fn powi(mut self, exp: i32) -> Self
     where
-        for <'a> C: DivAssign<&'a C>,
-        for <'a> &'a C: Mul<Output=C>,
-        C: Clone + SubAssign + Ln<Output=C> + Div<Output=C> + Mul<Output=C>,
-        Series<Var, C>: Mul<C,Output=Self> + Exp<Output=Self> + MulInverse<Output=Self>,
-
+        for<'a> C: DivAssign<&'a C>,
+        for<'a> &'a C: Mul<Output = C>,
+        C: Clone
+            + SubAssign
+            + Ln<Output = C>
+            + Div<Output = C>
+            + Mul<Output = C>,
+        Series<Var, C>: Mul<C, Output = Self>
+            + Exp<Output = Self>
+            + MulInverse<Output = Self>,
     {
         let new_min_pow = self.min_pow * (exp as isize);
         self.min_pow = 0;
@@ -1102,14 +1104,14 @@ mod tests {
     fn tst_series() {
         let var = String::from("x");
         let min_pow = -10;
-        let coeffs = vec!();
+        let coeffs = vec![];
         let s = Series::new(var.clone(), min_pow, coeffs);
         assert_eq!(s.min_pow(), min_pow);
         assert_eq!(s.coeff(-11), Some(&0));
         assert_eq!(s.coeff(-10), None);
 
         let min_pow = -3;
-        let coeffs = vec!(1.,2.,3.);
+        let coeffs = vec![1., 2., 3.];
         let s = Series::new(var.clone(), min_pow, coeffs);
         assert_eq!(s.min_pow(), min_pow);
         assert_eq!(s.coeff(-4), Some(&0.));
@@ -1119,7 +1121,7 @@ mod tests {
         assert_eq!(s.coeff(0), None);
 
         let min_pow = -2;
-        let coeffs = vec!(0.,0.,3.);
+        let coeffs = vec![0., 0., 3.];
         let s = Series::new(var.clone(), min_pow, coeffs);
         assert_eq!(s.min_pow(), min_pow + 2);
         assert_eq!(s.coeff(-2), Some(&0.));
@@ -1127,13 +1129,13 @@ mod tests {
         assert_eq!(s.coeff(0), Some(&3.));
         assert_eq!(s.coeff(1), None);
 
-        let s = Series::new(var.clone(), -2, vec!(0.,0.,1.));
-        let t = Series::new(var.clone(), 0, vec!(1.));
-        assert_eq!(s,t);
+        let s = Series::new(var.clone(), -2, vec![0., 0., 1.]);
+        let t = Series::new(var.clone(), 0, vec![1.]);
+        assert_eq!(s, t);
 
-        let s = Series::new(var.clone(), -3, vec!(0.,0.,0.));
-        let t = Series::new(var.clone(), 0, vec!());
-        assert_eq!(s,t);
+        let s = Series::new(var.clone(), -3, vec![0., 0., 0.]);
+        let t = Series::new(var.clone(), 0, vec![]);
+        assert_eq!(s, t);
     }
 
     #[test]
@@ -1142,50 +1144,50 @@ mod tests {
         let t = Series::new("x", 1, vec![]);
         assert_eq!(s, t);
 
-        let s = Series::with_cutoff("x", 0, 5, vec![1,2,3]);
-        let t = Series::new("x", 0, vec![1,2,3,0,0]);
+        let s = Series::with_cutoff("x", 0, 5, vec![1, 2, 3]);
+        let t = Series::new("x", 0, vec![1, 2, 3, 0, 0]);
         assert_eq!(s, t);
 
-        let s = Series::with_cutoff("x", 0, 2, vec![1,2,3]);
-        let t = Series::new("x", 0, vec![1,2]);
+        let s = Series::with_cutoff("x", 0, 2, vec![1, 2, 3]);
+        let t = Series::new("x", 0, vec![1, 2]);
         assert_eq!(s, t);
     }
     #[test]
     #[should_panic]
     fn tst_bad_cutoff() {
-        let _ = Series::with_cutoff("x", 0, -2, vec![1,2,3]);
+        let _ = Series::with_cutoff("x", 0, -2, vec![1, 2, 3]);
     }
 
     #[test]
     fn tst_display() {
         // let s = Series::new("x", -10, vec!());
         // assert_eq!(format!("{}", s), "O(x^-10)");
-        let s = Series::new("x", -3, vec!(1.,0.,-3.));
+        let s = Series::new("x", -3, vec![1., 0., -3.]);
         assert_eq!(format!("{}", s), "(1)*x^-3 + (-3)*x^-1 + O(x^0)");
-        let s = Series::new("x", -1, vec!(1.,2.,-3.));
+        let s = Series::new("x", -1, vec![1., 2., -3.]);
         assert_eq!(format!("{}", s), "(1)*x^-1 + (2) + (-3)*x + O(x^2)");
     }
 
     #[test]
     fn tst_neg() {
-        let s = Series::new("x", -3, vec!(1.,0.,-3.));
-        let res = Series::new("x", -3, vec!(-1.,0.,3.));
+        let s = Series::new("x", -3, vec![1., 0., -3.]);
+        let res = Series::new("x", -3, vec![-1., 0., 3.]);
         assert_eq!(res, -&s);
         assert_eq!(res, -s);
     }
 
     #[test]
     fn tst_add() {
-        let s = Series::new("x", -3, vec!(1.,0.,-3.));
-        let res = Series::new("x", -3, vec!(2.,0.,-6.));
+        let s = Series::new("x", -3, vec![1., 0., -3.]);
+        let res = Series::new("x", -3, vec![2., 0., -6.]);
         assert_eq!(res, &s + &s);
         assert_eq!(res, &s + s.clone());
         assert_eq!(res, s.clone() + &s);
         assert_eq!(res, s.clone() + s.clone());
 
-        let s = Series::new("x", -3, vec!(1.,0.,-3.));
-        let t = Series::new("x", -1, vec!(3., 4., 5.));
-        let res = Series::new("x", -3, vec!(1.,0.,0.));
+        let s = Series::new("x", -3, vec![1., 0., -3.]);
+        let t = Series::new("x", -1, vec![3., 4., 5.]);
+        let res = Series::new("x", -3, vec![1., 0., 0.]);
         assert_eq!(res, &s + &t);
         assert_eq!(res, &t + &s);
         assert_eq!(res, &s + t.clone());
@@ -1195,8 +1197,8 @@ mod tests {
         assert_eq!(res, s.clone() + t.clone());
         assert_eq!(res, t.clone() + s.clone());
 
-        let s = Series::new("x", -3, vec!(1.,0.,-3.));
-        let t = Series::new("x", 1, vec!(3., 4., 5.));
+        let s = Series::new("x", -3, vec![1., 0., -3.]);
+        let t = Series::new("x", 1, vec![3., 4., 5.]);
         assert_eq!(s, &s + &t);
         assert_eq!(s, &t + &s);
         assert_eq!(s, &s + t.clone());
@@ -1206,9 +1208,9 @@ mod tests {
         assert_eq!(s, s.clone() + t.clone());
         assert_eq!(s, t.clone() + s.clone());
 
-        let s = Series::new("x", -3, vec!(1.,0.,-3.));
-        let t = Series::new("x", -3, vec!(-1., 0., 3.));
-        let res = Series::new("x", 0, vec!());
+        let s = Series::new("x", -3, vec![1., 0., -3.]);
+        let t = Series::new("x", -3, vec![-1., 0., 3.]);
+        let res = Series::new("x", 0, vec![]);
         assert_eq!(res, &s + &t);
         assert_eq!(res, &t + &s);
         assert_eq!(res, &s + t.clone());
@@ -1221,62 +1223,62 @@ mod tests {
 
     #[test]
     fn tst_add_assign() {
-        let mut s = Series::new("x", -3, vec!(1.,0.,-3.));
-        let res = Series::new("x", -3, vec!(2.,0.,-6.));
+        let mut s = Series::new("x", -3, vec![1., 0., -3.]);
+        let res = Series::new("x", -3, vec![2., 0., -6.]);
         s += s.clone();
         assert_eq!(res, s);
 
-        let mut s = Series::new("x", -3, vec!(1.,0.,-3.));
-        let t = Series::new("x", -1, vec!(3., 4., 5.));
-        let res = Series::new("x", -3, vec!(1.,0.,0.));
+        let mut s = Series::new("x", -3, vec![1., 0., -3.]);
+        let t = Series::new("x", -1, vec![3., 4., 5.]);
+        let res = Series::new("x", -3, vec![1., 0., 0.]);
         s += &t;
         assert_eq!(res, s);
-        let mut s = Series::new("x", -3, vec!(1.,0.,-3.));
+        let mut s = Series::new("x", -3, vec![1., 0., -3.]);
         s += t;
         assert_eq!(res, s);
-        let mut s = Series::new("x", -1, vec!(3.,4.,5.));
-        let t = Series::new("x", -3, vec!(1.,0.,-3.));
+        let mut s = Series::new("x", -1, vec![3., 4., 5.]);
+        let t = Series::new("x", -3, vec![1., 0., -3.]);
         s += t;
         assert_eq!(res, s);
 
-        let mut s = Series::new("x", -3, vec!(1.,0.,-3.));
+        let mut s = Series::new("x", -3, vec![1., 0., -3.]);
         let res = s.clone();
-        let t = Series::new("x", 1, vec!(3., 4., 5.));
+        let t = Series::new("x", 1, vec![3., 4., 5.]);
         s += &t;
         assert_eq!(s, res);
-        let mut s = Series::new("x", -3, vec!(1.,0.,-3.));
+        let mut s = Series::new("x", -3, vec![1., 0., -3.]);
         s += t;
         assert_eq!(s, res);
 
-        let mut s = Series::new("x", -3, vec!(1.,0.,-3.));
-        let t = Series::new("x", -3, vec!(-1., 0., 3.));
-        let res = Series::new("x", 0, vec!());
+        let mut s = Series::new("x", -3, vec![1., 0., -3.]);
+        let t = Series::new("x", -3, vec![-1., 0., 3.]);
+        let res = Series::new("x", 0, vec![]);
         s += &t;
         assert_eq!(res, s);
-        let mut s = Series::new("x", -3, vec!(1.,0.,-3.));
+        let mut s = Series::new("x", -3, vec![1., 0., -3.]);
         s += t;
         assert_eq!(res, s);
     }
 
     #[test]
     fn tst_sub() {
-        let s = Series::new("x", -3, vec!(1.,0.,-3.));
-        let res = Series::new("x", 0, vec!());
+        let s = Series::new("x", -3, vec![1., 0., -3.]);
+        let res = Series::new("x", 0, vec![]);
         assert_eq!(res, &s - &s);
         assert_eq!(res, &s - s.clone());
         assert_eq!(res, s.clone() - &s);
         assert_eq!(res, s.clone() - s.clone());
 
-        let s = Series::new("x", -3, vec!(1.,0.,-3.));
-        let t = Series::new("x", -1, vec!(-3., 4., 5.));
-        let res = Series::new("x", -3, vec!(1.,0.,0.));
+        let s = Series::new("x", -3, vec![1., 0., -3.]);
+        let t = Series::new("x", -1, vec![-3., 4., 5.]);
+        let res = Series::new("x", -3, vec![1., 0., 0.]);
         assert_eq!(res, &s - &t);
         assert_eq!(res, &s - t.clone());
         assert_eq!(res, s.clone() - &t);
         assert_eq!(res, s - t);
 
-        let s = Series::new("x", -3, vec!(1.,0.,-3.));
-        let t = Series::new("x", 1, vec!(3., 4., 5.));
+        let s = Series::new("x", -3, vec![1., 0., -3.]);
+        let t = Series::new("x", 1, vec![3., 4., 5.]);
         assert_eq!(s, &s - &t);
         assert_eq!(s, &s - t.clone());
         assert_eq!(s, s.clone() - &t);
@@ -1285,42 +1287,42 @@ mod tests {
 
     #[test]
     fn tst_sub_assign() {
-        let mut s = Series::new("x", -3, vec!(1.,0.,-3.));
-        let res = Series::new("x", 0, vec!());
+        let mut s = Series::new("x", -3, vec![1., 0., -3.]);
+        let res = Series::new("x", 0, vec![]);
         s -= s.clone();
         assert_eq!(res, s);
 
-        let mut s = Series::new("x", -3, vec!(1.,0.,-3.));
-        let t = Series::new("x", -1, vec!(-3., 4., 5.));
-        let res = Series::new("x", -3, vec!(1.,0.,0.));
+        let mut s = Series::new("x", -3, vec![1., 0., -3.]);
+        let t = Series::new("x", -1, vec![-3., 4., 5.]);
+        let res = Series::new("x", -3, vec![1., 0., 0.]);
         s -= &t;
         assert_eq!(res, s);
-        let mut s = Series::new("x", -3, vec!(1.,0.,-3.));
+        let mut s = Series::new("x", -3, vec![1., 0., -3.]);
         s -= t;
         assert_eq!(res, s);
 
-        let mut s = Series::new("x", -3, vec!(1.,0.,-3.));
+        let mut s = Series::new("x", -3, vec![1., 0., -3.]);
         let res = s.clone();
-        let t = Series::new("x", 1, vec!(3., 4., 5.));
+        let t = Series::new("x", 1, vec![3., 4., 5.]);
         s -= &t;
         assert_eq!(res, s);
-        let mut s = Series::new("x", -3, vec!(1.,0.,-3.));
+        let mut s = Series::new("x", -3, vec![1., 0., -3.]);
         s -= t;
         assert_eq!(res, s);
     }
 
     #[test]
     fn tst_mul() {
-        let s = Series::new("x", -3, vec!(1.,0.,-3.));
-        let res = Series::new("x", -6, vec!(1.,0.,-6.));
+        let s = Series::new("x", -3, vec![1., 0., -3.]);
+        let res = Series::new("x", -6, vec![1., 0., -6.]);
         assert_eq!(res, &s * &s);
         assert_eq!(res, &s * s.clone());
         assert_eq!(res, s.clone() * &s);
         assert_eq!(res, s.clone() * s.clone());
 
-        let s = Series::new("x", -3, vec!(1.,0.,-3.));
-        let t = Series::new("x", -1, vec!(3., 4., 5., 7.));
-        let res = Series::new("x", -4, vec!(3.,4.,-4.));
+        let s = Series::new("x", -3, vec![1., 0., -3.]);
+        let t = Series::new("x", -1, vec![3., 4., 5., 7.]);
+        let res = Series::new("x", -4, vec![3., 4., -4.]);
         assert_eq!(res, &s * &t);
         assert_eq!(res, &t * &s);
         assert_eq!(res, &s * t.clone());
@@ -1330,9 +1332,9 @@ mod tests {
         assert_eq!(res, t.clone() * s.clone());
         assert_eq!(res, s * t);
 
-        let s = Series::new("x", -3, vec!(1., 7.,-3.));
-        let t = Series::new("x", 3, vec!(1., -7., 52.));
-        let res = Series::new("x", 0, vec!(1.,0., 0.));
+        let s = Series::new("x", -3, vec![1., 7., -3.]);
+        let t = Series::new("x", 3, vec![1., -7., 52.]);
+        let res = Series::new("x", 0, vec![1., 0., 0.]);
         assert_eq!(res, &s * &t);
         assert_eq!(res, &t * &s);
         assert_eq!(res, &s * t.clone());
@@ -1345,34 +1347,34 @@ mod tests {
 
     #[test]
     fn tst_mul_assign() {
-        let mut s = Series::new("x", -3, vec!(1.,0.,-3.));
+        let mut s = Series::new("x", -3, vec![1., 0., -3.]);
         s *= s.clone();
-        let res = Series::new("x", -6, vec!(1.,0.,-6.));
+        let res = Series::new("x", -6, vec![1., 0., -6.]);
         assert_eq!(res, s);
 
-        let mut s = Series::new("x", -3, vec!(1.,0.,-3.));
-        let t = Series::new("x", -1, vec!(3., 4., 5., 7.));
+        let mut s = Series::new("x", -3, vec![1., 0., -3.]);
+        let t = Series::new("x", -1, vec![3., 4., 5., 7.]);
         s *= &t;
-        let res = Series::new("x", -4, vec!(3.,4.,-4.));
+        let res = Series::new("x", -4, vec![3., 4., -4.]);
         assert_eq!(res, s);
-        let mut s = Series::new("x", -3, vec!(1.,0.,-3.));
+        let mut s = Series::new("x", -3, vec![1., 0., -3.]);
         s *= t;
         assert_eq!(res, s);
 
-        let mut s = Series::new("x", -3, vec!(1., 7.,-3.));
-        let t = Series::new("x", 3, vec!(1., -7., 52.));
+        let mut s = Series::new("x", -3, vec![1., 7., -3.]);
+        let t = Series::new("x", 3, vec![1., -7., 52.]);
         s *= &t;
-        let res = Series::new("x", 0, vec!(1.,0., 0.));
+        let res = Series::new("x", 0, vec![1., 0., 0.]);
         assert_eq!(res, s);
-        let mut s = Series::new("x", -3, vec!(1., 7.,-3.));
+        let mut s = Series::new("x", -3, vec![1., 7., -3.]);
         s *= t;
         assert_eq!(res, s);
     }
 
     #[test]
     fn tst_div() {
-        let s = Series::new("x", -3, vec!(1.,0.,-3.));
-        let res = Series::new("x", 0, vec!(1.,0.,0.));
+        let s = Series::new("x", -3, vec![1., 0., -3.]);
+        let res = Series::new("x", 0, vec![1., 0., 0.]);
         assert_eq!(res, &s / &s);
         assert_eq!(res, &s / s.clone());
         assert_eq!(res, s.clone() / &s);
@@ -1386,18 +1388,18 @@ mod tests {
         // assert_eq!(res, &t / &s);
         // assert_eq!(res, s / t);
 
-        let s = Series::new("x", -3, vec!(1., 7.,-3.));
-        let t = Series::new("x", 3, vec!(1., -7., 52.));
-        let res = Series::new("x", -6, vec!(1.,14., 43.));
+        let s = Series::new("x", -3, vec![1., 7., -3.]);
+        let t = Series::new("x", 3, vec![1., -7., 52.]);
+        let res = Series::new("x", -6, vec![1., 14., 43.]);
         assert_eq!(res, &s / &t);
         assert_eq!(res, s.clone() / &t);
         assert_eq!(res, &s / t.clone());
         assert_eq!((&res).mul_inverse(), &t / &s);
         assert_eq!(res, s / t);
 
-        let s = Series::new("x", 1, vec!(1., 7.,-3.));
-        let t = Series::new("x", 5, vec!());
-        let res = Series::new("x", -4, vec!());
+        let s = Series::new("x", 1, vec![1., 7., -3.]);
+        let t = Series::new("x", 5, vec![]);
+        let res = Series::new("x", -4, vec![]);
         assert_eq!(res, &s / &t);
         assert_eq!(res, s.clone() / &t);
         assert_eq!(res, &s / t.clone());
@@ -1407,38 +1409,38 @@ mod tests {
 
     #[test]
     fn tst_div_assign() {
-        let mut s = Series::new("x", -3, vec!(1.,0.,-3.));
+        let mut s = Series::new("x", -3, vec![1., 0., -3.]);
         s /= s.clone();
-        let res = Series::new("x", 0, vec!(1.,0.,0.));
+        let res = Series::new("x", 0, vec![1., 0., 0.]);
         assert_eq!(res, s);
 
-        let mut s = Series::new("x", -3, vec!(1., 7.,-3.));
-        let t = Series::new("x", 3, vec!(1., -7., 52.));
+        let mut s = Series::new("x", -3, vec![1., 7., -3.]);
+        let t = Series::new("x", 3, vec![1., -7., 52.]);
         s /= &t;
-        let res = Series::new("x", -6, vec!(1.,14., 43.));
+        let res = Series::new("x", -6, vec![1., 14., 43.]);
         assert_eq!(res, s);
-        let mut s = Series::new("x", -3, vec!(1., 7.,-3.));
+        let mut s = Series::new("x", -3, vec![1., 7., -3.]);
         s /= t;
         assert_eq!(res, s);
 
-        let mut s = Series::new("x", 1, vec!(1., 7.,-3.));
-        let t = Series::new("x", 5, vec!());
+        let mut s = Series::new("x", 1, vec![1., 7., -3.]);
+        let t = Series::new("x", 5, vec![]);
         s /= &t;
-        let res = Series::new("x", -4, vec!());
+        let res = Series::new("x", -4, vec![]);
         assert_eq!(res, s);
-        let mut s = Series::new("x", 1, vec!(1., 7.,-3.));
+        let mut s = Series::new("x", 1, vec![1., 7., -3.]);
         s /= t;
         assert_eq!(res, s);
     }
 
     #[test]
     fn tst_var() {
-        let _ = Series::new(String::from("x"), -3, vec!(1.,0.,-3.));
-        let _ = Series::new('j', -3, vec!(1.,0.,-3.));
-        let _ = Series::new(8, -3, vec!(1.,0.,-3.));
+        let _ = Series::new(String::from("x"), -3, vec![1., 0., -3.]);
+        let _ = Series::new('j', -3, vec![1., 0., -3.]);
+        let _ = Series::new(8, -3, vec![1., 0., -3.]);
     }
 
-    #[derive(Debug,Clone,PartialEq)]
+    #[derive(Debug, Clone, PartialEq)]
     struct Mystr<'a>(&'a str);
 
     impl<'a> From<Mystr<'a>> for f64 {
@@ -1449,54 +1451,59 @@ mod tests {
 
     #[test]
     fn tst_ln() {
-        let s = Series::new(Mystr("x"), 0, vec!(1., 7.,-3.));
-        let res = Series::new(Mystr("x"), 1, vec!(7.,-55./2.));
+        let s = Series::new(Mystr("x"), 0, vec![1., 7., -3.]);
+        let res = Series::new(Mystr("x"), 1, vec![7., -55. / 2.]);
         assert_eq!(res, (&s).ln());
         assert_eq!(res, s.ln());
 
-        let s = Series::new(Mystr("x"), 0, vec!(4., 7.,-3.));
-        let res = Series::new(Mystr("x"), 0, vec!(4_f64.ln(),7./4.,-73./32.));
+        let s = Series::new(Mystr("x"), 0, vec![4., 7., -3.]);
+        let res =
+            Series::new(Mystr("x"), 0, vec![4_f64.ln(), 7. / 4., -73. / 32.]);
         assert_eq!(res, (&s).ln());
         assert_eq!(res, s.ln());
     }
 
     #[test]
     fn tst_exp() {
-        let s = Series::new("x", 1, vec!(7.,-3.));
-        let res = Series::new("x", 0, vec!(1., 7.,43./2.));
+        let s = Series::new("x", 1, vec![7., -3.]);
+        let res = Series::new("x", 0, vec![1., 7., 43. / 2.]);
         assert_eq!(res, (&s).exp());
         assert_eq!(res, s.exp());
 
-        let s = Series::new("x", 2, vec!(0.));
-        let res = Series::new("x", 0, vec!(1.,0.,0.));
+        let s = Series::new("x", 2, vec![0.]);
+        let res = Series::new("x", 0, vec![1., 0., 0.]);
         assert_eq!(res, (&s).exp());
         assert_eq!(res, s.exp());
 
-        let s = Series::new("x", 0, vec!(5., 11., -7.));
+        let s = Series::new("x", 0, vec![5., 11., -7.]);
         let e5 = 5_f64.exp();
-        let res = Series::new("x", 0, vec!(e5,e5*11.,e5*107./2.));
+        let res = Series::new("x", 0, vec![e5, e5 * 11., e5 * 107. / 2.]);
         assert_eq!(res, (&s).exp());
         assert_eq!(res, s.exp());
     }
 
     #[test]
     fn tst_pow() {
-        let base = Series::new(Mystr("x"), 0, vec!(1., 7., 0.));
-        let exp = Series::new(Mystr("x"), -1, vec!(1., -5., 43.));
+        let base = Series::new(Mystr("x"), 0, vec![1., 7., 0.]);
+        let exp = Series::new(Mystr("x"), -1, vec![1., -5., 43.]);
         let e7 = 7_f64.exp();
-        let res = Series::new(Mystr("x"), 0, vec!(e7, -119./2.*e7));
+        let res = Series::new(Mystr("x"), 0, vec![e7, -119. / 2. * e7]);
         assert_eq!(res, (&base).pow(&exp));
         assert_eq!(res, (&base).pow(exp.clone()));
         assert_eq!(res, base.clone().pow(&exp));
         assert_eq!(res, base.pow(exp));
 
-        let base = Series::new(Mystr("x"), 0, vec!(2., 7., 0.));
-        let exp = Series::new(Mystr("x"), 0, vec!(3., -5., 11.));
+        let base = Series::new(Mystr("x"), 0, vec![2., 7., 0.]);
+        let exp = Series::new(Mystr("x"), 0, vec![3., -5., 11.]);
         // rescale result so we can use round and still get decent precision
-        let rescale = Series::new(Mystr("x"), 0, vec!(1e13, 0., 0., 0.));
+        let rescale = Series::new(Mystr("x"), 0, vec![1e13, 0., 0., 0.]);
         let test = &rescale * &base.pow(exp);
         let ln2 = 2_f64.ln();
-        let res = Series::new(Mystr("x"), 0, vec!(8., 84.-40.*ln2, 154.+ln2*(-332.+100.*ln2)));
+        let res = Series::new(
+            Mystr("x"),
+            0,
+            vec![8., 84. - 40. * ln2, 154. + ln2 * (-332. + 100. * ln2)],
+        );
         let res = rescale * res;
         assert_eq!(res.min_pow(), test.min_pow());
         assert_eq!(res.cutoff_pow(), test.cutoff_pow());
@@ -1510,54 +1517,54 @@ mod tests {
 
     #[test]
     fn tst_scalar() {
-        let s = Series::new("x", -3, vec!(1.,0.,-2.));
-        let res = Series::new("x", -3, vec!(1./2.,0.,-1.));
+        let s = Series::new("x", -3, vec![1., 0., -2.]);
+        let res = Series::new("x", -3, vec![1. / 2., 0., -1.]);
         assert_eq!(res, &s / 2.);
         let mut s = s;
         s /= 2.;
         assert_eq!(res, s);
 
-        let s = Series::new("x", -3, vec!(1./2.,0.,-1.));
-        let res = Series::new("x", -3, vec!(1.,0.,-2.));
+        let s = Series::new("x", -3, vec![1. / 2., 0., -1.]);
+        let res = Series::new("x", -3, vec![1., 0., -2.]);
         assert_eq!(res, &s * 2.);
         let mut s = s;
         s *= 2.;
         assert_eq!(res, s);
 
-        let s = Series::new("x", -3, vec!(1./2.,0.,-1.));
+        let s = Series::new("x", -3, vec![1. / 2., 0., -1.]);
         assert_eq!(s, &s + 0.);
         assert_eq!(s, &s + 2.);
-        let s = Series::new("x", -2, vec!(1./2.,0.,-1.));
-        let res = Series::new("x", -2, vec!(1./2.,0.,1.));
+        let s = Series::new("x", -2, vec![1. / 2., 0., -1.]);
+        let res = Series::new("x", -2, vec![1. / 2., 0., 1.]);
         assert_eq!(s, &s + 0.);
         assert_eq!(res, s + 2.);
-        let s = Series::new("x", 2, vec!(1./2.,0.,-1.));
-        let res = Series::new("x", 0, vec!(2., 0., 1./2.,0.,-1.));
+        let s = Series::new("x", 2, vec![1. / 2., 0., -1.]);
+        let res = Series::new("x", 0, vec![2., 0., 1. / 2., 0., -1.]);
         assert_eq!(s, &s + 0.);
         assert_eq!(res, s + 2.);
-        let s = Series::new("x", 0, vec!(-2.,0.,-1.));
-        let res = Series::new("x", 2, vec!(-1.));
+        let s = Series::new("x", 0, vec![-2., 0., -1.]);
+        let res = Series::new("x", 2, vec![-1.]);
         assert_eq!(res, s + 2.);
 
-        let s = Series::new("x", -3, vec!(1./2.,0.,-1.));
+        let s = Series::new("x", -3, vec![1. / 2., 0., -1.]);
         assert_eq!(s, &s - 0.);
         assert_eq!(s, &s - 2.);
-        let s = Series::new("x", -2, vec!(1./2.,0.,-1.));
-        let res = Series::new("x", -2, vec!(1./2.,0.,-3.));
+        let s = Series::new("x", -2, vec![1. / 2., 0., -1.]);
+        let res = Series::new("x", -2, vec![1. / 2., 0., -3.]);
         assert_eq!(s, &s - 0.);
         assert_eq!(res, s - 2.);
-        let s = Series::new("x", 2, vec!(1./2.,0.,-1.));
-        let res = Series::new("x", 0, vec!(-2., 0., 1./2.,0.,-1.));
+        let s = Series::new("x", 2, vec![1. / 2., 0., -1.]);
+        let res = Series::new("x", 0, vec![-2., 0., 1. / 2., 0., -1.]);
         assert_eq!(s, &s - 0.);
         assert_eq!(res, s - 2.);
-        let s = Series::new("x", 0, vec!(2.,0.,-1.));
-        let res = Series::new("x", 2, vec!(-1.));
+        let s = Series::new("x", 0, vec![2., 0., -1.]);
+        let res = Series::new("x", 2, vec![-1.]);
         assert_eq!(res, s - 2.);
 
-        let base = Series::new(Mystr("x"), 0, vec!(1., 7., 0.));
+        let base = Series::new(Mystr("x"), 0, vec![1., 7., 0.]);
         assert_eq!(base, (&base).pow(1.));
         assert_eq!(base, (&base).pow(&1.));
-        let res = Series::new(Mystr("x"), 0, vec!(1., 21., 147.));
+        let res = Series::new(Mystr("x"), 0, vec![1., 21., 147.]);
         assert_eq!(res, (&base).pow(3.));
         assert_eq!(res, base.pow(&3.));
     }
@@ -1565,32 +1572,32 @@ mod tests {
     #[test]
     #[should_panic]
     fn tst_bad_add() {
-        let s = Series::new("x", -3, vec!(1.,0.,-3.));
-        let t = Series::new("y", -3, vec!(1.,0.,-3.));
+        let s = Series::new("x", -3, vec![1., 0., -3.]);
+        let t = Series::new("y", -3, vec![1., 0., -3.]);
         let _ = s + t;
     }
 
     #[test]
     #[should_panic]
     fn tst_bad_sub() {
-        let s = Series::new("x", -3, vec!(1.,0.,-3.));
-        let t = Series::new("y", -3, vec!(1.,0.,-3.));
+        let s = Series::new("x", -3, vec![1., 0., -3.]);
+        let t = Series::new("y", -3, vec![1., 0., -3.]);
         let _ = s - t;
     }
 
     #[test]
     #[should_panic]
     fn tst_bad_mul() {
-        let s = Series::new("x", -3, vec!(1.,0.,-3.));
-        let t = Series::new("y", -3, vec!(1.,0.,-3.));
+        let s = Series::new("x", -3, vec![1., 0., -3.]);
+        let t = Series::new("y", -3, vec![1., 0., -3.]);
         let _ = s * t;
     }
 
     #[test]
     #[should_panic]
     fn tst_bad_div() {
-        let s = Series::new("x", -3, vec!(1.,0.,-3.));
-        let t = Series::new("y", -3, vec!(1.,0.,-3.));
+        let s = Series::new("x", -3, vec![1., 0., -3.]);
+        let t = Series::new("y", -3, vec![1., 0., -3.]);
         let _ = s / t;
     }
 }
