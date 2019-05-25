@@ -23,12 +23,7 @@ Add this to your Cargo.toml:
 
 ```toml
 [dependencies]
-series = "0.5.0"
-```
-
-and this to your crate root:
-```rust
-extern crate series;
+series = "0.6.0"
 ```
 
 # Examples

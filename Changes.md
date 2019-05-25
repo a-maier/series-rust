@@ -1,3 +1,7 @@
+# Version 0.6.0
+
+- Update to Rust 2018 (1.35.0)
+
 # Version 0.5.0
 
 - Implemented `powi` as a better method to compute a series to an
