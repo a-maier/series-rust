@@ -82,7 +82,7 @@ impl<'a> Exp for &'a f32 {
 pub trait Pow<T> {
     type Output;
 
-    fn pow(self, T) -> Self::Output;
+    fn pow(self, _exponent: T) -> Self::Output;
 }
 
 impl Pow<f64> for f64 {

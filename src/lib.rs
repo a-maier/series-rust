@@ -721,7 +721,7 @@ where
         }
         if self.min_pow() == 0 {
             let exp_a_0 = self.coeff(0).unwrap().clone().exp();
-            for mut b_n in & mut b {
+            for b_n in & mut b {
                 *b_n *= &exp_a_0;
             }
         }
@@ -813,7 +813,8 @@ where
             b.push(a[n].clone());
             for i in 1..n {
                 let num_factor = C::from(i as i32)/C::from(n as i32);
-                b[n] -= num_factor * (&a[n-i] * &b[i]);
+                let tmp = num_factor * (&a[n-i] * &b[i]);
+                b[n] -= tmp;
             }
         }
         Series::new(self.var, 0, b)
@@ -861,7 +862,8 @@ where
             b.push(a[n].clone()/c_k0);
             for i in 1..n {
                 let num_factor = C::from(i as i32)/C::from(n as i32);
-                b[n] -= num_factor * (&a[n-i] * &b[i])/c_k0;
+                let tmp = num_factor * (&a[n-i] * &b[i])/c_k0;
+                b[n] -= tmp;
             }
         }
         Series::new(self.var.clone(), 0, b)
@@ -953,7 +955,7 @@ impl<'a, Var, C: Coeff>
     where C: MulAssign<&'a C>
 {
     fn mul_assign(& mut self, rhs: &'a C) {
-        for mut coeff in &mut self.coeffs {
+        for coeff in &mut self.coeffs {
             *coeff *= rhs
         }
     }
@@ -975,7 +977,7 @@ impl<'a, Var, C: Coeff>
     where C: DivAssign<&'a C>
 {
     fn div_assign(& mut self, rhs: &'a C) {
-        for mut coeff in &mut self.coeffs {
+        for coeff in &mut self.coeffs {
             *coeff /= rhs
         }
     }
@@ -1053,7 +1055,8 @@ where
             b.push(a[n].clone());
             for i in 1..n {
                 let num_factor = C::from(i as i32)/C::from(n as i32);
-                b[n] -= num_factor * (&a[n-i] * &b[i]);
+                let tmp = num_factor * (&a[n-i] * &b[i]);
+                b[n] -= tmp;
             }
         }
         Series::new(self.var, 0, b)

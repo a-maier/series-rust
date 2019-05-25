@@ -2,6 +2,7 @@
 name = "series"
 version = "0.5.0"
 authors = ["Andreas Maier <andreas.martin.maier@desy.de>"]
+edition = "2018"
 description = "Laurent series in a single variable"
 license = "GPL-3.0-or-later"
 readme = "Readme.md"
