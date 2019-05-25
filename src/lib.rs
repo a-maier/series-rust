@@ -712,7 +712,7 @@ where
         debug_assert!(self.cutoff_pow() >= 0);
         for n in 1..self.cutoff_pow() as usize {
             let mut b_n = C::from(0);
-            for i in 1..n+1 {
+            for i in 1..=n {
                 let num_factor = C::from(i as i32)/C::from(n as i32);
                 let a_i = self.coeff(i as isize).unwrap();
                 b_n += num_factor*(a_i * &b[n-i]);
