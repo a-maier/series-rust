@@ -1,3 +1,8 @@
+# Version 0.7.0
+
+- Added `iter`, `iter_mut`, and `into_iter` methods to iterate over
+  series coefficients.
+
 # Version 0.6.0
 
 - Update to Rust 2018 (1.35.0)

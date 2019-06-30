@@ -6,8 +6,10 @@ extern crate serde;
 use std::cmp::min;
 use std::convert::From;
 use std::fmt;
+use std::iter::Zip;
 use std::ops::{
-    Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign,
+    Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, RangeFrom, Sub,
+    SubAssign,
 };
 
 pub mod ops;
@@ -16,6 +18,19 @@ use self::ops::{Exp, Ln, Pow};
 /// Minimum requirements on series coefficients
 pub trait Coeff: From<i32> + PartialEq {}
 impl<T: From<i32> + PartialEq> Coeff for T {}
+
+/// Immutable `Series` iterator.
+///
+/// This `struct` is created by the `iter` method on `Series`
+pub type Iter<'a, C> = Zip<RangeFrom<isize>, std::slice::Iter<'a, C>>;
+/// Mutable `Series` iterator.
+///
+/// This `struct` is created by the `iter_mut` method on `Series`
+pub type IterMut<'a, C> = Zip<RangeFrom<isize>, std::slice::IterMut<'a, C>>;
+/// An iterator that moves out of a vector.
+///
+/// This `struct` is created by the `into_iter` method on `Series`
+pub type IntoIter<C> = Zip<RangeFrom<isize>, std::vec::IntoIter<C>>;
 
 /// Laurent series in a single variable up to some power
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -151,6 +166,54 @@ impl<Var, C: Coeff> Series<Var, C> {
     /// ```
     pub fn cutoff_pow(&self) -> isize {
         self.min_pow + (self.coeffs.len() as isize)
+    }
+
+    /// Iterator over the series coefficients.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// let s = series::Series::new("x", -1, vec!(1,2,3));
+    /// let mut iter = s.iter();
+    /// assert_eq!(iter.next(), Some((-1, &1)));
+    /// assert_eq!(iter.next(), Some((0, &2)));
+    /// assert_eq!(iter.next(), Some((1, &3)));
+    /// assert_eq!(iter.next(), None);
+    /// ```
+    pub fn iter(&self) -> Iter<C> {
+        (self.min_pow..).zip(self.coeffs.iter())
+    }
+
+    /// An iterator that allows modifying each series coefficient.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// let mut s = series::Series::new("x", -1, vec!(1,2,3));
+    /// for (pow, coeff) in s.iter_mut() {
+    ///     *coeff += 1
+    /// }
+    /// let inc = series::Series::new("x", -1, vec!(2,3,4));
+    /// assert_eq!(s, inc);
+    /// ```
+    pub fn iter_mut(&mut self) -> IterMut<C> {
+        (self.min_pow..).zip(self.coeffs.iter_mut())
+    }
+
+    /// Consuming iterator over the series coefficients.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// let s = series::Series::new("x", -1, vec!(1,2,3));
+    /// let mut iter = s.into_iter();
+    /// assert_eq!(iter.next(), Some((-1, 1)));
+    /// assert_eq!(iter.next(), Some((0, 2)));
+    /// assert_eq!(iter.next(), Some((1, 3)));
+    /// assert_eq!(iter.next(), None);
+    /// ```
+    pub fn into_iter(self) -> IntoIter<C> {
+        (self.min_pow..).zip(self.coeffs.into_iter())
     }
 }
 
