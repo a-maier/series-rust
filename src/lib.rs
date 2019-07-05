@@ -200,6 +200,12 @@ impl<Var, C: Coeff> Series<Var, C> {
         (self.min_pow..).zip(self.coeffs.iter_mut())
     }
 
+}
+
+impl<Var, C: Coeff> std::iter::IntoIterator for Series<Var, C> {
+    type Item = (isize, C);
+    type IntoIter = crate::IntoIter<C>;
+
     /// Consuming iterator over the series coefficients.
     ///
     /// # Example
@@ -212,7 +218,7 @@ impl<Var, C: Coeff> Series<Var, C> {
     /// assert_eq!(iter.next(), Some((1, 3)));
     /// assert_eq!(iter.next(), None);
     /// ```
-    pub fn into_iter(self) -> IntoIter<C> {
+    fn into_iter(self) -> IntoIter<C> {
         (self.min_pow..).zip(self.coeffs.into_iter())
     }
 }
