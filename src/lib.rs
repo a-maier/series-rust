@@ -199,7 +199,6 @@ impl<Var, C: Coeff> Series<Var, C> {
     pub fn iter_mut(&mut self) -> IterMut<C> {
         (self.min_pow..).zip(self.coeffs.iter_mut())
     }
-
 }
 
 impl<Var, C: Coeff> std::iter::IntoIterator for Series<Var, C> {
@@ -603,6 +602,7 @@ impl<'a, Var: PartialEq + fmt::Debug, C: Coeff + Clone + AddAssign>
     MulAssign<&'a Series<Var, C>> for Series<Var, C>
 where
     for<'b> &'b C: Mul<Output = C>,
+    C: MulAssign<&'a C>,
 {
     /// Set s = s * t for two series s,t
     ///
@@ -625,16 +625,14 @@ where
         let num_coeffs = min(self.coeffs.len(), other.coeffs.len());
         self.coeffs.truncate(num_coeffs);
         // compute Cauchy product
-        // cloning here is inefficient, but the borrow checker won't allow us
-        // to modify self.coeffs directly
-        let mut c: Vec<_> =
-            self.coeffs.iter().map(|c| c * &other.coeffs[0]).collect();
-        for (k, c) in c.iter_mut().enumerate() {
+        for k in (1..self.coeffs.len()).rev() {
+            let (c_k, c) = self.coeffs[..=k].split_last_mut().unwrap();
+            *c_k *= &other.coeffs[0];
             for i in 1..=k {
-                *c += &self.coeffs[k - i] * &other.coeffs[i]
+                *c_k += &c[k - i] * &other.coeffs[i]
             }
         }
-        self.coeffs = c;
+        self.coeffs.first_mut().map(|c| *c *= &other.coeffs[0]);
     }
 }
 
