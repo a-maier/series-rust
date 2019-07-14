@@ -8,8 +8,9 @@ use std::convert::From;
 use std::fmt;
 use std::iter::Zip;
 use std::ops::{
-    Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, RangeFrom, Sub,
-    SubAssign, Index, IndexMut
+    Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub,
+    SubAssign, Index, IndexMut,
+    Range, RangeFrom, RangeFull, RangeInclusive, RangeTo, RangeToInclusive,
 };
 
 pub mod ops;
@@ -165,7 +166,7 @@ impl<Var, C: Coeff> Series<Var, C> {
     /// assert_eq!(s.cutoff_pow(), 2);
     /// ```
     pub fn cutoff_pow(&self) -> isize {
-        self.as_slice().cutoff_pow()
+        self.as_slice(..).cutoff_pow()
     }
 
     /// Iterator over the series coefficients.
@@ -200,15 +201,6 @@ impl<Var, C: Coeff> Series<Var, C> {
     pub fn iter_mut(&mut self) -> IterMut<C> {
         (self.min_pow..).zip(self.coeffs.iter_mut())
     }
-
-    pub fn as_slice<'a>(&'a self) -> SeriesSlice<'a, Var, C> {
-        SeriesSlice{
-            var: &self.var,
-            min_pow: self.min_pow,
-            coeffs: self.coeffs.as_slice(),
-            zero: &self.zero,
-        }
-    }
 }
 
 impl<Var, C: Coeff> Index<isize> for Series<Var, C> {
@@ -234,6 +226,210 @@ impl<Var, C: Coeff> Index<isize> for Series<Var, C> {
     /// ```
     fn index(&self, index: isize) -> &Self::Output {
         &self.coeffs[(index-self.min_pow) as usize]
+    }
+}
+
+pub trait AsSlice<'a, Var, C: Coeff, T> {
+    // TODO:
+    // we would like to use an associated Output type
+    // as return type, but that makes it almost impossible
+    // to have the lifetime parameter in the return type
+    fn as_slice(&'a self, index: T) -> SeriesSlice<'a, Var, C>;
+}
+
+impl<'a, Var, C: Coeff> AsSlice<'a, Var, C, Range<isize>> for Series<Var, C> {
+    /// A slice of the series truncated to the given range of powers.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the lower bound is smaller than the leading power
+    /// or the upper bound is at least as big as the cut-off power.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use crate::series::AsSlice;
+    /// let s = series::Series::new("x", -1, vec!(1,2,3,4));
+    /// let t = s.as_slice(0..2);
+    /// assert_eq!(t.min_pow(), 0);
+    /// assert_eq!(t.cutoff_pow(), 2);
+    /// assert_eq!(t[0], s[0]);
+    /// assert_eq!(t[1], s[1]);
+    /// assert!(std::panic::catch_unwind(|| t[2]).is_err());
+    /// ```
+    fn as_slice(&'a self, index: Range<isize>) -> SeriesSlice<'a, Var, C> {
+        let mut index = index;
+        let slice_min_pow = index.start;
+        index.start -= self.min_pow;
+        index.end -= self.min_pow;
+        let index = (index.start as usize)..(index.end as usize);
+        SeriesSlice{
+            var: &self.var,
+            min_pow: slice_min_pow,
+            coeffs: &self.coeffs[index],
+            zero: &self.zero,
+        }
+    }
+}
+
+impl<'a, Var, C: Coeff> AsSlice<'a, Var, C, RangeFrom<isize>> for Series<Var, C> {
+    /// A slice of the series truncated to the given range of powers.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the lower bound is smaller than the leading power.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use crate::series::AsSlice;
+    /// let s = series::Series::new("x", -1, vec!(1,2,3,4));
+    /// let t = s.as_slice(0..);
+    /// assert_eq!(t.min_pow(), 0);
+    /// assert_eq!(t.cutoff_pow(), s.cutoff_pow());
+    /// assert!(std::panic::catch_unwind(|| t[-1]).is_err());
+    /// assert_eq!(t[0], s[0]);
+    /// assert_eq!(t[1], s[1]);
+    /// assert_eq!(t[2], s[2]);
+    /// ```
+    fn as_slice(&'a self, index: RangeFrom<isize>) -> SeriesSlice<'a, Var, C> {
+        let mut index = index;
+        let slice_min_pow = index.start;
+        index.start -= self.min_pow;
+        let index = (index.start as usize)..;
+        SeriesSlice{
+            var: &self.var,
+            min_pow: slice_min_pow,
+            coeffs: &self.coeffs[index],
+            zero: &self.zero,
+        }
+    }
+}
+
+impl<'a, Var, C: Coeff> AsSlice<'a, Var, C, RangeFull> for Series<Var, C> {
+    /// A slice containing the complete series.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use crate::series::AsSlice;
+    /// let s = series::Series::new("x", -1, vec!(1,2,3,4));
+    /// let t = s.as_slice(..);
+    /// assert_eq!(t.min_pow(), s.min_pow());
+    /// assert_eq!(t.cutoff_pow(), s.cutoff_pow());
+    /// assert_eq!(t[-1], s[-1]);
+    /// assert_eq!(t[0], s[0]);
+    /// assert_eq!(t[1], s[1]);
+    /// assert_eq!(t[2], s[2]);
+    /// ```
+    fn as_slice(&'a self, _index: RangeFull) -> SeriesSlice<'a, Var, C> {
+        SeriesSlice{
+            var: &self.var,
+            min_pow: self.min_pow,
+            coeffs: self.coeffs.as_slice(),
+            zero: &self.zero,
+        }
+    }
+}
+
+impl<'a, Var, C: Coeff> AsSlice<'a, Var, C, RangeInclusive<isize>> for Series<Var, C> {
+    /// A slice of the series truncated to the given range of powers.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the lower bound is smaller than the leading power
+    /// or the upper bound is at least as big as the cut-off power.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use crate::series::AsSlice;
+    /// let s = series::Series::new("x", -1, vec!(1,2,3,4));
+    /// let t = s.as_slice(0..=1);
+    /// assert_eq!(t.min_pow(), 0);
+    /// assert_eq!(t.cutoff_pow(), 2);
+    /// assert_eq!(t[0], s[0]);
+    /// assert_eq!(t[1], s[1]);
+    /// assert!(std::panic::catch_unwind(|| t[2]).is_err());
+    /// ```
+    fn as_slice(&'a self, index: RangeInclusive<isize>) -> SeriesSlice<'a, Var, C> {
+        let (mut start, mut end) = index.into_inner();
+        let slice_min_pow = start;
+        start -= self.min_pow;
+        end -= self.min_pow;
+        let index = (start as usize)..=(end as usize);
+        SeriesSlice{
+            var: &self.var,
+            min_pow: slice_min_pow,
+            coeffs: &self.coeffs[index],
+            zero: &self.zero,
+        }
+    }
+}
+
+impl<'a, Var, C: Coeff> AsSlice<'a, Var, C, RangeTo<isize>> for Series<Var, C> {
+    /// A slice of the series truncated to the given range of powers.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the upper bound is at least as big as the cut-off power.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use crate::series::AsSlice;
+    /// let s = series::Series::new("x", -1, vec!(1,2,3,4));
+    /// let t = s.as_slice(..2);
+    /// assert_eq!(t.min_pow(), s.min_pow());
+    /// assert_eq!(t.cutoff_pow(), 2);
+    /// assert_eq!(t[0], s[0]);
+    /// assert_eq!(t[1], s[1]);
+    /// assert!(std::panic::catch_unwind(|| t[2]).is_err());
+    /// ```
+    fn as_slice(&'a self, index: RangeTo<isize>) -> SeriesSlice<'a, Var, C> {
+        let mut index = index;
+        index.end -= self.min_pow;
+        let index = RangeTo{
+            end: index.end as usize,
+        };
+        SeriesSlice{
+            var: &self.var,
+            min_pow: self.min_pow,
+            coeffs: &self.coeffs[index],
+            zero: &self.zero,
+        }
+    }
+}
+
+impl<'a, Var, C: Coeff> AsSlice<'a, Var, C, RangeToInclusive<isize>> for Series<Var, C> {
+    /// A slice of the series truncated to the given range of powers.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the upper bound is at least as big as the cut-off power.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use crate::series::AsSlice;
+    /// let s = series::Series::new("x", -1, vec!(1,2,3,4));
+    /// let t = s.as_slice(..=1);
+    /// assert_eq!(t.min_pow(), s.min_pow());
+    /// assert_eq!(t.cutoff_pow(), 2);
+    /// assert_eq!(t[0], s[0]);
+    /// assert_eq!(t[1], s[1]);
+    /// assert!(std::panic::catch_unwind(|| t[2]).is_err());
+    /// ```
+    fn as_slice(&'a self, index: RangeToInclusive<isize>) -> SeriesSlice<'a, Var, C> {
+        let mut index = index;
+        index.end -= self.min_pow;
+        let index = ..=(index.end as usize);
+        SeriesSlice{
+            var: &self.var,
+            min_pow: self.min_pow,
+            coeffs: &self.coeffs[index],
+            zero: &self.zero,
+        }
     }
 }
 
@@ -310,7 +506,7 @@ where
     /// assert_eq!(s * s_inv, one);
     /// ```
     fn mul_inverse(self) -> Self::Output {
-        self.as_slice().mul_inverse()
+        self.as_slice(..).mul_inverse()
     }
 }
 
@@ -368,7 +564,7 @@ impl<Var: fmt::Display, C: Coeff + fmt::Display> fmt::Display
     for Series<Var, C>
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.as_slice().fmt(f)
+        self.as_slice(..).fmt(f)
     }
 }
 
@@ -406,7 +602,7 @@ where
     /// assert_eq!(-&s, minus_s);
     /// ```
     fn neg(self) -> Self::Output {
-        self.as_slice().neg()
+        self.as_slice(..).neg()
     }
 }
 
@@ -432,7 +628,7 @@ where
     ///
     /// Panics if the series have different expansion variables.
     fn add_assign(&mut self, other: &'a Series<Var, C>) {
-        self.add_assign(other.as_slice())
+        self.add_assign(other.as_slice(..))
     }
 }
 
@@ -459,10 +655,10 @@ where
     /// Panics if the series have different expansion variables.
     fn add_assign(&mut self, mut other: Series<Var, C>) {
         assert_eq!(self.var, other.var);
-        self.truncate_cutoff_pow(other.as_slice());
-        self.add_overlap(other.as_slice());
+        self.truncate_cutoff_pow(other.as_slice(..));
+        self.add_overlap(other.as_slice(..));
         if other.min_pow() < self.min_pow() {
-            let num_leading = self.num_leading(other.as_slice());
+            let num_leading = self.num_leading(other.as_slice(..));
             let leading_coeff = other.coeffs.drain(0..num_leading);
             self.coeffs.splice(0..0, leading_coeff);
             self.min_pow = other.min_pow;
@@ -593,7 +789,7 @@ where
     ///
     /// Panics if the series have different expansion variables.
     fn mul_assign(&mut self, other: &'a Series<Var, C>) {
-        self.mul_assign(other.as_slice())
+        self.mul_assign(other.as_slice(..))
     }
 }
 
@@ -670,7 +866,7 @@ where
     ///
     /// Panics if the series have different expansion variables.
     fn div_assign(&mut self, other: &'a Series<Var, C>) {
-        self.div_assign(other.as_slice());
+        self.div_assign(other.as_slice(..));
     }
 }
 
@@ -760,7 +956,7 @@ where
     /// Panics if the series contains negative powers of the expansion
     /// variable
     fn exp(self) -> Self::Output {
-        self.as_slice().exp()
+        self.as_slice(..).exp()
     }
 }
 
@@ -833,7 +1029,7 @@ where
     ///
     /// Panics if the series has no (non-zero) coefficients
     fn ln(self) -> Self::Output {
-        self.as_slice().ln()
+        self.as_slice(..).ln()
     }
 }
 
@@ -859,7 +1055,7 @@ where
     type Output = <<Series<Var, C> as Mul<T>>::Output as Exp>::Output;
 
     fn pow(self, exponent: T) -> Self::Output {
-        self.as_slice().pow(exponent)
+        self.as_slice(..).pow(exponent)
     }
 }
 
@@ -1387,7 +1583,7 @@ where
     type Output = Vec<C>;
 
     fn exp_coeff(&self) -> Vec<C> {
-        self.as_slice().exp_coeff()
+        self.as_slice(..).exp_coeff()
     }
 }
 
