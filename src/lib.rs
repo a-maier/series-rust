@@ -9,7 +9,7 @@ use std::fmt;
 use std::iter::Zip;
 use std::ops::{
     Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, RangeFrom, Sub,
-    SubAssign,
+    SubAssign, Index, IndexMut
 };
 
 pub mod ops;
@@ -1160,6 +1160,57 @@ impl<Var, C: Coeff> Series<Var, C> {
         let pow = (self.ln_var_free() * C::from(exp)).exp();
 
         Series::new(pow.var, new_min_pow, pow.coeffs)
+    }
+}
+
+impl<Var, C: Coeff> Index<isize> for Series<Var, C> {
+    type Output = C;
+
+    /// Get the series coefficient of the expansion variable to the
+    /// given power.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the index is smaller than the leading power or
+    /// at least as big as the cut-off power.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// let s = series::Series::new("x", -1, vec!(1,2,3));
+    /// assert_eq!(s[-1], 1);
+    /// assert_eq!(s[0], 2);
+    /// assert_eq!(s[1], 3);
+    /// assert!(std::panic::catch_unwind(|| s[-2]).is_err());
+    /// assert!(std::panic::catch_unwind(|| s[2]).is_err());
+    /// ```
+    fn index(&self, index: isize) -> &Self::Output {
+        &self.coeffs[(index-self.min_pow) as usize]
+    }
+}
+
+impl<Var, C: Coeff> IndexMut<isize> for Series<Var, C> {
+    /// Access the (mutable) series coefficient of the expansion
+    /// variable to the given power.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the index is smaller than the leading power or
+    /// at least as big as the cut-off power.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// let mut s = series::Series::new("x", -1, vec!(1,2,3));
+    /// s[-1] = 0;
+    /// assert_eq!(s[-1], 0);
+    /// assert_eq!(s[0], 2);
+    /// assert_eq!(s[1], 3);
+    /// assert!(std::panic::catch_unwind(|| s[-2]).is_err());
+    /// assert!(std::panic::catch_unwind(|| s[2]).is_err());
+    /// ```
+    fn index_mut(&mut self, index: isize) -> &mut Self::Output {
+        &mut self.coeffs[(index-self.min_pow) as usize]
     }
 }
 
