@@ -1330,6 +1330,24 @@ impl<'a, Var, C: Coeff> SeriesSlice<'a, Var, C> {
     pub fn iter(&self) -> Iter<C> {
         (self.min_pow..).zip(self.coeffs.iter())
     }
+
+    pub fn split_at(&self, pos: isize) -> (Self, Self) {
+        let upos = (pos + self.min_pow()) as usize;
+        let (lower, upper) = self.coeffs.split_at(upos);
+        let lower = SeriesSlice{
+            var: self.var,
+            min_pow: self.min_pow(),
+            coeffs: lower,
+            zero: self.zero
+        };
+        let upper = SeriesSlice{
+            var: self.var,
+            min_pow: pos,
+            coeffs: upper,
+            zero: self.zero
+        };
+        (lower, upper)
+    }
 }
 
 impl<'a, Var, C: Coeff> Index<isize> for SeriesSlice<'a, Var, C> {
