@@ -843,35 +843,6 @@ where
     }
 }
 
-// another dubious helper trait that only serves to prevent obscure
-// compiler errors in rust 1.36.0
-trait MulNaive<'a, Var, C: Coeff>{
-    fn mul_naive(self, b: SeriesSlice<'a, Var, C>) -> Series<Var, C>;
-}
-
-impl <'a, 'b, Var, C: Coeff> MulNaive<'b, Var, C> for SeriesSlice<'a, Var, C>
-where
-    for<'c,'d> &'c C: Mul<&'d C, Output = C>,
-    C: AddAssign + Mul<Output = C> + Clone,
-    Var: Clone + PartialEq + fmt::Debug,
-{
-    fn mul_naive(self, b: SeriesSlice<'b, Var, C>) -> Series<Var, C> {
-        let a = self;
-        assert_eq!(a.var, b.var);
-        let res_len = a.coeffs.len() + b.coeffs.len();
-        let mut res_coeffs = Vec::with_capacity(res_len);
-        for _ in 0..res_len {
-            res_coeffs.push(C::from(0));
-        }
-        for (i, a) in a.coeffs.iter().enumerate() {
-            for (j, b) in b.coeffs.iter().enumerate() {
-                res_coeffs[i+j] += a.clone() * b.clone()
-            }
-        }
-        Series::new(a.var.clone(), a.min_pow() + b.min_pow(), res_coeffs)
-    }
-}
-
 impl<'a, Var: Clone, C: Coeff + SubAssign> DivAssign<&'a Series<Var, C>>
     for Series<Var, C>
 where
@@ -1974,32 +1945,6 @@ mod tests {
         assert_eq!(res, t.clone() * &s);
         assert_eq!(res, t.clone() * s.clone());
         assert_eq!(res, s * t);
-    }
-
-    #[test]
-    fn tst_mul_naive() {
-        let s = Series::new("x", -3, vec![1., 0., -3.]);
-        let res = Series::new("x", -6, vec![1., 0., -6.]);
-        let square = s.as_slice().mul_naive(s.as_slice());
-        assert_eq!(square.cutoff_pow(), 0);
-        let square = square + Series::new("x", -3, vec![]);
-        assert_eq!(square, res);
-
-        let s = Series::new("x", -3, vec![1., 0., -3.]);
-        let t = Series::new("x", -1, vec![3., 4., 5., 7.]);
-        let res = Series::new("x", -4, vec![3., 4., -4.]);
-        let prod = s.as_slice().mul_naive(t.as_slice());
-        assert_eq!(prod.cutoff_pow(), 3);
-        let prod = prod + Series::new("x", -1, vec![]);
-        assert_eq!(prod, res);
-
-        let s = Series::new("x", -3, vec![1., 7., -3.]);
-        let t = Series::new("x", 3, vec![1., -7., 52.]);
-        let res = Series::new("x", 0, vec![1., 0., 0.]);
-        let prod = s.as_slice().mul_naive(t.as_slice());
-        assert_eq!(prod.cutoff_pow(), 6);
-        let prod = prod + Series::new("x", 3, vec![]);
-        assert_eq!(prod, res);
     }
 
     #[test]
