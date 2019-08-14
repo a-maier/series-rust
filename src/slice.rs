@@ -32,6 +32,36 @@ impl<'a, Var, C: Coeff> std::clone::Clone for SeriesSlice<'a, Var, C>
 }
 
 impl<'a, Var, C: Coeff> SeriesSlice<'a, Var, C> {
+    pub(super) fn new(
+        var: &'a Var,
+        min_pow: isize,
+        coeffs: &'a [C],
+        zero: &'a C,
+    ) -> Self {
+        let mut res = SeriesSlice{var, min_pow, coeffs, zero};
+        res.trim();
+        res
+    }
+
+    fn trim(&mut self) {
+        let idx = self
+            .coeffs
+            .iter()
+            .enumerate()
+            .find(|&(_, c)| *c != C::from(0))
+            .map(|(idx, _)| idx);
+        match idx {
+            Some(idx) => {
+                self.min_pow += idx as isize;
+                self.coeffs = &self.coeffs[idx..];
+            }
+            None => {
+                self.min_pow += self.coeffs.len() as isize;
+                self.coeffs = &self.coeffs[0..0];
+            }
+        }
+    }
+
     pub fn min_pow(&self) -> isize {
         self.min_pow
     }
