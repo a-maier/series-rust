@@ -1,8 +1,7 @@
-pub use crate::{Series, Coeff, Iter, MulInverse};
-use crate::{AddAssignHelper, ExpCoeff};
+use crate::{Series, Coeff, Iter};
+use crate::traits::{MulInverse, ExpCoeff};
 use crate::ops::{Exp, Ln, Pow};
 
-use std::cmp::min;
 use std::fmt;
 use std::ops::{
     Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub,
@@ -13,10 +12,10 @@ use std::ops::{
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(PartialEq, Eq, Debug, Hash, Ord, PartialOrd)]
 pub struct SeriesSlice<'a, Var, C: Coeff> {
-    pub(super) var: &'a Var,
-    pub(super) min_pow: isize,
-    pub(super) coeffs: &'a [C],
-    pub(super) zero: &'a C,
+    pub(crate) var: &'a Var,
+    pub(crate) min_pow: isize,
+    pub(crate) coeffs: &'a [C],
+    pub(crate) zero: &'a C,
 }
 
 // needs manual implementation,
@@ -200,26 +199,6 @@ where
     }
 }
 
-impl<'a, Var: PartialEq + fmt::Debug, C: Coeff + Clone>
-    AddAssign<SeriesSlice<'a, Var, C>> for Series<Var, C>
-where
-    for<'c> C: AddAssign<&'c C>,
-{
-    fn add_assign(&mut self, other: SeriesSlice<'a, Var, C>) {
-        assert_eq!(self.var, *other.var);
-        self.truncate_cutoff_pow(other);
-        self.add_overlap(other);
-        if other.min_pow() < self.min_pow() {
-            let num_leading = self.num_leading(other);
-            let leading_coeff = other.coeffs[0..num_leading].iter().cloned();
-            self.coeffs.splice(0..0, leading_coeff);
-            self.min_pow = other.min_pow;
-        }
-        debug_assert!(other.cutoff_pow() >= self.cutoff_pow());
-        self.trim();
-    }
-}
-
 impl<'a, Var, C: Coeff, T> Sub<T> for SeriesSlice<'a, Var, C>
 where
     C: Clone,
@@ -235,16 +214,6 @@ where
     }
 }
 
-impl<'a, Var, C: Coeff> SubAssign<SeriesSlice<'a, Var, C>> for Series<Var, C>
-where
-    for<'c> SeriesSlice<'c, Var, C>: Neg<Output = Series<Var, C>>,
-    Series<Var, C>: AddAssign<Series<Var, C>>,
-{
-    fn sub_assign(&mut self, other: SeriesSlice<'a, Var, C>) {
-        *self += -other;
-    }
-}
-
 impl<'a, Var, C: Coeff, T> Mul<T> for SeriesSlice<'a, Var, C>
 where
     Var: Clone,
@@ -257,41 +226,6 @@ where
         let mut res = self.to_owned();
         res *= other;
         res
-    }
-}
-
-impl<'a, Var, C: > MulAssign<SeriesSlice<'a, Var, C>> for Series<Var, C>
-where
-    Var: PartialEq + fmt::Debug,
-    for<'b> &'b C: Mul<Output = C>,
-    C: MulAssign<&'a C> + Coeff + Clone + AddAssign,
-{
-    fn mul_assign(&mut self, other: SeriesSlice<'a, Var, C>) {
-        assert_eq!(self.var, *other.var);
-        self.min_pow += other.min_pow();
-        let num_coeffs = min(self.coeffs.len(), other.coeffs.len());
-        self.coeffs.truncate(num_coeffs);
-        // compute Cauchy product
-        for k in (1..self.coeffs.len()).rev() {
-            let (c_k, c) = self.coeffs[..=k].split_last_mut().unwrap();
-            *c_k *= &other.coeffs[0];
-            for i in 1..=k {
-                *c_k += &c[k - i] * &other.coeffs[i]
-            }
-        }
-        self.coeffs.first_mut().map(|c| *c *= &other.coeffs[0]);
-    }
-}
-
-impl<'a, Var: Clone, C: Coeff + SubAssign> DivAssign<SeriesSlice<'a, Var, C>>
-    for Series<Var, C>
-where
-    Series<Var, C>: MulAssign,
-    for<'b> &'b C: Div<Output = C> + Mul<Output = C>,
-    for<'c> &'c Series<Var, C>: MulInverse<Output = Series<Var, C>>,
-{
-    fn div_assign(&mut self, other: SeriesSlice<'a, Var, C>) {
-        *self *= other.mul_inverse();
     }
 }
 
