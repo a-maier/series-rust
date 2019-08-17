@@ -210,7 +210,7 @@ impl<'a, Var: 'a, C: 'a + Coeff>  AsSlice<'a, Range<isize>> for Series<Var, C> {
         let end = (r.end - self.min_pow()) as usize;
         SeriesSlice::new(
             &self.var,
-            self.min_pow,
+            r.start,
             &self.coeffs[start..end],
             &self.zero,
         )
@@ -241,12 +241,12 @@ impl<'a, Var: 'a, C: 'a + Coeff>  AsSlice<'a, RangeInclusive<isize>> for Series<
     /// ```
     fn as_slice(&'a self, r: RangeInclusive<isize>) -> Self::Output {
         let (start, end) = r.into_inner();
-        let start = (start - self.min_pow()) as usize;
+        let ustart = (start - self.min_pow()) as usize;
         let end = (end - self.min_pow()) as usize;
         SeriesSlice::new(
             &self.var,
-            self.min_pow,
-            &self.coeffs[start..=end],
+            start,
+            &self.coeffs[ustart..=end],
             &self.zero,
         )
     }
@@ -310,7 +310,7 @@ impl<'a, Var: 'a, C: 'a + Coeff>  AsSlice<'a, RangeFrom<isize>> for Series<Var, 
         let start = (r.start - self.min_pow()) as usize;
         SeriesSlice::new(
             &self.var,
-            self.min_pow,
+            r.start,
             &self.coeffs[start..],
             &self.zero,
         )
