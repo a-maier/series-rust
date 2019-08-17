@@ -1,8 +1,7 @@
-/// Laurent series in a single variable up to some power
-
 use crate::ops::{Exp, Ln, Pow};
 use crate::slice::*;
 use crate::traits::*;
+use crate::util::trim_start;
 use crate::{Coeff, Iter, IterMut, IntoIter};
 
 use std::cmp::min;
@@ -14,6 +13,7 @@ use std::ops::{
     Sub, SubAssign, Index, IndexMut
 };
 
+/// Laurent series in a single variable up to some power
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(PartialEq, Eq, Debug, Clone, Hash, Ord, PartialOrd)]
 pub struct Series<Var, C: Coeff> {
@@ -149,7 +149,7 @@ impl<Var, C: Coeff> Series<Var, C> {
         self.as_slice(..).cutoff_pow()
     }
 
-    /// Iterator over the series coefficients.
+    /// Iterator over the series powers and coefficients.
     ///
     /// # Example
     ///
@@ -172,7 +172,7 @@ impl<Var, C: Coeff> Series<Var, C> {
     ///
     /// ```rust
     /// let mut s = series::Series::new("x", -1, vec!(1,2,3));
-    /// for (pow, coeff) in s.iter_mut() {
+    /// for (_pow, coeff) in s.iter_mut() {
     ///     *coeff += 1
     /// }
     /// let inc = series::Series::new("x", -1, vec!(2,3,4));
@@ -497,24 +497,7 @@ where
 
 impl<Var, C: Coeff> Series<Var, C> {
     fn trim(&mut self) {
-        let idx = self
-            .coeffs
-            .iter()
-            .enumerate()
-            .find(|&(_, c)| *c != C::from(0))
-            .map(|(idx, _)| idx);
-        match idx {
-            Some(idx) => {
-                if idx > 0 {
-                    self.min_pow += idx as isize;
-                    self.coeffs.drain(0..idx);
-                }
-            }
-            None => {
-                self.min_pow += self.coeffs.len() as isize;
-                self.coeffs = vec![];
-            }
-        }
+        self.min_pow += trim_start(&mut self.coeffs, &C::from(0)) as isize;
     }
 }
 

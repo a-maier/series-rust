@@ -10,6 +10,7 @@ pub use self::series::*;
 pub use self::ops::*;
 mod traits;
 pub use self::traits::{MulInverse};
+mod util;
 
 use std::iter::Zip;
 use std::ops::RangeFrom;
