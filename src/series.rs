@@ -497,7 +497,7 @@ where
 
 impl<Var, C: Coeff> Series<Var, C> {
     fn trim(&mut self) {
-        self.min_pow += trim_start(&mut self.coeffs, &C::from(0)) as isize;
+        self.min_pow += trim_start(&mut self.coeffs, &self.zero) as isize;
     }
 }
 

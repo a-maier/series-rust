@@ -1,6 +1,7 @@
-use crate::{Series, Coeff, Iter};
+use crate::{Series, Coeff, Iter, PolynomialSlice};
 use crate::traits::{MulInverse, ExpCoeff};
 use crate::ops::{Exp, Ln, Pow};
+use crate::util::trim_slice_start;
 
 use std::fmt;
 use std::ops::{
@@ -43,22 +44,9 @@ impl<'a, Var, C: Coeff> SeriesSlice<'a, Var, C> {
     }
 
     fn trim(&mut self) {
-        let idx = self
-            .coeffs
-            .iter()
-            .enumerate()
-            .find(|&(_, c)| *c != C::from(0))
-            .map(|(idx, _)| idx);
-        match idx {
-            Some(idx) => {
-                self.min_pow += idx as isize;
-                self.coeffs = &self.coeffs[idx..];
-            }
-            None => {
-                self.min_pow += self.coeffs.len() as isize;
-                self.coeffs = &self.coeffs[0..0];
-            }
-        }
+        let (coeffs, removed) = trim_slice_start(self.coeffs, self.zero);
+        self.coeffs = coeffs;
+        self.min_pow += removed as isize;
     }
 
     pub fn min_pow(&self) -> isize {
@@ -101,6 +89,10 @@ impl<'a, Var, C: Coeff> SeriesSlice<'a, Var, C> {
         };
         (lower, upper)
     }
+
+    pub fn as_poly(&self) -> PolynomialSlice<'a, Var, C> {
+        PolynomialSlice::new(self.var, self.min_pow, self.coeffs, self.zero)
+    }
 }
 
 impl<'a, Var, C: Coeff> Index<isize> for SeriesSlice<'a, Var, C> {
@@ -111,8 +103,10 @@ impl<'a, Var, C: Coeff> Index<isize> for SeriesSlice<'a, Var, C> {
     }
 }
 
+// TODO: impl std::borrow::ToOwned
+// but this conflicts with impl for T: Clone in std
 impl<'a, Var: Clone, C: Coeff + Clone> SeriesSlice<'a, Var, C> {
-    pub fn to_owned(&self) -> Series<Var, C> {
+    pub fn to_owned(&self) ->  Series<Var, C> {
         Series::new(self.var.clone(), self.min_pow, self.coeffs.to_vec())
     }
 }
@@ -151,23 +145,8 @@ impl<'a, Var: fmt::Display, C: Coeff + fmt::Display> fmt::Display
     for SeriesSlice<'a, Var, C>
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        for (i, coeff) in self.coeffs.iter().enumerate() {
-            if *coeff == C::from(0) {
-                continue;
-            }
-            let cur_pow = self.min_pow() + i as isize;
-            if i > 0 {
-                write!(f, " + ")?;
-            }
-            write!(f, "({})", coeff)?;
-            if cur_pow != 0 {
-                write!(f, "*{}", self.var)?;
-                if cur_pow != 1 {
-                    write!(f, "^{}", cur_pow)?;
-                }
-            }
-        }
         if !self.coeffs.is_empty() {
+            self.as_poly().fmt(f)?;
             write!(f, " + ")?;
         }
         write!(f, "O({}^{})", self.var, self.cutoff_pow())
