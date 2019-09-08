@@ -8,7 +8,7 @@ use std::iter;
 use std::ops::{
     Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Range,
     RangeInclusive, RangeToInclusive, RangeFrom, RangeFull, RangeTo,
-    Sub, SubAssign, Index, IndexMut
+    Sub, SubAssign, Index
 };
 
 /// Laurent polynomial in a single variable
@@ -308,31 +308,6 @@ impl<Var, C: Coeff> Index<isize> for Polynomial<Var, C> {
     }
 }
 
-impl<Var, C: Coeff> IndexMut<isize> for Polynomial<Var, C> {
-    /// Access the (mutable) coefficient of the polynomial
-    /// variable to the given power.
-    ///
-    /// # Panics
-    ///
-    /// Panics if the index is smaller than the leading power or
-    /// bigger than the highest power
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// let mut p = series::Polynomial::new("x", -1, vec!(1,2,3));
-    /// p[-1] = 0;
-    /// assert_eq!(p[-1], 0);
-    /// assert_eq!(p[0], 2);
-    /// assert_eq!(p[1], 3);
-    /// assert!(std::panic::catch_unwind(|| p[-2]).is_err());
-    /// assert!(std::panic::catch_unwind(|| p[2]).is_err());
-    /// ```
-    fn index_mut(&mut self, index: isize) -> &mut Self::Output {
-        &mut self.coeffs[(index-self.min_pow.unwrap()) as usize]
-    }
-}
-
 impl<Var, C: Coeff> std::iter::IntoIterator for Polynomial<Var, C> {
     type Item = (isize, C);
     type IntoIter = crate::IntoIter<C>;
@@ -478,8 +453,9 @@ where
         }
         debug_assert!(self.min_pow().unwrap() <= other_min_pow);
         debug_assert!(self.max_pow().unwrap() >= other_max_pow);
+        let min_pow = self.min_pow().unwrap();
         for (pow, coeff) in other.iter() {
-            self[pow] += coeff;
+            self.coeffs[(pow - min_pow) as usize] += coeff;
         }
         self.trim();
     }
@@ -530,8 +506,9 @@ where
         }
         debug_assert!(self.min_pow() <= other.min_pow());
         debug_assert!(self.max_pow() >= other.max_pow());
+        let min_pow = self.min_pow().unwrap();
         for (pow, coeff) in other.into_iter() {
-            self[pow] += coeff;
+            self.coeffs[(pow - min_pow) as usize] += coeff;
         }
         self.trim();
     }
@@ -791,7 +768,8 @@ where
                 }
                 debug_assert!(self.min_pow().unwrap() <= 0);
                 debug_assert!(0 <= self.max_pow().unwrap());
-                self[0] += other;
+                let min_pow = self.min_pow().unwrap();
+                self.coeffs[-min_pow as usize] += other;
             }
         }
         self.trim();
@@ -1042,9 +1020,10 @@ where
     }
 
     fn add_prod_naive(&mut self, a: PolynomialSlice<'a, Var, C>, b: PolynomialSlice<'b, Var, C>) {
+        let min_pow = self.min_pow().unwrap();
         for (i, a) in a.iter() {
             for (j, b) in b.iter() {
-                self[i + j] += a*b;
+                self.coeffs[(i + j - min_pow) as usize] += a*b;
             }
         }
     }

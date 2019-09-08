@@ -10,7 +10,7 @@ use std::fmt;
 use std::ops::{
     Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Range,
     RangeInclusive, RangeToInclusive, RangeFrom, RangeFull, RangeTo,
-    Sub, SubAssign, Index, IndexMut
+    Sub, SubAssign, Index
 };
 
 /// Laurent series in a single variable up to some power
@@ -401,32 +401,6 @@ impl<Var, C: Coeff> Index<isize> for Series<Var, C> {
     /// ```
     fn index(&self, index: isize) -> &Self::Output {
         &self.coeffs[(index-self.min_pow) as usize]
-    }
-}
-
-impl<Var, C: Coeff> IndexMut<isize> for Series<Var, C> {
-    /// Access the (mutable) series coefficient of the expansion
-    /// variable to the given power.
-    ///
-    /// # Panics
-    ///
-    /// Panics if the index is smaller than the leading power or
-    /// at least as big as the cut-off power.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use series::AsSlice;
-    /// let mut s = series::Series::new("x", -1, vec!(1,2,3));
-    /// s[-1] = 0;
-    /// assert_eq!(s[-1], 0);
-    /// assert_eq!(s[0], 2);
-    /// assert_eq!(s[1], 3);
-    /// assert!(std::panic::catch_unwind(|| s[-2]).is_err());
-    /// assert!(std::panic::catch_unwind(|| s[2]).is_err());
-    /// ```
-    fn index_mut(&mut self, index: isize) -> &mut Self::Output {
-        &mut self.coeffs[(index-self.min_pow) as usize]
     }
 }
 
