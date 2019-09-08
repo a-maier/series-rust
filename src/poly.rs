@@ -110,12 +110,12 @@ impl<Var, C: Coeff> Polynomial<Var, C> {
     ///
     /// ```rust
     /// let p = series::Polynomial::new("x", -1, vec!(1,2,3));
-    /// assert_eq!(p.max_pow(), Some(2));
+    /// assert_eq!(p.max_pow(), Some(1));
     /// let p = series::Polynomial::new("x", -1, vec![0]);
     /// assert_eq!(p.max_pow(), None);
     /// ```
     pub fn max_pow(&self) -> Option<isize> {
-        self.min_pow.map(|c| c + self.len() as isize)
+        self.min_pow.map(|c| c - 1 + self.len() as isize)
     }
 
     /// Get the number of coefficients
@@ -789,6 +789,8 @@ where
                 } else if self.max_pow().unwrap() < 0 {
                     self.extend_max((- self.max_pow().unwrap()) as usize);
                 }
+                debug_assert!(self.min_pow().unwrap() <= 0);
+                debug_assert!(0 <= self.max_pow().unwrap());
                 self[0] += other;
             }
         }
