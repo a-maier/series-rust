@@ -1,5 +1,5 @@
 use crate::polyslice::PolynomialSlice;
-use crate::{Coeff, Iter, IterMut, IntoIter};
+use crate::{Coeff, Iter, IntoIter};
 use crate::traits::AsSlice;
 use crate::util::{trim_start, trim_end};
 
@@ -144,22 +144,6 @@ impl<Var, C: Coeff> Polynomial<Var, C> {
     /// ```
     pub fn iter(&self) -> Iter<C> {
         (self.min_pow().unwrap_or(0)..).zip(self.coeffs.iter())
-    }
-
-    /// An iterator that allows modifying each polynomial coefficient.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// let mut p = series::Polynomial::new("x", -1, vec!(1,2,3));
-    /// for (_pow, coeff) in p.iter_mut() {
-    ///     *coeff += 1
-    /// }
-    /// let inc = series::Polynomial::new("x", -1, vec!(2,3,4));
-    /// assert_eq!(p, inc);
-    /// ```
-    pub fn iter_mut(&mut self) -> IterMut<C> {
-        (self.min_pow().unwrap_or(0)..).zip(self.coeffs.iter_mut())
     }
 
     fn as_empty_slice<'a>(&'a self) -> PolynomialSlice<'a, Var, C> {

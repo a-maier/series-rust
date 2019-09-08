@@ -2,7 +2,7 @@ use crate::ops::{Exp, Ln, Pow};
 use crate::slice::*;
 use crate::traits::*;
 use crate::util::trim_start;
-use crate::{Coeff, Iter, IterMut, IntoIter};
+use crate::{Coeff, Iter, IntoIter};
 
 use std::cmp::min;
 use std::convert::From;
@@ -164,22 +164,6 @@ impl<Var, C: Coeff> Series<Var, C> {
     pub fn iter(&self) -> Iter<C> {
         // TODO: code duplication with SeriesSlice
         (self.min_pow..).zip(self.coeffs.iter())
-    }
-
-    /// An iterator that allows modifying each series coefficient.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// let mut s = series::Series::new("x", -1, vec!(1,2,3));
-    /// for (_pow, coeff) in s.iter_mut() {
-    ///     *coeff += 1
-    /// }
-    /// let inc = series::Series::new("x", -1, vec!(2,3,4));
-    /// assert_eq!(s, inc);
-    /// ```
-    pub fn iter_mut(&mut self) -> IterMut<C> {
-        (self.min_pow..).zip(self.coeffs.iter_mut())
     }
 }
 
