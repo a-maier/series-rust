@@ -5,7 +5,7 @@ use crate::traits::AsSlice;
 
 use std::fmt;
 use std::ops::{
-    Add, AddAssign, Mul, Neg,
+    Add, AddAssign, Div, Mul, Neg,
     Sub, SubAssign, Index
 };
 
@@ -232,5 +232,53 @@ where
 
     fn mul(self, other: &'b Polynomial<Var, C>) -> Self::Output {
         self * other.as_slice(..)
+    }
+}
+
+impl<'a, Var: Clone, C: Coeff> Mul<C> for PolynomialSlice<'a, Var, C>
+where
+    for<'b> &'b C: Mul<Output=C>
+{
+    type Output = Polynomial<Var, C>;
+
+    fn mul(self, scalar: C) -> Self::Output {
+        let coeffs = self.coeffs.iter().map(|c| c * &scalar).collect();
+        Polynomial::new(self.var.clone(), self.min_pow.unwrap_or(0), coeffs)
+    }
+}
+
+impl<'a, 'b, Var: Clone, C: Coeff> Mul<&'b C> for PolynomialSlice<'a, Var, C>
+where
+    for<'c> &'c C: Mul<Output=C>
+{
+    type Output = Polynomial<Var, C>;
+
+    fn mul(self, scalar: &'b C) -> Self::Output {
+        let coeffs = self.coeffs.iter().map(|c| c * scalar).collect();
+        Polynomial::new(self.var.clone(), self.min_pow.unwrap_or(0), coeffs)
+    }
+}
+
+impl<'a, Var: Clone, C: Coeff> Div<C> for PolynomialSlice<'a, Var, C>
+where
+    for<'c> &'c C: Div<Output=C>
+{
+    type Output = Polynomial<Var, C>;
+
+    fn div(self, scalar: C) -> Self::Output {
+        let coeffs = self.coeffs.iter().map(|c| c / &scalar).collect();
+        Polynomial::new(self.var.clone(), self.min_pow.unwrap_or(0), coeffs)
+    }
+}
+
+impl<'a, 'b, Var: Clone, C: Coeff> Div<&'b C> for PolynomialSlice<'a, Var, C>
+where
+    for<'c> &'c C: Div<Output=C>
+{
+    type Output = Polynomial<Var, C>;
+
+    fn div(self, scalar: &'b C) -> Self::Output {
+        let coeffs = self.coeffs.iter().map(|c| c / scalar).collect();
+        Polynomial::new(self.var.clone(), self.min_pow.unwrap_or(0), coeffs)
     }
 }

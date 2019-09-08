@@ -6,7 +6,7 @@ use crate::util::{trim_start, trim_end};
 use std::fmt;
 use std::iter;
 use std::ops::{
-    Add, AddAssign, Mul, MulAssign, Neg, Range,
+    Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Range,
     RangeInclusive, RangeToInclusive, RangeFrom, RangeFull, RangeTo,
     Sub, SubAssign, Index, IndexMut
 };
@@ -651,7 +651,7 @@ impl<'a, Var: PartialEq + fmt::Debug, C: Coeff + Clone + AddAssign>
 where
     Polynomial<Var, C>: MulAssign<PolynomialSlice<'a, Var, C>>
 {
-    /// Set p = p * q for two polynomial p,q
+    /// Set p = p * q for two polynomials p,q
     ///
     /// # Example
     ///
@@ -685,7 +685,7 @@ impl<Var, C: Coeff> MulAssign for Polynomial<Var, C>
 where
     for<'a> Polynomial<Var, C>: MulAssign<&'a Polynomial<Var, C>>,
 {
-    /// Set p = p * q for two series p,q
+    /// Set p = p * q for two polynomials p,q
     ///
     /// # Example
     ///
@@ -702,6 +702,195 @@ where
     /// Panics if the series have different expansion variables.
     fn mul_assign(&mut self, other: Polynomial<Var, C>) {
         *self *= &other
+    }
+}
+
+impl<Var, C: Coeff> MulAssign<C> for Polynomial<Var, C>
+where
+    for<'a> C: MulAssign<&'a C>,
+{
+    /// Multiply each monomial by a factor
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use series::Polynomial;
+    /// let mut p = Polynomial::new("x", -3, vec!(1.,0.,-3.));
+    /// p *= 2.;
+    /// let res = Polynomial::new("x", -3, vec!(2.,0.,-6.));
+    /// assert_eq!(res, p);
+    /// ```
+    fn mul_assign(&mut self, other: C) {
+        self.mul_assign(&other)
+    }
+}
+
+impl<'a, Var, C: Coeff> MulAssign<&'a C> for Polynomial<Var, C>
+where
+    C: MulAssign<&'a C>,
+{
+    /// Multiply each monomial by a factor
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use series::Polynomial;
+    /// let mut p = Polynomial::new("x", -3, vec!(1.,0.,-3.));
+    /// p *= &2.;
+    /// let res = Polynomial::new("x", -3, vec!(2.,0.,-6.));
+    /// assert_eq!(res, p);
+    /// ```
+    fn mul_assign(&mut self, other: &'a C) {
+        for c in &mut self.coeffs {
+            *c *= other
+        }
+    }
+}
+
+impl<Var, C: Coeff> DivAssign<C> for Polynomial<Var, C>
+where
+    for<'a> C: DivAssign<&'a C>,
+{
+    /// Divide each monomial by a factor
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use series::Polynomial;
+    /// let mut p = Polynomial::new("x", -3, vec!(1.,0.,-3.));
+    /// p /= 2.;
+    /// let res = Polynomial::new("x", -3, vec!(0.5,0.,-1.5));
+    /// assert_eq!(res, p);
+    /// ```
+    fn div_assign(&mut self, other: C) {
+        self.div_assign(&other)
+    }
+}
+
+impl<'a, Var, C: Coeff> DivAssign<&'a C> for Polynomial<Var, C>
+where
+    C: DivAssign<&'a C>,
+{
+    /// Divide each monomial by a factor
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use series::Polynomial;
+    /// let mut p = Polynomial::new("x", -3, vec!(1.,0.,-3.));
+    /// p /= &2.;
+    /// let res = Polynomial::new("x", -3, vec!(0.5,0.,-1.5));
+    /// assert_eq!(res, p);
+    /// ```
+    fn div_assign(&mut self, other: &'a C) {
+        for c in &mut self.coeffs {
+            *c /= other
+        }
+    }
+}
+
+impl<Var, C: Coeff> Mul for Polynomial<Var, C>
+where
+    Polynomial<Var, C>: MulAssign,
+{
+    type Output = Polynomial<Var, C>;
+
+    fn mul(mut self, other: Polynomial<Var, C>) -> Self::Output {
+        self *= other;
+        self
+    }
+}
+
+impl<'a, Var, C: Coeff> Mul<&'a Polynomial<Var, C>> for Polynomial<Var, C>
+where
+    Polynomial<Var, C>: MulAssign<PolynomialSlice<'a, Var, C>>,
+{
+    type Output = Polynomial<Var, C>;
+
+    fn mul(self, other: &'a Polynomial<Var, C>) -> Self::Output {
+        self * other.as_slice(..)
+    }
+}
+
+impl<'a, Var, C: Coeff> Mul<PolynomialSlice<'a, Var, C>> for Polynomial<Var, C>
+where
+    Polynomial<Var, C>: MulAssign<PolynomialSlice<'a, Var, C>>,
+{
+    type Output = Polynomial<Var, C>;
+
+    fn mul(mut self, other: PolynomialSlice<'a, Var, C>) -> Self::Output {
+        self *= other;
+        self
+    }
+}
+
+impl<Var, C: Coeff> Mul<C> for Polynomial<Var, C>
+where
+    for<'c> C: MulAssign<&'c C>,
+{
+    type Output = Polynomial<Var, C>;
+
+    fn mul(mut self, other: C) -> Self::Output {
+        self *= &other;
+        self
+    }
+}
+
+impl<'a, Var, C: Coeff> Mul<&'a C> for Polynomial<Var, C>
+where
+    for<'c> C: MulAssign<&'c C>,
+{
+    type Output = Polynomial<Var, C>;
+
+    fn mul(mut self, other: &'a C) -> Self::Output {
+        self *= other;
+        self
+    }
+}
+
+impl<Var, C: Coeff> Div<C> for Polynomial<Var, C>
+where
+    for<'c> C: DivAssign<&'c C>,
+{
+    type Output = Polynomial<Var, C>;
+
+    fn div(mut self, other: C) -> Self::Output {
+        self /= &other;
+        self
+    }
+}
+
+impl<'a, Var, C: Coeff> Div<&'a C> for Polynomial<Var, C>
+where
+    for<'c> C: DivAssign<&'c C>,
+{
+    type Output = Polynomial<Var, C>;
+
+    fn div(mut self, other: &'a C) -> Self::Output {
+        self /= other;
+        self
+    }
+}
+
+impl<'a, Var, C: Coeff, T> Mul<T> for &'a Polynomial<Var, C>
+where
+    PolynomialSlice<'a, Var, C>: Mul<T, Output=Polynomial<Var, C>>
+{
+    type Output = Polynomial<Var, C>;
+
+    fn mul(self, other: T) -> Self::Output {
+        self.as_slice(..) * other
+    }
+}
+
+impl<'a, Var, C: Coeff, T> Div<T> for &'a Polynomial<Var, C>
+where
+    PolynomialSlice<'a, Var, C>: Div<T, Output=Polynomial<Var, C>>
+{
+    type Output = Polynomial<Var, C>;
+
+    fn div(self, other: T) -> Self::Output {
+        self.as_slice(..) / other
     }
 }
 
@@ -806,27 +995,5 @@ where
                 self[i + j] += a*b;
             }
         }
-    }
-}
-
-impl<'a, Var, C: Coeff, T> Mul<T> for &'a Polynomial<Var, C>
-where
-    PolynomialSlice<'a, Var, C>: Mul<T>,
-{
-    type Output = <PolynomialSlice<'a, Var, C> as Mul<T>>::Output;
-
-    fn mul(self, other: T) -> Self::Output {
-        self.as_slice(..) * other
-    }
-}
-
-impl<Var, C: Coeff, T> Mul<T> for Polynomial<Var, C>
-where
-    for<'a> PolynomialSlice<'a, Var, C>: Mul<T, Output=Polynomial<Var, C>>,
-{
-    type Output = Polynomial<Var, C>;
-
-    fn mul(self, other: T) -> Self::Output {
-        self.as_slice(..) * other
     }
 }

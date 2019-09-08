@@ -805,21 +805,22 @@ mod tests {
         let _ = Polynomial::new(8, -3, vec![1., 0., -3.]);
     }
 
-    // #[test]
-    // fn tst_poly_scalar() {
-    //     let s = Polynomial::new("x", -3, vec![1., 0., -2.]);
-    //     let res = Polynomial::new("x", -3, vec![1. / 2., 0., -1.]);
-    //     assert_eq!(res, &s / 2.);
-    //     let mut s = s;
-    //     s /= 2.;
-    //     assert_eq!(res, s);
+    #[test]
+    fn tst_poly_scalar() {
+        let s = Polynomial::new("x", -3, vec![1., 0., -2.]);
+        let res = Polynomial::new("x", -3, vec![1. / 2., 0., -1.]);
+        assert_eq!(res, std::ops::Div::div(&s, 2.));
+        assert_eq!(res, &s / 2.);
+        let mut s = s;
+        s /= 2.;
+        assert_eq!(res, s);
 
-    //     let s = Polynomial::new("x", -3, vec![1. / 2., 0., -1.]);
-    //     let res = Polynomial::new("x", -3, vec![1., 0., -2.]);
-    //     assert_eq!(res, &s * 2.);
-    //     let mut s = s;
-    //     s *= 2.;
-    //     assert_eq!(res, s);
+        let s = Polynomial::new("x", -3, vec![1. / 2., 0., -1.]);
+        let res = Polynomial::new("x", -3, vec![1., 0., -2.]);
+        assert_eq!(res, &s * 2.);
+        let mut s = s;
+        s *= 2.;
+        assert_eq!(res, s);
 
     //     let s = Polynomial::new("x", -3, vec![1. / 2., 0., -1.]);
     //     assert_eq!(s, &s + 0.);
@@ -851,7 +852,7 @@ mod tests {
     //     let res = Polynomial::new("x", 2, vec![-1.]);
     //     assert_eq!(res, s - 2.);
 
-    // }
+    }
 
     #[test]
     #[should_panic]
