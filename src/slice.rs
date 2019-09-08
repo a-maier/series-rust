@@ -1,5 +1,5 @@
 use crate::{Series, Coeff, Iter, PolynomialSlice};
-use crate::traits::{MulInverse, ExpCoeff};
+use crate::traits::{MulInverse, ExpCoeff, AsSlice};
 use crate::ops::{Exp, Ln, Pow};
 use crate::util::trim_slice_start;
 
@@ -193,18 +193,74 @@ where
     }
 }
 
-impl<'a, Var, C: Coeff, T> Mul<T> for SeriesSlice<'a, Var, C>
+impl<'a, Var, C: Coeff> Mul for SeriesSlice<'a, Var, C>
 where
     Var: Clone,
     C: Clone,
-    Series<Var, C>: MulAssign<T>,
+    Series<Var, C>: Mul<SeriesSlice<'a, Var, C>, Output=Series<Var, C>>,
 {
     type Output = Series<Var, C>;
 
-    fn mul(self, other: T) -> Self::Output {
-        let mut res = self.to_owned();
-        res *= other;
-        res
+    fn mul(self, other: SeriesSlice<'a, Var, C>) -> Self::Output {
+        self.to_owned() * other
+    }
+}
+
+impl<'a, Var, C: Coeff> Mul<Series<Var, C>> for SeriesSlice<'a, Var, C>
+where
+    Series<Var, C>: Mul<SeriesSlice<'a, Var, C>, Output=Series<Var, C>>,
+{
+    type Output = Series<Var, C>;
+
+    fn mul(self, other: Series<Var, C>) -> Self::Output {
+        other * self
+    }
+}
+
+impl<'a, 'b, Var, C: Coeff> Mul<&'b Series<Var, C>> for SeriesSlice<'a, Var, C>
+where
+    C: Clone,
+    Var: Clone,
+    for<'c> Series<Var, C>: Mul<SeriesSlice<'c, Var, C>, Output=Series<Var, C>>,
+{
+    type Output = Series<Var, C>;
+
+    fn mul(self, other: &'b Series<Var, C>) -> Self::Output {
+        self * other.as_slice(..)
+    }
+}
+
+impl<'a, Var, C: Coeff> Mul<C> for SeriesSlice<'a, Var, C>
+where
+    Var: Clone,
+    for<'c>  &'c C: Mul<Output=C>
+{
+    type Output = Series<Var, C>;
+
+    fn mul(self, other: C) -> Self::Output {
+        let coeffs = self.coeffs.iter().map(|c| c * &other).collect();
+        Series::new(
+            self.var.clone(),
+            self.min_pow(),
+            coeffs
+        )
+    }
+}
+
+impl<'a, 'b, Var, C: Coeff> Mul<&'b C> for SeriesSlice<'a, Var, C>
+where
+    Var: Clone,
+    for<'c>  &'c C: Mul<Output=C>
+{
+    type Output = Series<Var, C>;
+
+    fn mul(self, other: &'b C) -> Self::Output {
+        let coeffs = self.coeffs.iter().map(|c| c * other).collect();
+        Series::new(
+            self.var.clone(),
+            self.min_pow(),
+            coeffs
+        )
     }
 }
 

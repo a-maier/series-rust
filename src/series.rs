@@ -814,28 +814,73 @@ where
 }
 
 // TODO: somehow make multiplication symmetric?
+impl<Var, C: Coeff> Mul for Series<Var, C>
+where
+    Series<Var, C>: MulAssign,
+{
+    type Output = Series<Var, C>;
+
+    fn mul(mut self, other: Series<Var, C>) -> Self::Output {
+        self *= other;
+        self
+    }
+}
+
+impl<'a, Var, C: Coeff> Mul<&'a Series<Var, C>> for Series<Var, C>
+where
+    Series<Var, C>: MulAssign<SeriesSlice<'a, Var, C>>,
+{
+    type Output = Series<Var, C>;
+
+    fn mul(self, other: &'a Series<Var, C>) -> Self::Output {
+        self * other.as_slice(..)
+    }
+}
+
+impl<'a, Var, C: Coeff> Mul<SeriesSlice<'a, Var, C>> for Series<Var, C>
+where
+    Series<Var, C>: MulAssign<SeriesSlice<'a, Var, C>>,
+{
+    type Output = Series<Var, C>;
+
+    fn mul(mut self, other: SeriesSlice<'a, Var, C>) -> Self::Output {
+        self *= other;
+        self
+    }
+}
+
+impl<Var, C: Coeff> Mul<C> for Series<Var, C>
+where
+    for<'c> C: MulAssign<&'c C>,
+{
+    type Output = Series<Var, C>;
+
+    fn mul(mut self, other: C) -> Self::Output {
+        self *= &other;
+        self
+    }
+}
+
+impl<'a, Var, C: Coeff> Mul<&'a C> for Series<Var, C>
+where
+    for<'c> C: MulAssign<&'c C>,
+{
+    type Output = Series<Var, C>;
+
+    fn mul(mut self, other: &'a C) -> Self::Output {
+        self *= other;
+        self
+    }
+}
+
 impl<'a, Var, C: Coeff, T> Mul<T> for &'a Series<Var, C>
 where
-    Series<Var, C>: Clone + MulAssign<T>,
+    SeriesSlice<'a, Var, C>: Mul<T, Output=Series<Var, C>>
 {
     type Output = Series<Var, C>;
 
     fn mul(self, other: T) -> Self::Output {
-        let mut res = self.clone();
-        res *= other;
-        res
-    }
-}
-
-impl<Var, C: Coeff, T> Mul<T> for Series<Var, C>
-where
-    Series<Var, C>: MulAssign<T>,
-{
-    type Output = Series<Var, C>;
-
-    fn mul(mut self, other: T) -> Self::Output {
-        self *= other;
-        self
+        self.as_slice(..) * other
     }
 }
 
