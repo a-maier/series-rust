@@ -822,35 +822,37 @@ mod tests {
         s *= 2.;
         assert_eq!(res, s);
 
-    //     let s = Polynomial::new("x", -3, vec![1. / 2., 0., -1.]);
-    //     assert_eq!(s, &s + 0.);
-    //     assert_eq!(s, &s + 2.);
-    //     let s = Polynomial::new("x", -2, vec![1. / 2., 0., -1.]);
-    //     let res = Polynomial::new("x", -2, vec![1. / 2., 0., 1.]);
-    //     assert_eq!(s, &s + 0.);
-    //     assert_eq!(res, s + 2.);
-    //     let s = Polynomial::new("x", 2, vec![1. / 2., 0., -1.]);
-    //     let res = Polynomial::new("x", 0, vec![2., 0., 1. / 2., 0., -1.]);
-    //     assert_eq!(s, &s + 0.);
-    //     assert_eq!(res, s + 2.);
-    //     let s = Polynomial::new("x", 0, vec![-2., 0., -1.]);
-    //     let res = Polynomial::new("x", 2, vec![-1.]);
-    //     assert_eq!(res, s + 2.);
+        let s = Polynomial::new("x", -3, vec![1. / 2., 0., -1.]);
+        assert_eq!(s, &s + 0.);
+        let res = Polynomial::new("x", -3, vec![1. / 2., 0., -1., 2.]);
+        assert_eq!(res, &s + 2.);
+        let s = Polynomial::new("x", -2, vec![1. / 2., 0., -1.]);
+        let res = Polynomial::new("x", -2, vec![1. / 2., 0., 1.]);
+        assert_eq!(s, &s + 0.);
+        assert_eq!(res, s + 2.);
+        let s = Polynomial::new("x", 2, vec![1. / 2., 0., -1.]);
+        let res = Polynomial::new("x", 0, vec![2., 0., 1. / 2., 0., -1.]);
+        assert_eq!(s, &s + 0.);
+        assert_eq!(res, s + 2.);
+        let s = Polynomial::new("x", 0, vec![-2., 0., -1.]);
+        let res = Polynomial::new("x", 2, vec![-1.]);
+        assert_eq!(res, s + 2.);
 
-    //     let s = Polynomial::new("x", -3, vec![1. / 2., 0., -1.]);
-    //     assert_eq!(s, &s - 0.);
-    //     assert_eq!(s, &s - 2.);
-    //     let s = Polynomial::new("x", -2, vec![1. / 2., 0., -1.]);
-    //     let res = Polynomial::new("x", -2, vec![1. / 2., 0., -3.]);
-    //     assert_eq!(s, &s - 0.);
-    //     assert_eq!(res, s - 2.);
-    //     let s = Polynomial::new("x", 2, vec![1. / 2., 0., -1.]);
-    //     let res = Polynomial::new("x", 0, vec![-2., 0., 1. / 2., 0., -1.]);
-    //     assert_eq!(s, &s - 0.);
-    //     assert_eq!(res, s - 2.);
-    //     let s = Polynomial::new("x", 0, vec![2., 0., -1.]);
-    //     let res = Polynomial::new("x", 2, vec![-1.]);
-    //     assert_eq!(res, s - 2.);
+        let s = Polynomial::new("x", -3, vec![1. / 2., 0., -1.]);
+        assert_eq!(s, &s - 0.);
+        let res = Polynomial::new("x", -3, vec![1. / 2., 0., -1., -2.]);
+        assert_eq!(res, &s - 2.);
+        let s = Polynomial::new("x", -2, vec![1. / 2., 0., -1.]);
+        let res = Polynomial::new("x", -2, vec![1. / 2., 0., -3.]);
+        assert_eq!(s, &s - 0.);
+        assert_eq!(res, s - 2.);
+        let s = Polynomial::new("x", 2, vec![1. / 2., 0., -1.]);
+        let res = Polynomial::new("x", 0, vec![-2., 0., 1. / 2., 0., -1.]);
+        assert_eq!(s, &s - 0.);
+        assert_eq!(res, s - 2.);
+        let s = Polynomial::new("x", 0, vec![2., 0., -1.]);
+        let res = Polynomial::new("x", 2, vec![-1.]);
+        assert_eq!(res, s - 2.);
 
     }
 
