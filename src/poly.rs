@@ -537,19 +537,6 @@ where
     }
 }
 
-impl<'a, Var: Clone, C: Coeff + Clone, Rhs> Add<Rhs> for &'a Polynomial<Var, C>
-where
-    Polynomial<Var, C>: AddAssign<Rhs>,
-{
-    type Output = Polynomial<Var, C>;
-
-    fn add(self, other: Rhs) -> Self::Output {
-        let mut res = self.clone();
-        res += other;
-        res
-    }
-}
-
 impl<Var: Clone, C: Coeff + Clone, Rhs> Add<Rhs> for Polynomial<Var, C>
 where
     Polynomial<Var, C>: AddAssign<Rhs>,
@@ -618,19 +605,6 @@ where
     /// Panics if the polynomial have different expansion variables.
     fn sub_assign(&mut self, other: Polynomial<Var, C>) {
         *self += -other;
-    }
-}
-
-impl<'a, Var, C: Coeff, T> Sub<T> for &'a Polynomial<Var, C>
-where
-    Polynomial<Var, C>: Clone + SubAssign<T>,
-{
-    type Output = Polynomial<Var, C>;
-
-    fn sub(self, other: T) -> Self::Output {
-        let mut res = self.clone();
-        res -= other;
-        res
     }
 }
 
@@ -789,6 +763,60 @@ where
     }
 }
 
+impl<Var, C: Coeff> AddAssign<C> for Polynomial<Var, C>
+where
+    for<'c> Polynomial<Var, C>: AddAssign<&'c C>,
+{
+    fn add_assign(&mut self, other: C) {
+        self.add_assign(&other)
+    }
+}
+
+impl<'a, Var, C: Coeff> AddAssign<&'a C> for Polynomial<Var, C>
+where
+    Polynomial<Var, C>: AddAssign,
+    C: Clone + AddAssign<&'a C>,
+{
+    fn add_assign(&mut self, other: &'a C) {
+        match self.min_pow() {
+            None => {
+                self.min_pow = Some(0);
+                self.coeffs.push(other.clone())
+            },
+            Some(min_pow) => {
+                if min_pow > 0 {
+                    self.extend_min(min_pow as usize);
+                } else if self.max_pow().unwrap() < 0 {
+                    self.extend_max((- self.max_pow().unwrap()) as usize);
+                }
+                self[0] += other;
+            }
+        }
+        self.trim();
+    }
+}
+
+impl<Var, C: Coeff> SubAssign<C> for Polynomial<Var, C>
+where
+    Polynomial<Var, C>: AddAssign<C>,
+    C: Neg<Output=C> + AddAssign,
+{
+    fn sub_assign(&mut self, other: C) {
+        self.add_assign(-other);
+    }
+}
+
+impl<'c, Var, C: Coeff> SubAssign<&'c C> for Polynomial<Var, C>
+where
+    Polynomial<Var, C>: AddAssign<C>,
+    C: AddAssign,
+    &'c C: Neg<Output=C>
+{
+    fn sub_assign(&mut self, other: &'c C) {
+        self.add_assign(-other);
+    }
+}
+
 impl<Var, C: Coeff> Mul for Polynomial<Var, C>
 where
     Polynomial<Var, C>: MulAssign,
@@ -891,6 +919,28 @@ where
 
     fn div(self, other: T) -> Self::Output {
         self.as_slice(..) / other
+    }
+}
+
+impl<'a, Var, C: Coeff, T> Add<T> for &'a Polynomial<Var, C>
+where
+    PolynomialSlice<'a, Var, C>: Add<T, Output=Polynomial<Var, C>>
+{
+    type Output = Polynomial<Var, C>;
+
+    fn add(self, other: T) -> Self::Output {
+        self.as_slice(..) + other
+    }
+}
+
+impl<'a, Var, C: Coeff, T> Sub<T> for &'a Polynomial<Var, C>
+where
+    PolynomialSlice<'a, Var, C>: Sub<T, Output=Polynomial<Var, C>>
+{
+    type Output = Polynomial<Var, C>;
+
+    fn sub(self, other: T) -> Self::Output {
+        self.as_slice(..) - other
     }
 }
 
