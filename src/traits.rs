@@ -10,7 +10,7 @@ pub trait MulInverse {
 }
 
 // Slice views into objects
-pub(crate) trait AsSlice<'a, T> {
+pub trait AsSlice<'a, T> {
     type Output;
 
     fn as_slice(&'a self, t: T) -> Self::Output;

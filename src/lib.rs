@@ -13,7 +13,7 @@ pub use self::poly::*;
 pub use self::polyslice::*;
 pub use self::ops::*;
 mod traits;
-pub use self::traits::{MulInverse};
+pub use self::traits::{AsSlice, MulInverse};
 mod util;
 
 use std::iter::Zip;

@@ -196,7 +196,7 @@ impl<'a, Var: 'a, C: 'a + Coeff>  AsSlice<'a, Range<isize>> for Series<Var, C> {
     /// # Example
     ///
     /// ```rust
-    /// use crate::series::AsSlice;
+    /// use series::AsSlice;
     /// let s = series::Series::new("x", -1, vec!(1,2,3,4));
     /// let t = s.as_slice(0..2);
     /// assert_eq!(t.min_pow(), 0);
@@ -230,7 +230,7 @@ impl<'a, Var: 'a, C: 'a + Coeff>  AsSlice<'a, RangeInclusive<isize>> for Series<
     /// # Example
     ///
     /// ```rust
-    /// use crate::series::AsSlice;
+    /// use series::AsSlice;
     /// let s = series::Series::new("x", -1, vec!(1,2,3,4));
     /// let t = s.as_slice(0..=1);
     /// assert_eq!(t.min_pow(), 0);
@@ -264,7 +264,7 @@ impl<'a, Var: 'a, C: 'a + Coeff>  AsSlice<'a, RangeToInclusive<isize>> for Serie
     /// # Example
     ///
     /// ```rust
-    /// use crate::series::AsSlice;
+    /// use series::AsSlice;
     /// let s = series::Series::new("x", -1, vec!(1,2,3,4));
     /// let t = s.as_slice(..=1);
     /// assert_eq!(t.min_pow(), s.min_pow());
@@ -296,7 +296,7 @@ impl<'a, Var: 'a, C: 'a + Coeff>  AsSlice<'a, RangeFrom<isize>> for Series<Var, 
     /// # Example
     ///
     /// ```rust
-    /// use crate::series::AsSlice;
+    /// use series::AsSlice;
     /// let s = series::Series::new("x", -1, vec!(1,2,3,4));
     /// let t = s.as_slice(0..);
     /// assert_eq!(t.min_pow(), 0);
@@ -329,7 +329,7 @@ impl<'a, Var: 'a, C: 'a + Coeff>  AsSlice<'a, RangeTo<isize>> for Series<Var, C>
     /// # Example
     ///
     /// ```rust
-    /// use crate::series::AsSlice;
+    /// use series::AsSlice;
     /// let s = series::Series::new("x", -1, vec!(1,2,3,4));
     /// let t = s.as_slice(..2);
     /// assert_eq!(t.min_pow(), s.min_pow());
@@ -357,7 +357,7 @@ impl<'a, Var: 'a, C: 'a + Coeff>  AsSlice<'a, RangeFull> for Series<Var, C> {
     /// # Example
     ///
     /// ```rust
-    /// use crate::series::AsSlice;
+    /// use series::AsSlice;
     /// let s = series::Series::new("x", -1, vec!(1,2,3,4));
     /// let t = s.as_slice(..);
     /// assert_eq!(t.min_pow(), s.min_pow());
@@ -391,6 +391,7 @@ impl<Var, C: Coeff> Index<isize> for Series<Var, C> {
     /// # Example
     ///
     /// ```rust
+    /// use series::AsSlice;
     /// let s = series::Series::new("x", -1, vec!(1,2,3));
     /// assert_eq!(s[-1], 1);
     /// assert_eq!(s[0], 2);
@@ -415,6 +416,7 @@ impl<Var, C: Coeff> IndexMut<isize> for Series<Var, C> {
     /// # Example
     ///
     /// ```rust
+    /// use series::AsSlice;
     /// let mut s = series::Series::new("x", -1, vec!(1,2,3));
     /// s[-1] = 0;
     /// assert_eq!(s[-1], 0);
