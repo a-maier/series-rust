@@ -8,7 +8,7 @@ use criterion::Criterion;
 use rand::prelude::*;
 use rand::SeedableRng;
 
-use series::Series;
+use series::{Series, Polynomial};
 
 const MAX_ELEMENTS: usize = 2000;
 const MAX_DIGITS: usize = 20;
@@ -24,9 +24,29 @@ impl Integer {
     }
 }
 
-impl<'a> std::ops::AddAssign<Integer> for Integer {
+impl std::ops::Neg for Integer {
+    type Output = Self;
+    fn neg(self) -> Self {
+        Integer(-self.0)
+    }
+}
+
+impl<'a> std::ops::Neg for &'a Integer {
+    type Output = Integer;
+    fn neg(self) -> Integer {
+        Integer((-&self.0).into())
+    }
+}
+
+impl std::ops::AddAssign<Integer> for Integer {
     fn add_assign(&mut self, rhs: Integer) {
         self.0 += rhs.0;
+    }
+}
+
+impl<'a> std::ops::AddAssign<&'a Integer> for Integer {
+    fn add_assign(&mut self, rhs: &'a Integer) {
+        self.0 += &rhs.0;
     }
 }
 
@@ -89,7 +109,7 @@ lazy_static! {
 fn mul_f64_1(c: &mut Criterion) {
     let s = Series::new("x", -2, RAN_F64[..1].to_owned());
     c.bench_function(
-        "1 f64 coefficient",
+        "multiply series with 1 f64 coefficient",
         move |b| {
             let s = s.clone();
             b.iter(|| &s * &s)
@@ -100,7 +120,7 @@ fn mul_f64_1(c: &mut Criterion) {
 fn mul_f64_10(c: &mut Criterion) {
     let s = Series::new("x", -2, RAN_F64[..10].to_owned());
     c.bench_function(
-        "10 f64 coefficients",
+        "multiply series with 10 f64 coefficients",
         move |b| {
             let s = s.clone();
             b.iter(|| &s * &s)
@@ -111,7 +131,7 @@ fn mul_f64_10(c: &mut Criterion) {
 fn mul_f64_100(c: &mut Criterion) {
     let s = Series::new("x", -2, RAN_F64[..100].to_owned());
     c.bench_function(
-        "100 f64 coefficients",
+        "multiply series with 100 f64 coefficients",
         move |b| {
             let s = s.clone();
             b.iter(|| &s * &s)
@@ -122,7 +142,7 @@ fn mul_f64_100(c: &mut Criterion) {
 fn mul_f64_1000(c: &mut Criterion) {
     let s = Series::new("x", -2, RAN_F64[..1000].to_owned());
     c.bench_function(
-        "1000 f64 coefficients",
+        "multiply series with 1000 f64 coefficients",
         move |b| {
             let s = s.clone();
             b.iter(|| &s * &s)
@@ -133,7 +153,7 @@ fn mul_f64_1000(c: &mut Criterion) {
 fn mul_int_1(c: &mut Criterion) {
     let s = Series::new("x", -2, RAN_INT[..1].to_owned());
     c.bench_function(
-        "1 integer coefficient",
+        "multiply series with 1 integer coefficient",
         move |b| {
             let s = s.clone();
             b.iter(|| &s * &s)
@@ -144,7 +164,7 @@ fn mul_int_1(c: &mut Criterion) {
 fn mul_int_10(c: &mut Criterion) {
     let s = Series::new("x", -2, RAN_INT[..10].to_owned());
     c.bench_function(
-        "10 integer coefficients",
+        "multiply series with 10 integer coefficients",
         move |b| {
             let s = s.clone();
             b.iter(|| &s * &s)
@@ -155,7 +175,7 @@ fn mul_int_10(c: &mut Criterion) {
 fn mul_int_100(c: &mut Criterion) {
     let s = Series::new("x", -2, RAN_INT[..100].to_owned());
     c.bench_function(
-        "100 integer coefficients",
+        "multiply series with 100 integer coefficients",
         move |b| {
             let s = s.clone();
             b.iter(|| &s * &s)
@@ -168,7 +188,7 @@ fn mul_int_1000(c: &mut Criterion) {
     c.bench(
         "",
         criterion::Benchmark::new(
-            "1000 integer coefficients",
+            "multiply series with 1000 integer coefficients",
             move |b| {
                 let s = s.clone();
                 b.iter(|| &s * &s)
@@ -177,10 +197,102 @@ fn mul_int_1000(c: &mut Criterion) {
     );
 }
 
+fn mul_poly_f64_1(c: &mut Criterion) {
+    let s = Polynomial::new("x", -2, RAN_F64[..1].to_owned());
+    c.bench_function(
+        "multiply polynomials with 1 f64 coefficient",
+        move |b| {
+            let s = s.clone();
+            b.iter(|| &s * &s)
+        }
+    );
+}
+
+fn mul_poly_f64_10(c: &mut Criterion) {
+    let s = Polynomial::new("x", -2, RAN_F64[..10].to_owned());
+    c.bench_function(
+        "multiply polynomials with 10 f64 coefficients",
+        move |b| {
+            let s = s.clone();
+            b.iter(|| &s * &s)
+        }
+    );
+}
+
+fn mul_poly_f64_100(c: &mut Criterion) {
+    let s = Polynomial::new("x", -2, RAN_F64[..100].to_owned());
+    c.bench_function(
+        "multiply polynomials with 100 f64 coefficients",
+        move |b| {
+            let s = s.clone();
+            b.iter(|| &s * &s)
+        }
+    );
+}
+
+fn mul_poly_f64_1000(c: &mut Criterion) {
+    let s = Polynomial::new("x", -2, RAN_F64[..1000].to_owned());
+    c.bench_function(
+        "multiply polynomials with 1000 f64 coefficients",
+        move |b| {
+            let s = s.clone();
+            b.iter(|| &s * &s)
+        }
+    );
+}
+
+fn mul_poly_int_1(c: &mut Criterion) {
+    let s = Polynomial::new("x", -2, RAN_INT[..1].to_owned());
+    c.bench_function(
+        "multiply polynomials with 1 integer coefficient",
+        move |b| {
+            let s = s.clone();
+            b.iter(|| &s * &s)
+        }
+    );
+}
+
+fn mul_poly_int_10(c: &mut Criterion) {
+    let s = Polynomial::new("x", -2, RAN_INT[..10].to_owned());
+    c.bench_function(
+        "multiply polynomials with 10 integer coefficients",
+        move |b| {
+            let s = s.clone();
+            b.iter(|| &s * &s)
+        }
+    );
+}
+
+fn mul_poly_int_100(c: &mut Criterion) {
+    let s = Polynomial::new("x", -2, RAN_INT[..100].to_owned());
+    c.bench_function(
+        "multiply polynomials with 100 integer coefficients",
+        move |b| {
+            let s = s.clone();
+            b.iter(|| &s * &s)
+        }
+    );
+}
+
+fn mul_poly_int_1000(c: &mut Criterion) {
+    let s = Polynomial::new("x", -2, RAN_INT[..1000].to_owned());
+    c.bench(
+        "",
+        criterion::Benchmark::new(
+            "multiply polynomials with 1000 integer coefficients",
+            move |b| {
+                let s = s.clone();
+                b.iter(|| &s * &s)
+            }
+        ).sample_size(20)
+    );
+}
 
 criterion_group!(
     benches,
     mul_f64_1, mul_f64_10, mul_f64_100, mul_f64_1000,
     mul_int_1, mul_int_10, mul_int_100, mul_int_1000,
+    mul_poly_f64_1, mul_poly_f64_10, mul_poly_f64_100, mul_poly_f64_1000,
+    mul_poly_int_1, mul_poly_int_10, mul_poly_int_100, mul_poly_int_1000,
 );
 criterion_main!(benches);
