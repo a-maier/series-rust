@@ -73,7 +73,7 @@ impl<'a, Var, C: Coeff> SeriesSlice<'a, Var, C> {
     }
 
     pub fn split_at(&self, pos: isize) -> (Self, Self) {
-        let upos = (pos + self.min_pow()) as usize;
+        let upos = (pos - self.min_pow()) as usize;
         let (lower, upper) = self.coeffs.split_at(upos);
         let lower = SeriesSlice{
             var: self.var,
