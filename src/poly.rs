@@ -1,10 +1,10 @@
 use crate::polyslice::PolynomialSlice;
 use crate::{Coeff, Iter, IntoIter};
+use crate::series::Series;
 use crate::traits::AsSlice;
 use crate::util::{trim_start, trim_end};
 
-use std::fmt;
-use std::iter;
+use std::{convert, fmt, iter};
 use std::ops::{
     Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Range,
     RangeInclusive, RangeToInclusive, RangeFrom, RangeFull, RangeTo,
@@ -265,6 +265,15 @@ impl<'a, Var: 'a, C: 'a + Coeff>  AsSlice<'a, RangeFull> for Polynomial<Var, C> 
         }
     }
 }
+
+impl<Var, C: Coeff> convert::From<Series<Var, C>> for Polynomial<Var, C> {
+
+    fn from(s: Series<Var, C>) -> Self {
+        Polynomial::new(s.var, s.min_pow, s.coeffs)
+    }
+}
+
+
 
 impl<Var, C: Coeff> Index<isize> for Polynomial<Var, C> {
     type Output = C;
