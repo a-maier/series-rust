@@ -221,7 +221,7 @@ impl<'a, Var: 'a, C: 'a + Coeff>  AsSlice<'a, RangeFrom<isize>> for Polynomial<V
             let start = r.start - min_pow;
             PolynomialSlice::new(
                 &self.var,
-                start,
+                r.start,
                 &self.coeffs[(start as usize)..],
                 &self.zero,
             )
