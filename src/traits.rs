@@ -9,7 +9,7 @@ pub trait MulInverse {
     fn mul_inverse(self) -> Self::Output;
 }
 
-// Slice views into objects
+/// View a slice of the original object
 pub trait AsSlice<'a, T> {
     type Output;
 

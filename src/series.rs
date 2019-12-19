@@ -136,8 +136,7 @@ impl<Var, C: Coeff> Series<Var, C> {
     }
 
     /// Get the power of the expansion variable where the series is
-    /// truncated, that is \\( N \\) in a series of the form \\(
-    /// \sum_{n=n_0}^{N-1} a_n x^n + O(x^N), \\)
+    /// truncated.
     ///
     /// # Example
     ///

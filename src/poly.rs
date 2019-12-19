@@ -118,7 +118,8 @@ impl<Var, C: Coeff> Polynomial<Var, C> {
         self.min_pow.map(|c| c - 1 + self.len() as isize)
     }
 
-    /// Get the number of coefficients
+    /// Get the difference between the highest and the lowest power of
+    /// the polynomial variable
     ///
     /// # Example
     ///

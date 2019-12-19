@@ -60,14 +60,56 @@ impl<'a, Var, C: Coeff> PolynomialSlice<'a, Var, C> {
         }
     }
 
+    /// Get the leading power of the polynomial variable
+    ///
+    /// For vanishing polynomials `None` is returned
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use series::AsSlice;
+    ///
+    /// let p = series::Polynomial::new("x", -1, vec!(1,2,3));
+    /// assert_eq!(p.as_slice(..).min_pow(), Some(-1));
+    /// assert_eq!(p.as_slice(0..).min_pow(), Some(0));
+    /// let p = series::Polynomial::new("x", -1, vec![0]);
+    /// assert_eq!(p.as_slice(..).min_pow(), None);
+    /// ```
     pub fn min_pow(&self) -> Option<isize> {
         self.min_pow
     }
 
+    /// Get the highest power of the polynomial variable
+    ///
+    /// For vanishing polynomials `None` is returned
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use series::AsSlice;
+    ///
+    /// let p = series::Polynomial::new("x", -1, vec!(1,2,3));
+    /// assert_eq!(p.as_slice(..).max_pow(), Some(1));
+    /// assert_eq!(p.as_slice(..1).max_pow(), Some(0));
+    /// let p = series::Polynomial::new("x", -1, vec![0]);
+    /// assert_eq!(p.max_pow(), None);
+    /// ```
     pub fn max_pow(&self) -> Option<isize> {
         self.min_pow.map(|c| c - 1 + self.coeffs.len() as isize)
     }
 
+    /// Get the difference between the highest and the lowest power of
+    /// the polynomial variable
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use series::AsSlice;
+    ///
+    /// let p = series::Polynomial::new("x", -1, vec!(1,2,3));
+    /// assert_eq!(p.as_slice(..).len(), 3);
+    /// assert_eq!(p.as_slice(0..2).len(), 2);
+    /// ```
     pub fn len(&self) -> usize {
         self.coeffs.len()
     }
@@ -86,10 +128,38 @@ impl<'a, Var, C: Coeff> PolynomialSlice<'a, Var, C> {
         }
     }
 
+    /// Iterator over the polynomial powers and coefficients.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use series::AsSlice;
+    ///
+    /// let p = series::Polynomial::new("x", -1, vec!(1,2,3));
+    /// let slice = p.as_slice(..);
+    /// let mut iter = slice.iter();
+    /// assert_eq!(iter.next(), Some((-1, &1)));
+    /// assert_eq!(iter.next(), Some((0, &2)));
+    /// assert_eq!(iter.next(), Some((1, &3)));
+    /// assert_eq!(iter.next(), None);
+    /// ```
     pub fn iter(&self) -> Iter<C> {
         (self.min_pow().unwrap_or(0)..).zip(self.coeffs.iter())
     }
 
+    /// Split a polynomial slice into two at the given power
+    /// of the polynomial variable.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use series::AsSlice;
+    ///
+    /// let p = series::Polynomial::new("x", -1, vec!(1,2,3));
+    /// let (lower, upper) = p.as_slice(..).split_at(0);
+    /// assert_eq!(lower.min_pow(), Some(-1));
+    /// assert_eq!(upper.min_pow(), Some(0));
+    /// ```
     pub fn split_at(&self, pos: isize) -> (Self, Self) {
         let upos = (pos - self.min_pow().unwrap()) as usize;
         let (lower, upper) = self.coeffs.split_at(upos);
