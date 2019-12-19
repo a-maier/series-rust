@@ -27,7 +27,7 @@ impl<T: From<i32> + PartialEq> Coeff for T {}
 ///
 /// This `struct` is created by the `iter` method on `Series`
 pub type Iter<'a, C> = Zip<RangeFrom<isize>, std::slice::Iter<'a, C>>;
-/// An iterator that moves out of a vector.
+/// An iterator that moves out of a series.
 ///
 /// This `struct` is created by the `into_iter` method on `Series`
 pub type IntoIter<C> = Zip<RangeFrom<isize>, std::vec::IntoIter<C>>;
