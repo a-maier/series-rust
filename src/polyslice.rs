@@ -65,7 +65,7 @@ impl<'a, Var, C: Coeff> PolynomialSlice<'a, Var, C> {
     }
 
     pub fn max_pow(&self) -> Option<isize> {
-        self.min_pow.map(|c| c + self.coeffs.len() as isize)
+        self.min_pow.map(|c| c - 1 + self.coeffs.len() as isize)
     }
 
     pub fn len(&self) -> usize {
