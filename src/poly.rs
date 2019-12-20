@@ -936,19 +936,32 @@ where
     }
 }
 
-const MIN_KARATSUBA_SIZE: usize = 8;
-
 // dubious helpers trait that only serve to prevent obscure
 // compiler errors (rust 1.36.0)
 pub(crate) trait MulHelper<'a, 'b, Var, C: Coeff> {
 
-    fn add_prod(&mut self, a: PolynomialSlice<'a, Var, C>, b: PolynomialSlice<'b, Var, C>);
+    fn add_prod(
+        &mut self,
+        a: PolynomialSlice<'a, Var, C>,
+        b: PolynomialSlice<'b, Var, C>,
+        min_karatsuba_size: usize,
+    );
 
     fn add_prod_naive(&mut self, a: PolynomialSlice<'a, Var, C>, b: PolynomialSlice<'b, Var, C>);
 
-    fn add_prod_karatsuba(&mut self, a: PolynomialSlice<'a, Var, C>, b: PolynomialSlice<'b, Var, C>);
+    fn add_prod_karatsuba(
+        &mut self,
+        a: PolynomialSlice<'a, Var, C>,
+        b: PolynomialSlice<'b, Var, C>,
+        min_karatsuba_size: usize,
+    );
 
-    fn add_prod_unchecked(&mut self, a: PolynomialSlice<'a, Var, C>, b: PolynomialSlice<'b, Var, C>);
+    fn add_prod_unchecked(
+        &mut self,
+        a: PolynomialSlice<'a, Var, C>,
+        b: PolynomialSlice<'b, Var, C>,
+        min_karatsuba_size: usize,
+    );
 
     fn resize_to_fit(&mut self, a: PolynomialSlice<'a, Var, C>, b: PolynomialSlice<'b, Var, C>);
 }
@@ -964,12 +977,17 @@ where
     for <'c> &'c C: Mul<Output=C>
 {
 
-    fn add_prod(&mut self, a: PolynomialSlice<'a, Var, C>, b: PolynomialSlice<'b, Var, C>) {
+    fn add_prod(
+        &mut self,
+        a: PolynomialSlice<'a, Var, C>,
+        b: PolynomialSlice<'b, Var, C>,
+        min_karatsuba_size: usize,
+    ) {
         if a.min_pow() == None || b.min_pow() == None {
             return;
         }
         self.resize_to_fit(a, b);
-        self.add_prod_unchecked(a, b);
+        self.add_prod_unchecked(a, b, min_karatsuba_size);
         self.trim();
     }
 
@@ -996,20 +1014,30 @@ where
         }
     }
 
-    fn add_prod_unchecked(&mut self, a: PolynomialSlice<'a, Var, C>, b: PolynomialSlice<'b, Var, C>) {
+    fn add_prod_unchecked(
+        &mut self,
+        a: PolynomialSlice<'a, Var, C>,
+        b: PolynomialSlice<'b, Var, C>,
+        min_karatsuba_size: usize,
+    ) {
         if a.len() > b.len() {
-            return self.add_prod_unchecked(b, a)
+            return self.add_prod_unchecked(b, a, min_karatsuba_size)
         }
-        if a.len() < MIN_KARATSUBA_SIZE {
+        if a.len() < min_karatsuba_size {
             self.add_prod_naive(a, b);
         }
         else {
             // TODO: split b if it's too long?
-            self.add_prod_karatsuba(a, b);
+            self.add_prod_karatsuba(a, b, min_karatsuba_size);
         }
     }
 
-    fn add_prod_karatsuba(&mut self, a: PolynomialSlice<'a, Var, C>, b: PolynomialSlice<'b, Var, C>) {
+    fn add_prod_karatsuba(
+        &mut self,
+        a: PolynomialSlice<'a, Var, C>,
+        b: PolynomialSlice<'b, Var, C>,
+        min_karatsuba_size: usize,
+    ) {
         debug_assert!(a.len() <= b.len());
         let mid = ((a.len() + 1)/2) as isize;
         let (a_low, mut a_high) = a.split_at(a.min_pow().unwrap() + mid);
@@ -1019,7 +1047,11 @@ where
         let t = a_low + a_high;
         let mut u = b_low + b_high;
         u.min_pow.as_mut().map(|m| *m += mid);
-        self.add_prod_unchecked(t.as_slice(..), u.as_slice(..));
+        self.add_prod_unchecked(
+            t.as_slice(..),
+            u.as_slice(..),
+            min_karatsuba_size
+        );
         let mut t = a_low * b_low;
         *self += &t;
         t.min_pow.as_mut().map(|m| *m += mid);

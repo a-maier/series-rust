@@ -1,7 +1,7 @@
 use crate::{Coeff, Iter, Polynomial};
 use crate::util::{trim_slice_start, trim_slice_end};
 use crate::poly::MulHelper;
-use crate::traits::AsSlice;
+use crate::traits::{AsSlice, KaratsubaMul};
 
 use std::fmt;
 use std::ops::{
@@ -263,6 +263,8 @@ where
     }
 }
 
+const MIN_KARATSUBA_SIZE: usize = 8;
+
 impl<'a, 'b, Var, C: Coeff> Mul<PolynomialSlice<'b, Var, C>> for PolynomialSlice<'a, Var, C>
 where
     Var: Clone + PartialEq + fmt::Debug,
@@ -277,9 +279,7 @@ where
 
     fn mul(self, other: PolynomialSlice<'b, Var, C>) -> Self::Output {
         assert_eq!(self.var, other.var);
-        let mut res = Polynomial::new(self.var.clone(), 0, vec![]);
-        res.add_prod(self, other);
-        res
+        self.karatsuba_mul(other, MIN_KARATSUBA_SIZE)
     }
 }
 
@@ -350,5 +350,33 @@ where
     fn div(self, scalar: &'b C) -> Self::Output {
         let coeffs = self.coeffs.iter().map(|c| c / scalar).collect();
         Polynomial::new(self.var.clone(), self.min_pow.unwrap_or(0), coeffs)
+    }
+}
+
+impl<'a, 'b, Var: Clone, C: Coeff> KaratsubaMul<PolynomialSlice<'b, Var, C>> for PolynomialSlice<'a, Var, C>
+where
+    Var: Clone + PartialEq + fmt::Debug,
+    C: Clone,
+    for <'c> C: AddAssign,
+    for <'c> Polynomial<Var, C>: AddAssign<&'c Polynomial<Var, C>> + SubAssign<&'c Polynomial<Var, C>>,
+    Polynomial<Var, C>: AddAssign<Polynomial<Var, C>> + SubAssign<Polynomial<Var, C>>,
+    for<'c> PolynomialSlice<'c, Var, C>: Add<Output = Polynomial<Var, C>>,
+    for <'c> &'c C: Mul<Output=C>
+{
+    type Output = Polynomial<Var, C>;
+
+    fn karatsuba_mul(
+        self,
+        rhs: PolynomialSlice<'b, Var, C>,
+        min_size: usize,
+    ) -> Self::Output {
+        let mut result = Polynomial{
+            var: self.var.clone(),
+            min_pow: None,
+            coeffs: vec![],
+            zero: C::from(0)
+        };
+        result.add_prod(self, rhs, min_size);
+        result
     }
 }

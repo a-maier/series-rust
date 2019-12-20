@@ -16,6 +16,13 @@ pub trait AsSlice<'a, T> {
     fn as_slice(&'a self, t: T) -> Self::Output;
 }
 
+/// Karatsuba multiplication
+pub trait KaratsubaMul<Rhs> {
+    type Output;
+
+    fn karatsuba_mul(self, rhs: Rhs, min_size: usize) -> Self::Output;
+}
+
 // Logarithm for series starting with var^0
 pub(crate) trait LnVarFree {
     type Output;
