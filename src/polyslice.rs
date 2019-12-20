@@ -380,3 +380,24 @@ where
         result
     }
 }
+
+impl<'a, 'b, Var: Clone, C: Coeff> KaratsubaMul<&'b Polynomial<Var, C>> for PolynomialSlice<'a, Var, C>
+where
+    Var: Clone + PartialEq + fmt::Debug,
+    C: Clone,
+    for <'c> C: AddAssign,
+    for <'c> Polynomial<Var, C>: AddAssign<&'c Polynomial<Var, C>> + SubAssign<&'c Polynomial<Var, C>>,
+    Polynomial<Var, C>: AddAssign<Polynomial<Var, C>> + SubAssign<Polynomial<Var, C>>,
+    for<'c> PolynomialSlice<'c, Var, C>: Add<Output = Polynomial<Var, C>>,
+    for <'c> &'c C: Mul<Output=C>
+{
+    type Output = Polynomial<Var, C>;
+
+    fn karatsuba_mul(
+        self,
+        rhs: &'b Polynomial<Var, C>,
+        min_size: usize,
+    ) -> Self::Output {
+        self.karatsuba_mul(rhs.as_slice(..), min_size)
+    }
+}
