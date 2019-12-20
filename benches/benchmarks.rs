@@ -111,7 +111,6 @@ fn mul_f64_1(c: &mut Criterion) {
     c.bench_function(
         "multiply series with 1 f64 coefficient",
         move |b| {
-            let s = s.clone();
             b.iter(|| &s * &s)
         }
     );
@@ -122,7 +121,6 @@ fn mul_f64_10(c: &mut Criterion) {
     c.bench_function(
         "multiply series with 10 f64 coefficients",
         move |b| {
-            let s = s.clone();
             b.iter(|| &s * &s)
         }
     );
@@ -133,7 +131,6 @@ fn mul_f64_100(c: &mut Criterion) {
     c.bench_function(
         "multiply series with 100 f64 coefficients",
         move |b| {
-            let s = s.clone();
             b.iter(|| &s * &s)
         }
     );
@@ -144,7 +141,6 @@ fn mul_f64_1000(c: &mut Criterion) {
     c.bench_function(
         "multiply series with 1000 f64 coefficients",
         move |b| {
-            let s = s.clone();
             b.iter(|| &s * &s)
         }
     );
@@ -155,7 +151,6 @@ fn mul_int_1(c: &mut Criterion) {
     c.bench_function(
         "multiply series with 1 integer coefficient",
         move |b| {
-            let s = s.clone();
             b.iter(|| &s * &s)
         }
     );
@@ -166,7 +161,6 @@ fn mul_int_10(c: &mut Criterion) {
     c.bench_function(
         "multiply series with 10 integer coefficients",
         move |b| {
-            let s = s.clone();
             b.iter(|| &s * &s)
         }
     );
@@ -177,7 +171,6 @@ fn mul_int_100(c: &mut Criterion) {
     c.bench_function(
         "multiply series with 100 integer coefficients",
         move |b| {
-            let s = s.clone();
             b.iter(|| &s * &s)
         }
     );
@@ -190,7 +183,6 @@ fn mul_int_1000(c: &mut Criterion) {
         criterion::Benchmark::new(
             "multiply series with 1000 integer coefficients",
             move |b| {
-                let s = s.clone();
                 b.iter(|| &s * &s)
             }
         ).sample_size(20)
@@ -202,7 +194,6 @@ fn mul_poly_f64_1(c: &mut Criterion) {
     c.bench_function(
         "multiply polynomials with 1 f64 coefficient",
         move |b| {
-            let s = s.clone();
             b.iter(|| &s * &s)
         }
     );
@@ -213,7 +204,6 @@ fn mul_poly_f64_10(c: &mut Criterion) {
     c.bench_function(
         "multiply polynomials with 10 f64 coefficients",
         move |b| {
-            let s = s.clone();
             b.iter(|| &s * &s)
         }
     );
@@ -224,7 +214,6 @@ fn mul_poly_f64_100(c: &mut Criterion) {
     c.bench_function(
         "multiply polynomials with 100 f64 coefficients",
         move |b| {
-            let s = s.clone();
             b.iter(|| &s * &s)
         }
     );
@@ -235,7 +224,6 @@ fn mul_poly_f64_1000(c: &mut Criterion) {
     c.bench_function(
         "multiply polynomials with 1000 f64 coefficients",
         move |b| {
-            let s = s.clone();
             b.iter(|| &s * &s)
         }
     );
@@ -246,7 +234,6 @@ fn mul_poly_int_1(c: &mut Criterion) {
     c.bench_function(
         "multiply polynomials with 1 integer coefficient",
         move |b| {
-            let s = s.clone();
             b.iter(|| &s * &s)
         }
     );
@@ -257,7 +244,6 @@ fn mul_poly_int_10(c: &mut Criterion) {
     c.bench_function(
         "multiply polynomials with 10 integer coefficients",
         move |b| {
-            let s = s.clone();
             b.iter(|| &s * &s)
         }
     );
@@ -268,7 +254,6 @@ fn mul_poly_int_100(c: &mut Criterion) {
     c.bench_function(
         "multiply polynomials with 100 integer coefficients",
         move |b| {
-            let s = s.clone();
             b.iter(|| &s * &s)
         }
     );
@@ -281,7 +266,6 @@ fn mul_poly_int_1000(c: &mut Criterion) {
         criterion::Benchmark::new(
             "multiply polynomials with 1000 integer coefficients",
             move |b| {
-                let s = s.clone();
                 b.iter(|| &s * &s)
             }
         ).sample_size(20)
