@@ -147,6 +147,24 @@ impl<Var, C: Coeff> Polynomial<Var, C> {
         (self.min_pow().unwrap_or(0)..).zip(self.coeffs.iter())
     }
 
+    /// Turn a polynomial into a series with the given cutoff
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// let p = series::Polynomial::new("x", -1, vec!(1,2,3));
+    /// let s = series::Series::with_cutoff("x", -1, 5, vec!(1,2,3));
+    /// assert_eq!(p.cutoff_at(5), s);
+    /// ```
+    pub fn cutoff_at(self, cutoff_pow: isize) -> Series<Var, C> {
+        Series::with_cutoff(
+            self.var,
+            self.min_pow.unwrap_or(cutoff_pow),
+            cutoff_pow,
+            self.coeffs,
+        )
+    }
+
     fn as_empty_slice<'a>(&'a self) -> PolynomialSlice<'a, Var, C> {
         PolynomialSlice::new(
             &self.var,
