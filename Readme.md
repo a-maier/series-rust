@@ -1,12 +1,16 @@
 # Series
 
-This is a crate for handling truncated Laurent series in a single
-variable about zero, i.e. expressions of the form
+This is a crate for handling truncated Laurent series and Laurent
+polynomials in a single variable about zero, i.e. expressions of the
+form
 
-`s = a_n0*x^n0 + ... + a_N*x^N + O(x^{N+1}),`
+```
+s = a_n0*x^n0 + ... + a_N*x^N + O(x^{N+1})
+p = a_n0*x^n0 + ... + a_N*x^N
+```
 
 where `n0` and `N` are integers and `^` denotes exponentiation. Such
-series can be added, subtracted, multiplied, and divided. Some
+expressions can be added, subtracted, multiplied, and divided. Some
 simple functions like powers of series, natural logarithms and
 exponentials are also implemented.
 
@@ -29,7 +33,7 @@ series = "0.6.0"
 # Examples
 
 ```rust
-use series::Series;
+use series::{Series, Polynomial};
 use series::ops::{Ln,Exp,Pow};
 
 // Create a new series in x, starting at order x^2 with coefficients 1, 2, 3,
@@ -37,7 +41,11 @@ use series::ops::{Ln,Exp,Pow};
 let s = Series::new("x", 2, vec!(1, 2, 3));
 println!("s = {}", s);
 
-// similar, with a cutoff power of 7
+// The corresponding Laurent polynomial
+let p = Polynomial::new("x", 2, vec![1, 2, 3]);
+assert_eq!(p, Polynomial::from(s));
+
+// series with a cutoff power of 7
 // s = 1*x^2 + 2*x^3 + 3*x^4 + O(x^7).
 let s = Series::with_cutoff("x", 2, 7, vec!(1, 2, 3));
 
@@ -50,7 +58,8 @@ let s = Series::with_cutoff("x", 0, 5, vec!(1., -1.));
 let t = s.mul_inverse();
 println!("1/(1-x) = {}", t);
 
-// Series can be added, subtracted, multiplied, divided.
+// Series and polynomials can be added, subtracted, multiplied.
+// Series can also be divided by other series.
 // We can either move the arguments or use references
 println!("s+t = {}", &s + &t);
 println!("s-t = {}", &s - &t);
@@ -61,8 +70,9 @@ println!("s/t = {}", &s/t);
 println!("s*3 = {}", &s * 3.);
 println!("s/3 = {}", &s / 3.);
 
-// More advanced operations in general require the variable type to be
-// convertible to the coefficient type by implementing the From trait.
+// More advanced operations on Laurent series in general require the
+// variable type to be convertible to the coefficient type by
+// implementing the From trait.
 // In the examples shown here, this conversion is actually never used,
 // so we can get away with a dummy implementation.
 #[derive(Debug,Clone,PartialEq)]
