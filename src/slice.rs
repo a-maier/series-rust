@@ -292,12 +292,14 @@ where
 
 impl<'a, Var, C: Coeff> Mul<Series<Var, C>> for SeriesSlice<'a, Var, C>
 where
-    Series<Var, C>: Mul<SeriesSlice<'a, Var, C>, Output=Series<Var, C>>,
+    Var: Clone,
+    C: Clone,
+    Series<Var, C>: MulAssign<Series<Var, C>>,
 {
     type Output = Series<Var, C>;
 
     fn mul(self, other: Series<Var, C>) -> Self::Output {
-        other * self
+        self.to_owned() * other
     }
 }
 
