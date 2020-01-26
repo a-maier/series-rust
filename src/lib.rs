@@ -1,6 +1,7 @@
 #[cfg(feature = "serde")]
 #[macro_use]
 extern crate serde;
+extern crate num_traits;
 
 pub mod ops;
 pub mod series;
@@ -18,10 +19,11 @@ mod util;
 
 use std::iter::Zip;
 use std::ops::RangeFrom;
+use num_traits::{Zero,One};
 
 /// Minimum requirements on series coefficients
-pub trait Coeff: From<i32> + PartialEq {}
-impl<T: From<i32> + PartialEq> Coeff for T {}
+pub trait Coeff: From<i32> + Zero + One + PartialEq {}
+impl<T: From<i32> + Zero + One + PartialEq> Coeff for T {}
 
 /// Immutable `Series` iterator.
 ///

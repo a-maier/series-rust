@@ -39,7 +39,7 @@ impl<Var, C: Coeff> Series<Var, C> {
             var,
             min_pow,
             coeffs,
-            zero: C::from(0),
+            zero: C::zero(),
         };
         res.trim();
         res
@@ -76,7 +76,7 @@ impl<Var, C: Coeff> Series<Var, C> {
             let num_missing = len - coeffs.len();
             coeffs.reserve(num_missing);
             for _ in 0..num_missing {
-                coeffs.push(C::from(0));
+                coeffs.push(C::zero());
             }
         }
         Series::new(var, min_pow, coeffs)
@@ -994,7 +994,7 @@ where
         assert!(!self.coeffs.is_empty());
         let k0 = self.min_pow();
         let c_k0 = self.coeffs[0].clone();
-        self.coeffs[0] = C::from(1);
+        self.coeffs[0] = C::one();
         for i in 1..self.coeffs.len() {
             self.coeffs[i] /= &c_k0;
         }
@@ -1205,7 +1205,7 @@ where
         debug_assert!(self.min_pow == 0);
         assert!(!self.coeffs.is_empty());
         let c_k0 = self.coeffs[0].clone();
-        self.coeffs[0] = C::from(1);
+        self.coeffs[0] = C::one();
         for i in 1..self.coeffs.len() {
             self.coeffs[i] /= &c_k0;
         }
@@ -1319,10 +1319,10 @@ where
     fn exp_coeff(&self) -> Vec<C> {
         assert!(self.min_pow() >= 0);
         let mut b = Vec::with_capacity(min(self.coeffs.len(), 1));
-        b.push(C::from(1));
+        b.push(C::one());
         debug_assert!(self.cutoff_pow() >= 0);
         for n in 1..self.cutoff_pow() as usize {
-            let mut b_n = C::from(0);
+            let mut b_n = C::zero();
             for i in 1..=n {
                 let num_factor = C::from(i as i32) / C::from(n as i32);
                 let a_i = self.coeff(i as isize).unwrap();

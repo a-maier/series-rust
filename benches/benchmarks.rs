@@ -50,6 +50,14 @@ impl<'a> std::ops::AddAssign<&'a Integer> for Integer {
     }
 }
 
+impl std::ops::Add<Integer> for Integer {
+    type Output = Integer;
+
+    fn add(self, rhs: Integer) -> Integer {
+        Integer(rug::Integer::from(self.0 + rhs.0))
+    }
+}
+
 impl<'a> std::ops::MulAssign<&'a Integer> for Integer {
     fn mul_assign(&mut self, rhs: &'a Integer) {
         self.0 *= &rhs.0;
@@ -61,6 +69,34 @@ impl<'a, 'b> std::ops::Mul<&'b Integer> for &'a Integer {
 
     fn mul(self, rhs: &'b Integer) -> Integer {
         Integer(rug::Integer::from(&self.0 * &rhs.0))
+    }
+}
+
+impl std::ops::Mul<Integer> for Integer {
+    type Output = Integer;
+
+    fn mul(self, rhs: Integer) -> Integer {
+        Integer(rug::Integer::from(self.0 * rhs.0))
+    }
+}
+
+impl num_traits::Zero for Integer {
+    fn zero() -> Self {
+        Integer(rug::Integer::new())
+    }
+
+    fn is_zero(&self) -> bool {
+        self.0 == 0
+    }
+}
+
+impl num_traits::One for Integer {
+    fn one() -> Self {
+        Integer(rug::Integer::from(1))
+    }
+
+    fn is_one(&self) -> bool {
+        self.0 == 1
     }
 }
 

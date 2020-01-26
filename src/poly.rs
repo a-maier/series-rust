@@ -37,7 +37,7 @@ impl<Var, C: Coeff> Polynomial<Var, C> {
             var,
             min_pow: Some(min_pow),
             coeffs,
-            zero: C::from(0),
+            zero: C::zero(),
         };
         res.trim();
         res
@@ -355,13 +355,13 @@ impl<Var, C: Coeff> Polynomial<Var, C> {
 
     fn extend_min(&mut self, extend: usize) {
         debug_assert!(self.min_pow != None);
-        let to_insert = iter::repeat_with(|| C::from(0)).take(extend);
+        let to_insert = iter::repeat_with(|| C::zero()).take(extend);
         self.coeffs.splice(0..0, to_insert);
         self.min_pow.as_mut().map(|m| *m -= extend as isize);
     }
 
     fn extend_max(&mut self, extend: usize) {
-        let to_insert = iter::repeat_with(|| C::from(0)).take(extend);
+        let to_insert = iter::repeat_with(|| C::zero()).take(extend);
         self.coeffs.extend(to_insert);
     }
 }
@@ -1041,7 +1041,7 @@ where
             Some(min_pow) => {
                 if min_pow > prod_min_pow {
                     let num_missing = (min_pow - prod_min_pow) as usize;
-                    let to_prepend = iter::repeat(C::from(0)).take(num_missing);
+                    let to_prepend = iter::repeat(C::zero()).take(num_missing);
                     self.coeffs.splice(0..0, to_prepend);
                     self.min_pow = Some(prod_min_pow);
                 }
@@ -1052,7 +1052,7 @@ where
         }
         let prod_len = a.len() + b.len() - 1;
         if self.len() < prod_len {
-            self.coeffs.resize(prod_len, C::from(0));
+            self.coeffs.resize(prod_len, C::zero());
         }
     }
 

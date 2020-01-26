@@ -203,7 +203,7 @@ impl<'a, Var: fmt::Display, C: Coeff + fmt::Display> fmt::Display
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         if let Some(min_pow) = self.min_pow() {
             for (i, coeff) in self.coeffs.iter().enumerate() {
-                if *coeff == C::from(0) {
+                if *coeff == C::zero() {
                     continue;
                 }
                 let cur_pow = min_pow + i as isize;

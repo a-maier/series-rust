@@ -211,9 +211,9 @@ where
         let a: Vec<_> =
             self.coeffs.iter().map(|c| c / &self.coeffs[0]).collect();
         let mut b = Vec::with_capacity(a.len());
-        b.push(C::from(1));
+        b.push(C::one());
         for n in 1..a.len() {
-            let mut b_n = C::from(0);
+            let mut b_n = C::zero();
             for i in 0..n {
                 b_n -= &a[n - i] * &b[i];
             }
@@ -400,7 +400,7 @@ where
         assert!(!self.coeffs.is_empty());
         let k0 = self.min_pow();
         let c_k0 = &self.coeffs[0];
-        // self.coeffs[0] = C::from(1);
+        // self.coeffs[0] = C::one();
         // for i in 1..self.coeffs.len() {
         //     self.coeffs[i] /= &c_k0;
         // }
