@@ -1062,14 +1062,11 @@ where
         b: PolynomialSlice<'b, Var, C>,
         min_karatsuba_size: usize,
     ) {
-        if a.len() > b.len() {
-            return self.add_prod_unchecked(b, a, min_karatsuba_size)
-        }
-        if a.len() < min_karatsuba_size {
+        if std::cmp::min(a.len(), b.len()) < min_karatsuba_size {
             self.add_prod_naive(a, b);
         }
         else {
-            // TODO: split b if it's too long?
+            // TODO: split a or b if it's too long?
             self.add_prod_karatsuba(a, b, min_karatsuba_size);
         }
     }
@@ -1080,8 +1077,7 @@ where
         b: PolynomialSlice<'b, Var, C>,
         min_karatsuba_size: usize,
     ) {
-        debug_assert!(a.len() <= b.len());
-        let mid = ((a.len() + 1)/2) as isize;
+        let mid = ((std::cmp::min(a.len(), b.len()) + 1)/2) as isize;
         let (a_low, mut a_high) = a.split_at(a.min_pow().unwrap() + mid);
         let (b_low, mut b_high) = b.split_at(b.min_pow().unwrap() + mid);
         a_high.min_pow.as_mut().map(|m| *m -= mid);
