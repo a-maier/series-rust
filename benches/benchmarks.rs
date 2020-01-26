@@ -8,7 +8,7 @@ use criterion::Criterion;
 use rand::prelude::*;
 use rand::SeedableRng;
 
-use series::{Series, Polynomial};
+use series::{Series, Polynomial, KaratsubaMul};
 
 const MAX_ELEMENTS: usize = 2000;
 const MAX_DIGITS: usize = 20;
@@ -308,11 +308,82 @@ fn mul_poly_int_1000(c: &mut Criterion) {
     );
 }
 
+fn mul_poly_int_karatsuba_4(c: &mut Criterion) {
+    let s = Polynomial::new("x", -2, RAN_INT[..1000].to_owned());
+    c.bench(
+        "",
+        criterion::Benchmark::new(
+            "multiply int polynomials with Karatsuba threshold 4",
+            move |b| {
+                b.iter(|| s.karatsuba_mul(&s, 4))
+            }
+        ).sample_size(20)
+    );
+}
+
+fn mul_poly_int_karatsuba_8(c: &mut Criterion) {
+    let s = Polynomial::new("x", -2, RAN_INT[..1000].to_owned());
+    c.bench(
+        "",
+        criterion::Benchmark::new(
+            "multiply int polynomials with Karatsuba threshold 8",
+            move |b| {
+                b.iter(|| s.karatsuba_mul(&s, 8))
+            }
+        ).sample_size(20)
+    );
+}
+
+fn mul_poly_int_karatsuba_16(c: &mut Criterion) {
+    let s = Polynomial::new("x", -2, RAN_INT[..1000].to_owned());
+    c.bench(
+        "",
+        criterion::Benchmark::new(
+            "multiply int polynomials with Karatsuba threshold 16",
+            move |b| {
+                b.iter(|| s.karatsuba_mul(&s, 16))
+            }
+        ).sample_size(20)
+    );
+}
+
+fn mul_poly_f64_karatsuba_4(c: &mut Criterion) {
+    let s = Polynomial::new("x", -2, RAN_F64[..1000].to_owned());
+    c.bench_function(
+        "multiply f64 polynomials with Karatsuba threshold 4",
+        move |b| {
+            b.iter(|| s.karatsuba_mul(&s, 4))
+        }
+    );
+}
+
+fn mul_poly_f64_karatsuba_8(c: &mut Criterion) {
+    let s = Polynomial::new("x", -2, RAN_F64[..1000].to_owned());
+    c.bench_function(
+        "multiply f64 polynomials with Karatsuba threshold 8",
+        move |b| {
+            b.iter(|| s.karatsuba_mul(&s, 8))
+        }
+    );
+}
+
+fn mul_poly_f64_karatsuba_16(c: &mut Criterion) {
+    let s = Polynomial::new("x", -2, RAN_F64[..1000].to_owned());
+    c.bench_function(
+        "multiply f64 polynomials with Karatsuba threshold 16",
+        move |b| {
+            b.iter(|| s.karatsuba_mul(&s, 16))
+        }
+    );
+}
+
 criterion_group!(
     benches,
     mul_f64_1, mul_f64_10, mul_f64_100, mul_f64_1000,
     mul_int_1, mul_int_10, mul_int_100, mul_int_1000,
     mul_poly_f64_1, mul_poly_f64_10, mul_poly_f64_100, mul_poly_f64_1000,
     mul_poly_int_1, mul_poly_int_10, mul_poly_int_100, mul_poly_int_1000,
+    mul_poly_f64_karatsuba_4, mul_poly_f64_karatsuba_8, mul_poly_f64_karatsuba_16,
+    mul_poly_int_karatsuba_4, mul_poly_int_karatsuba_8, mul_poly_int_karatsuba_16,
 );
 criterion_main!(benches);
