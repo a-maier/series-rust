@@ -2,6 +2,8 @@
 #[macro_use]
 extern crate serde;
 extern crate num_traits;
+#[macro_use]
+extern crate log;
 
 pub mod ops;
 pub mod series;
@@ -38,8 +40,14 @@ pub type IntoIter<C> = Zip<RangeFrom<isize>, std::vec::IntoIter<C>>;
 mod tests {
     use super::*;
 
+    fn log_init() {
+        let _ = env_logger::builder().is_test(true).try_init();
+    }
+
     #[test]
     fn tst_series() {
+        log_init();
+
         let var = String::from("x");
         let min_pow = -10;
         let coeffs = vec![];
@@ -78,6 +86,8 @@ mod tests {
 
     #[test]
     fn tst_series_with_cutoff() {
+        log_init();
+
         let s = Series::with_cutoff("x", -10, 1, Vec::<i32>::new());
         let t = Series::new("x", 1, vec![]);
         assert_eq!(s, t);
@@ -93,11 +103,15 @@ mod tests {
     #[test]
     #[should_panic]
     fn tst_bad_cutoff() {
+        log_init();
+
         let _ = Series::with_cutoff("x", 0, -2, vec![1, 2, 3]);
     }
 
     #[test]
     fn tst_display() {
+        log_init();
+
         // let s = Series::new("x", -10, vec!());
         // assert_eq!(format!("{}", s), "O(x^-10)");
         let s = Series::new("x", -3, vec![1., 0., -3.]);
@@ -108,6 +122,8 @@ mod tests {
 
     #[test]
     fn tst_neg() {
+        log_init();
+
         let s = Series::new("x", -3, vec![1., 0., -3.]);
         let res = Series::new("x", -3, vec![-1., 0., 3.]);
         assert_eq!(res, -&s);
@@ -116,6 +132,8 @@ mod tests {
 
     #[test]
     fn tst_add() {
+        log_init();
+
         let s = Series::new("x", -3, vec![1., 0., -3.]);
         let res = Series::new("x", -3, vec![2., 0., -6.]);
         assert_eq!(res, &s + &s);
@@ -161,6 +179,8 @@ mod tests {
 
     #[test]
     fn tst_add_assign() {
+        log_init();
+
         let mut s = Series::new("x", -3, vec![1., 0., -3.]);
         let res = Series::new("x", -3, vec![2., 0., -6.]);
         s += s.clone();
@@ -200,6 +220,8 @@ mod tests {
 
     #[test]
     fn tst_sub() {
+        log_init();
+
         let s = Series::new("x", -3, vec![1., 0., -3.]);
         let res = Series::new("x", 0, vec![]);
         assert_eq!(res, &s - &s);
@@ -225,6 +247,8 @@ mod tests {
 
     #[test]
     fn tst_sub_assign() {
+        log_init();
+
         let mut s = Series::new("x", -3, vec![1., 0., -3.]);
         let res = Series::new("x", 0, vec![]);
         s -= s.clone();
@@ -251,6 +275,8 @@ mod tests {
 
     #[test]
     fn tst_mul() {
+        log_init();
+
         let s = Series::new("x", -3, vec![1., 0., -3.]);
         let res = Series::new("x", -6, vec![1., 0., -6.]);
         assert_eq!(res, &s * &s);
@@ -285,6 +311,8 @@ mod tests {
 
     #[test]
     fn tst_mul_assign() {
+        log_init();
+
         let mut s = Series::new("x", -3, vec![1., 0., -3.]);
         s *= s.clone();
         let res = Series::new("x", -6, vec![1., 0., -6.]);
@@ -311,6 +339,8 @@ mod tests {
 
     #[test]
     fn tst_div() {
+        log_init();
+
         let s = Series::new("x", -3, vec![1., 0., -3.]);
         let res = Series::new("x", 0, vec![1., 0., 0.]);
         assert_eq!(res, &s / &s);
@@ -347,6 +377,8 @@ mod tests {
 
     #[test]
     fn tst_div_assign() {
+        log_init();
+
         let mut s = Series::new("x", -3, vec![1., 0., -3.]);
         s /= s.clone();
         let res = Series::new("x", 0, vec![1., 0., 0.]);
@@ -373,6 +405,8 @@ mod tests {
 
     #[test]
     fn tst_var() {
+        log_init();
+
         let _ = Series::new(String::from("x"), -3, vec![1., 0., -3.]);
         let _ = Series::new('j', -3, vec![1., 0., -3.]);
         let _ = Series::new(8, -3, vec![1., 0., -3.]);
@@ -389,6 +423,8 @@ mod tests {
 
     #[test]
     fn tst_ln() {
+        log_init();
+
         let s = Series::new(Mystr("x"), 0, vec![1., 7., -3.]);
         let res = Series::new(Mystr("x"), 1, vec![7., -55. / 2.]);
         assert_eq!(res, (&s).ln());
@@ -403,6 +439,8 @@ mod tests {
 
     #[test]
     fn tst_exp() {
+        log_init();
+
         let s = Series::new("x", 1, vec![7., -3.]);
         let res = Series::new("x", 0, vec![1., 7., 43. / 2.]);
         assert_eq!(res, (&s).exp());
@@ -422,6 +460,8 @@ mod tests {
 
     #[test]
     fn tst_pow() {
+        log_init();
+
         let base = Series::new(Mystr("x"), 0, vec![1., 7., 0.]);
         let exp = Series::new(Mystr("x"), -1, vec![1., -5., 43.]);
         let e7 = 7_f64.exp();
@@ -455,6 +495,8 @@ mod tests {
 
     #[test]
     fn tst_scalar() {
+        log_init();
+
         let s = Series::new("x", -3, vec![1., 0., -2.]);
         let res = Series::new("x", -3, vec![1. / 2., 0., -1.]);
         assert_eq!(res, &s / 2.);
@@ -510,6 +552,8 @@ mod tests {
     #[test]
     #[should_panic]
     fn tst_bad_add() {
+        log_init();
+
         let s = Series::new("x", -3, vec![1., 0., -3.]);
         let t = Series::new("y", -3, vec![1., 0., -3.]);
         let _ = s + t;
@@ -518,6 +562,8 @@ mod tests {
     #[test]
     #[should_panic]
     fn tst_bad_sub() {
+        log_init();
+
         let s = Series::new("x", -3, vec![1., 0., -3.]);
         let t = Series::new("y", -3, vec![1., 0., -3.]);
         let _ = s - t;
@@ -526,6 +572,8 @@ mod tests {
     #[test]
     #[should_panic]
     fn tst_bad_mul() {
+        log_init();
+
         let s = Series::new("x", -3, vec![1., 0., -3.]);
         let t = Series::new("y", -3, vec![1., 0., -3.]);
         let _ = s * t;
@@ -534,6 +582,8 @@ mod tests {
     #[test]
     #[should_panic]
     fn tst_bad_div() {
+        log_init();
+
         let s = Series::new("x", -3, vec![1., 0., -3.]);
         let t = Series::new("y", -3, vec![1., 0., -3.]);
         let _ = s / t;
@@ -541,6 +591,8 @@ mod tests {
 
     #[test]
     fn tst_poly() {
+        log_init();
+
         let var = String::from("x");
         let min_pow = -10;
         let coeffs = vec![0];
@@ -579,6 +631,8 @@ mod tests {
 
     #[test]
     fn tst_poly_display() {
+        log_init();
+
         let s = Polynomial::new("x", -10, vec!(0));
         assert_eq!(format!("{}", s), "");
         let s = Polynomial::new("x", -3, vec![1., 0., -3.]);
@@ -597,6 +651,8 @@ mod tests {
 
     #[test]
     fn tst_poly_add() {
+        log_init();
+
         let s = Polynomial::new("x", -3, vec![1., 0., -3.]);
         let res = Polynomial::new("x", -3, vec![2., 0., -6.]);
         assert_eq!(res, &s + &s);
@@ -643,6 +699,8 @@ mod tests {
 
     #[test]
     fn tst_poly_add_assign() {
+        log_init();
+
         let mut s = Polynomial::new("x", -3, vec![1., 0., -3.]);
         let res = Polynomial::new("x", -3, vec![2., 0., -6.]);
         s += s.clone();
@@ -686,6 +744,8 @@ mod tests {
 
     #[test]
     fn tst_poly_sub() {
+        log_init();
+
         let s = Polynomial::new("x", -3, vec![1., 0., -3.]);
         let res = Polynomial::new("x", 0, vec![]);
         assert_eq!(res, &s - &s);
@@ -712,6 +772,8 @@ mod tests {
 
     #[test]
     fn tst_poly_sub_assign() {
+        log_init();
+
         let mut s = Polynomial::new("x", -3, vec![1., 0., -3.]);
         let res = Polynomial::new("x", 0, vec![]);
         s -= s.clone();
@@ -738,6 +800,8 @@ mod tests {
 
     #[test]
     fn tst_poly_mul() {
+        log_init();
+
         let s = Polynomial::new("x", -3, vec![1., 0., -3.]);
         let res = Polynomial::new("x", -6, vec![1., 0., -6., 0., 9.]);
         assert_eq!(res, &s * &s);
@@ -771,7 +835,20 @@ mod tests {
     }
 
     #[test]
+    fn tst_poly_mul_karatsuba() {
+        log_init();
+
+        let s = Polynomial::new("x", -3, (0..=100).collect());
+        let res = s.karatsuba_mul(&s, 200);
+        assert_eq!(res.min_pow(), Some(-4));
+        let res2 = s.karatsuba_mul(&s, 8);
+        assert_eq!(res, res2);
+    }
+
+    #[test]
     fn tst_poly_mul_assign() {
+        log_init();
+
         let mut s = Polynomial::new("x", -3, vec![1., 0., -3.]);
         s *= s.clone();
         let res = Polynomial::new("x", -6, vec![1., 0., -6., 0., 9.]);
@@ -798,6 +875,8 @@ mod tests {
 
     #[test]
     fn tst_poly_var() {
+        log_init();
+
         let _ = Polynomial::new(String::from("x"), -3, vec![1., 0., -3.]);
         let _ = Polynomial::new('j', -3, vec![1., 0., -3.]);
         let _ = Polynomial::new(8, -3, vec![1., 0., -3.]);
@@ -805,6 +884,8 @@ mod tests {
 
     #[test]
     fn tst_poly_scalar() {
+        log_init();
+
         let s = Polynomial::new("x", -3, vec![1., 0., -2.]);
         let res = Polynomial::new("x", -3, vec![1. / 2., 0., -1.]);
         assert_eq!(res, std::ops::Div::div(&s, 2.));
@@ -857,6 +938,8 @@ mod tests {
     #[test]
     #[should_panic]
     fn tst_poly_bad_add() {
+        log_init();
+
         let s = Polynomial::new("x", -3, vec![1., 0., -3.]);
         let t = Polynomial::new("y", -3, vec![1., 0., -3.]);
         let _ = s + t;
@@ -865,6 +948,8 @@ mod tests {
     #[test]
     #[should_panic]
     fn tst_poly_bad_sub() {
+        log_init();
+
         let s = Polynomial::new("x", -3, vec![1., 0., -3.]);
         let t = Polynomial::new("y", -3, vec![1., 0., -3.]);
         let _ = s - t;
@@ -873,6 +958,8 @@ mod tests {
     #[test]
     #[should_panic]
     fn tst_poly_bad_mul() {
+        log_init();
+
         let s = Polynomial::new("x", -3, vec![1., 0., -3.]);
         let t = Polynomial::new("y", -3, vec![1., 0., -3.]);
         let _ = s * t;
