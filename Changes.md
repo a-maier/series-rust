@@ -1,7 +1,11 @@
 # Version 0.7.0
 
-- Added `iter`, `iter_mut`, and `into_iter` methods to iterate over
-  series coefficients.
+- Implemented Laurent polynomials.
+- Added `SeriesSlice` and `PolynomialSlice` as immutable views into
+  series and polynomials.
+- Implemented `Iter` and `IntoIter` for iteration over series and
+  polynomial coefficients.
+- Added multiplication benchmarks.
 
 # Version 0.6.0
 
