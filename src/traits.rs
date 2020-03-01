@@ -20,6 +20,10 @@ pub trait AsSlice<'a, T> {
 pub trait KaratsubaMul<Rhs> {
     type Output;
 
+    /// Calculate `self * rhs` using Karatsuba multiplication.
+    ///
+    /// `min_size` marks the threshold size below which naive
+    /// multiplication should be used.
     fn karatsuba_mul(self, rhs: Rhs, min_size: usize) -> Self::Output;
 }
 
