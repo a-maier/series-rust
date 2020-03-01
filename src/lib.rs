@@ -11,7 +11,7 @@ pub mod slice;
 pub mod polyslice;
 pub mod poly;
 pub use self::series::{Series, SeriesParts};
-pub use self::poly::Polynomial;
+pub use self::poly::{Polynomial, PolynomialParts};
 pub use self::slice::SeriesSlice;
 pub use self::polyslice::PolynomialSlice;
 pub use self::ops::{Exp,Ln,Pow};

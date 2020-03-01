@@ -946,6 +946,36 @@ impl<'a, Var: Clone, C: Coeff + Clone> From<PolynomialSlice<'a, Var, C>> for Pol
     }
 }
 
+/// Data parts of a polynomial
+///
+/// # Example
+///
+/// ```rust
+/// // destructure a polynomial
+/// let p = series::Polynomial::new("x", -1, vec![1,2,3]);
+/// let series::PolynomialParts{var, min_pow, coeffs} = p.into();
+/// assert_eq!(var, "x");
+/// assert_eq!(min_pow, Some(-1));
+/// assert_eq!(coeffs, vec![1,2,3]);
+/// ```
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[derive(PartialEq, Eq, Debug, Clone, Hash, Ord, PartialOrd)]
+pub struct PolynomialParts<Var, C> {
+    pub var: Var,
+    pub min_pow: Option<isize>,
+    pub coeffs: Vec<C>,
+}
+
+impl<Var, C: Coeff> From<Polynomial<Var, C>> for PolynomialParts<Var, C> {
+    fn from(p: Polynomial<Var, C>) -> Self {
+        PolynomialParts {
+            var: p.var,
+            min_pow: p.min_pow,
+            coeffs: p.coeffs,
+        }
+    }
+}
+
 impl<'a, 'b, Var: Clone, C: Coeff> KaratsubaMul<&'b Polynomial<Var, C>> for &'a Polynomial<Var, C>
 where
     Var: Clone + PartialEq + fmt::Debug,
