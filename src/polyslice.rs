@@ -114,6 +114,23 @@ impl<'a, Var, C: Coeff> PolynomialSlice<'a, Var, C> {
         self.coeffs.len()
     }
 
+    /// Check if the polynomial is zero
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use series::AsSlice;
+    ///
+    /// let p = series::Polynomial::new("x", -1, vec!(1,2,3));
+    /// assert!(!p.as_slice(..).is_empty());
+    ///
+    /// let p = series::Polynomial::new("x", -1, vec!(0));
+    /// assert!(p.as_slice(..).is_empty());
+    /// ```
+    pub fn is_empty(&self) -> bool {
+        self.coeffs.is_empty()
+    }
+
     pub fn coeff(&self, pow: isize) -> &C {
         if let Some(min_pow) = self.min_pow() {
             let idx = pow - min_pow;

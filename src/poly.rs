@@ -131,6 +131,21 @@ impl<Var, C: Coeff> Polynomial<Var, C> {
         self.coeffs.len()
     }
 
+    /// Check if the polynomial is zero
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// let p = series::Polynomial::new("x", -1, vec!(1,2,3));
+    /// assert!(!p.is_empty());
+    ///
+    /// let p = series::Polynomial::new("x", -1, vec!(0));
+    /// assert!(p.is_empty());
+    /// ```
+    pub fn is_empty(&self) -> bool {
+        self.coeffs.is_empty()
+    }
+
     /// Iterator over the polynomial powers and coefficients.
     ///
     /// # Example
