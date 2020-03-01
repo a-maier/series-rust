@@ -936,6 +936,16 @@ where
     }
 }
 
+impl<'a, Var: Clone, C: Coeff + Clone> From<PolynomialSlice<'a, Var, C>> for Polynomial<Var, C> {
+    fn from(s: PolynomialSlice<'a, Var, C>) -> Polynomial<Var, C> {
+        Polynomial::new(
+            s.var.clone(),
+            s.min_pow.unwrap_or(0),
+            s.coeffs.to_vec()
+        )
+    }
+}
+
 impl<'a, 'b, Var: Clone, C: Coeff> KaratsubaMul<&'b Polynomial<Var, C>> for &'a Polynomial<Var, C>
 where
     Var: Clone + PartialEq + fmt::Debug,

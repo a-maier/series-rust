@@ -1157,6 +1157,12 @@ where
     }
 }
 
+impl<'a, Var: Clone, C: Coeff + Clone> From<SeriesSlice<'a, Var, C>> for Series<Var, C> {
+    fn from(s: SeriesSlice<'a, Var, C>) -> Self {
+        Series::new(s.var.clone(), s.min_pow, s.coeffs.to_vec())
+    }
+}
+
 /// Data parts of a series
 ///
 /// # Example

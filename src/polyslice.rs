@@ -187,16 +187,6 @@ impl<'a, Var, C: Coeff> Index<isize> for PolynomialSlice<'a, Var, C> {
     }
 }
 
-impl<'a, Var: Clone, C: Coeff + Clone> PolynomialSlice<'a, Var, C> {
-    fn to_owned(&self) -> Polynomial<Var, C> {
-        Polynomial::new(
-            self.var.clone(),
-            self.min_pow.unwrap_or(0),
-            self.coeffs.to_vec()
-        )
-    }
-}
-
 impl<'a, Var: fmt::Display, C: Coeff + fmt::Display> fmt::Display
     for PolynomialSlice<'a, Var, C>
 {
@@ -242,7 +232,7 @@ where
     type Output = Polynomial<Var, C>;
 
     fn add(self, other: Rhs) -> Self::Output {
-        let mut res = self.to_owned();
+        let mut res = Polynomial::from(self);
         res += other;
         res
     }
@@ -257,7 +247,7 @@ where
     type Output = Polynomial<Var, C>;
 
     fn sub(self, other: T) -> Self::Output {
-        let mut res = self.to_owned();
+        let mut res = Polynomial::from(self);
         res -= other;
         res
     }

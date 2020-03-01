@@ -187,14 +187,6 @@ impl<'a, Var, C: Coeff> Index<isize> for SeriesSlice<'a, Var, C> {
     }
 }
 
-// TODO: impl std::borrow::ToOwned
-// but this conflicts with impl for T: Clone in std
-impl<'a, Var: Clone, C: Coeff + Clone> SeriesSlice<'a, Var, C> {
-    pub fn to_owned(&self) ->  Series<Var, C> {
-        Series::new(self.var.clone(), self.min_pow, self.coeffs.to_vec())
-    }
-}
-
 impl<'a, Var, C> MulInverse for SeriesSlice<'a, Var, C>
 where
     Var: Clone,
@@ -256,7 +248,7 @@ where
     type Output = Series<Var, C>;
 
     fn add(self, other: Rhs) -> Self::Output {
-        let mut res = self.to_owned();
+        let mut res = Series::from(self);
         res += other;
         res
     }
@@ -271,7 +263,7 @@ where
     type Output = Series<Var, C>;
 
     fn sub(self, other: T) -> Self::Output {
-        let mut res = self.to_owned();
+        let mut res = Series::from(self);
         res -= other;
         res
     }
@@ -286,7 +278,7 @@ where
     type Output = Series<Var, C>;
 
     fn mul(self, other: SeriesSlice<'a, Var, C>) -> Self::Output {
-        self.to_owned() * other
+        Series::from(self) * other
     }
 }
 
@@ -299,7 +291,7 @@ where
     type Output = Series<Var, C>;
 
     fn mul(self, other: Series<Var, C>) -> Self::Output {
-        self.to_owned() * other
+        Series::from(self) * other
     }
 }
 
@@ -359,7 +351,7 @@ where
     type Output = Series<Var, C>;
 
     fn div(self, other: T) -> Self::Output {
-        let mut res = self.to_owned();
+        let mut res = Series::from(self);
         res /= other;
         res
     }
