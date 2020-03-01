@@ -1,3 +1,4 @@
+#![allow(clippy::suspicious_op_assign_impl)]
 #[cfg(feature = "serde")]
 #[macro_use]
 extern crate serde;

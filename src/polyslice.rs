@@ -56,7 +56,9 @@ impl<'a, Var, C: Coeff> PolynomialSlice<'a, Var, C> {
         } else {
             let (coeffs, removed) = trim_slice_start(self.coeffs, self.zero);
             self.coeffs = coeffs;
-            self.min_pow.as_mut().map(|m| *m += removed as isize);
+            if let Some(min_pow) = self.min_pow.as_mut() {
+                *min_pow += removed as isize
+            }
         }
     }
 

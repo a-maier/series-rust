@@ -742,7 +742,9 @@ where
                 *c_k += &c[k - i] * &other.coeffs[i]
             }
         }
-        self.coeffs.first_mut().map(|c| *c *= &other.coeffs[0]);
+        if let Some(c0) = self.coeffs.first_mut() {
+            *c0 *= &other.coeffs[0]
+        }
     }
 }
 

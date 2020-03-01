@@ -180,7 +180,7 @@ impl<Var, C: Coeff> Polynomial<Var, C> {
         )
     }
 
-    fn as_empty_slice<'a>(&'a self) -> PolynomialSlice<'a, Var, C> {
+    fn as_empty_slice(& self) -> PolynomialSlice<'_, Var, C> {
         PolynomialSlice::new(
             &self.var,
             0,
@@ -364,19 +364,23 @@ impl<Var, C: Coeff> Polynomial<Var, C> {
         }
         else {
             let min_pow_shift = trim_start(&mut self.coeffs, &self.zero);
-            self.min_pow.as_mut().map(|m| *m += min_pow_shift as isize);
+            if let Some(min_pow) = self.min_pow.as_mut() {
+                *min_pow += min_pow_shift as isize
+            }
         }
     }
 
     fn extend_min(&mut self, extend: usize) {
         debug_assert!(self.min_pow != None);
-        let to_insert = iter::repeat_with(|| C::zero()).take(extend);
+        let to_insert = iter::repeat_with(C::zero).take(extend);
         self.coeffs.splice(0..0, to_insert);
-        self.min_pow.as_mut().map(|m| *m -= extend as isize);
+        if let Some(min_pow) = self.min_pow.as_mut() {
+            *min_pow -= extend as isize
+        }
     }
 
     fn extend_max(&mut self, extend: usize) {
-        let to_insert = iter::repeat_with(|| C::zero()).take(extend);
+        let to_insert = iter::repeat_with(C::zero).take(extend);
         self.coeffs.extend(to_insert);
     }
 }
@@ -1137,11 +1141,17 @@ where
         let mid = ((std::cmp::min(a.len(), b.len()) + 1)/2) as isize;
         let (a_low, mut a_high) = a.split_at(a.min_pow().unwrap() + mid);
         let (b_low, mut b_high) = b.split_at(b.min_pow().unwrap() + mid);
-        a_high.min_pow.as_mut().map(|m| *m -= mid);
-        b_high.min_pow.as_mut().map(|m| *m -= mid);
+        if let Some(min_pow) = a_high.min_pow.as_mut() {
+            *min_pow -= mid
+        }
+        if let Some(min_pow) = b_high.min_pow.as_mut() {
+            *min_pow -= mid
+        }
         let t = a_low + a_high;
         let mut u = b_low + b_high;
-        u.min_pow.as_mut().map(|m| *m += mid);
+        if let Some(min_pow) = u.min_pow.as_mut() {
+            *min_pow += mid
+        }
         self.add_prod_unchecked(
             t.as_slice(..),
             u.as_slice(..),
@@ -1149,12 +1159,18 @@ where
         );
         let mut t = a_low * b_low;
         *self += &t;
-        t.min_pow.as_mut().map(|m| *m += mid);
+        if let Some(min_pow) = t.min_pow.as_mut() {
+            *min_pow += mid
+        }
         *self -= t;
         let mut t = a_high * b_high;
-        t.min_pow.as_mut().map(|m| *m += mid);
+        if let Some(min_pow) = t.min_pow.as_mut() {
+            *min_pow += mid
+        }
         *self -= &t;
-        t.min_pow.as_mut().map(|m| *m += mid);
+        if let Some(min_pow) = t.min_pow.as_mut() {
+            *min_pow += mid
+        }
         *self += t;
     }
 

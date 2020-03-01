@@ -48,7 +48,7 @@ where for<'c> &'c T: PartialEq
         .enumerate()
         .find(|&(_, c)| c != elem)
         .map(|(idx, _)| idx)
-        .unwrap_or(s.len());
+        .unwrap_or_else(|| s.len());
     (&s[remove..], remove)
 }
 
@@ -61,6 +61,6 @@ where for<'c> &'c T: PartialEq
         .enumerate()
         .find(|&(_, c)| c != elem)
         .map(|(idx, _)| idx)
-        .unwrap_or(s.len());
+        .unwrap_or_else(|| s.len());
     (&s[..(s.len()-remove)], remove)
 }
