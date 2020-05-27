@@ -97,5 +97,5 @@ println!("exp(s) = {}", s.clone().exp());
 println!("ln(s) = {}", s.clone().ln());
 let t = s.clone();
 println!("s^s = {}", s.pow(&t));
-println!("s^4 = {}", s.powi(t));
+println!("s^4 = {}", s.powi(4));
 ```

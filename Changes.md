@@ -1,3 +1,7 @@
+# Version 0.7.1
+
+- Fixed typo in Readme.
+
 # Version 0.7.0
 
 - Implemented Laurent polynomials.
