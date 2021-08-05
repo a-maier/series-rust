@@ -1272,7 +1272,7 @@ impl<Var, C: Coeff> AddAssignHelper<Var, C> for Series<Var, C>
 where
     for<'c> C: AddAssign<&'c C>,
 {
-    fn truncate_cutoff_pow<'a>(&mut self, other: SeriesSlice<'a, Var, C>) {
+    fn truncate_cutoff_pow(&mut self, other: SeriesSlice<'_, Var, C>) {
         if other.cutoff_pow() < self.cutoff_pow() {
             let to_remove = min(
                 (self.cutoff_pow() - other.cutoff_pow()) as usize,
@@ -1287,7 +1287,7 @@ where
         }
     }
 
-    fn add_overlap<'a>(&mut self, other: SeriesSlice<'a, Var, C>) {
+    fn add_overlap(&mut self, other: SeriesSlice<'_, Var, C>) {
         let offset = self.min_pow();
         for (i, c) in self.coeffs.iter_mut().enumerate() {
             let power = offset + i as isize;
@@ -1295,7 +1295,7 @@ where
         }
     }
 
-    fn num_leading<'a>(&mut self, other: SeriesSlice<'a, Var, C>) -> usize {
+    fn num_leading(&mut self, other: SeriesSlice<'_, Var, C>) -> usize {
         min(
             (self.min_pow() - other.min_pow()) as usize,
             other.coeffs.len(),

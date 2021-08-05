@@ -137,13 +137,13 @@ impl<'a, Var, C: Coeff> PolynomialSlice<'a, Var, C> {
         if let Some(min_pow) = self.min_pow() {
             let idx = pow - min_pow;
             if idx < 0 || idx > self.len() as isize {
-                &self.zero
+                self.zero
             }
             else {
                 &self.coeffs[idx as usize]
             }
         } else {
-            &self.zero
+            self.zero
         }
     }
 
