@@ -1,3 +1,9 @@
+# Version 0.8.0
+
+- Update to Rust 2021.
+- Fixed broken `serde` support.
+- Updated dependencies.
+
 # Version 0.7.1
 
 - Fixed typo in Readme.
