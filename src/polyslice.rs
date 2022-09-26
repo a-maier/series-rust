@@ -1,13 +1,10 @@
-use crate::{Coeff, Iter, Polynomial};
-use crate::util::{trim_slice_start, trim_slice_end};
 use crate::poly::MulHelper;
 use crate::traits::{AsSlice, KaratsubaMul};
+use crate::util::{trim_slice_end, trim_slice_start};
+use crate::{Coeff, Iter, Polynomial};
 
 use std::fmt;
-use std::ops::{
-    Add, AddAssign, Div, Mul, Neg,
-    Sub, SubAssign, Index
-};
+use std::ops::{Add, AddAssign, Div, Index, Mul, Neg, Sub, SubAssign};
 
 /// View into a Laurent polynomial
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -21,11 +18,9 @@ pub struct PolynomialSlice<'a, Var, C: Coeff> {
 
 // needs manual implementation,
 // #[derive(Copy)] can't deal with lifetimes in rust 1.36
-impl<'a, Var, C: Coeff> std::marker::Copy for PolynomialSlice<'a, Var, C>
-{}
+impl<'a, Var, C: Coeff> std::marker::Copy for PolynomialSlice<'a, Var, C> {}
 
-impl<'a, Var, C: Coeff> std::clone::Clone for PolynomialSlice<'a, Var, C>
-{
+impl<'a, Var, C: Coeff> std::clone::Clone for PolynomialSlice<'a, Var, C> {
     fn clone(&self) -> Self {
         *self
     }
@@ -38,11 +33,11 @@ impl<'a, Var, C: Coeff> PolynomialSlice<'a, Var, C> {
         coeffs: &'a [C],
         zero: &'a C,
     ) -> Self {
-        let mut res = PolynomialSlice{
+        let mut res = PolynomialSlice {
             var,
             min_pow: Some(min_pow),
             coeffs,
-            zero
+            zero,
         };
         res.trim();
         res
@@ -138,8 +133,7 @@ impl<'a, Var, C: Coeff> PolynomialSlice<'a, Var, C> {
             let idx = pow - min_pow;
             if idx < 0 || idx > self.len() as isize {
                 self.zero
-            }
-            else {
+            } else {
                 &self.coeffs[idx as usize]
             }
         } else {
@@ -182,17 +176,17 @@ impl<'a, Var, C: Coeff> PolynomialSlice<'a, Var, C> {
     pub fn split_at(&self, pos: isize) -> (Self, Self) {
         let upos = (pos - self.min_pow().unwrap()) as usize;
         let (lower, upper) = self.coeffs.split_at(upos);
-        let lower = PolynomialSlice{
+        let lower = PolynomialSlice {
             var: self.var,
             min_pow: self.min_pow(),
             coeffs: lower,
-            zero: self.zero
+            zero: self.zero,
         };
-        let upper = PolynomialSlice{
+        let upper = PolynomialSlice {
             var: self.var,
             min_pow: Some(pos),
             coeffs: upper,
-            zero: self.zero
+            zero: self.zero,
         };
         (lower, upper)
     }
@@ -202,7 +196,7 @@ impl<'a, Var, C: Coeff> Index<isize> for PolynomialSlice<'a, Var, C> {
     type Output = C;
 
     fn index(&self, index: isize) -> &Self::Output {
-        &self.coeffs[(index-self.min_pow.unwrap()) as usize]
+        &self.coeffs[(index - self.min_pow.unwrap()) as usize]
     }
 }
 
@@ -244,7 +238,8 @@ where
     }
 }
 
-impl<'a, Var: Clone, C: Coeff + Clone, Rhs> Add<Rhs> for PolynomialSlice<'a, Var, C>
+impl<'a, Var: Clone, C: Coeff + Clone, Rhs> Add<Rhs>
+    for PolynomialSlice<'a, Var, C>
 where
     Polynomial<Var, C>: AddAssign<Rhs>,
 {
@@ -274,15 +269,18 @@ where
 
 const MIN_KARATSUBA_SIZE: usize = 8;
 
-impl<'a, 'b, Var, C: Coeff> Mul<PolynomialSlice<'b, Var, C>> for PolynomialSlice<'a, Var, C>
+impl<'a, 'b, Var, C: Coeff> Mul<PolynomialSlice<'b, Var, C>>
+    for PolynomialSlice<'a, Var, C>
 where
     Var: Clone + PartialEq + fmt::Debug,
     C: Clone,
-    for <'c> C: AddAssign,
-    for <'c> Polynomial<Var, C>: AddAssign<&'c Polynomial<Var, C>> + SubAssign<&'c Polynomial<Var, C>>,
-    Polynomial<Var, C>: AddAssign<Polynomial<Var, C>> + SubAssign<Polynomial<Var, C>>,
+    for<'c> C: AddAssign,
+    for<'c> Polynomial<Var, C>:
+        AddAssign<&'c Polynomial<Var, C>> + SubAssign<&'c Polynomial<Var, C>>,
+    Polynomial<Var, C>:
+        AddAssign<Polynomial<Var, C>> + SubAssign<Polynomial<Var, C>>,
     for<'c> PolynomialSlice<'c, Var, C>: Add<Output = Polynomial<Var, C>>,
-    for <'c> &'c C: Mul<Output=C>
+    for<'c> &'c C: Mul<Output = C>,
 {
     type Output = Polynomial<Var, C>;
 
@@ -294,7 +292,8 @@ where
 
 impl<'a, Var, C: Coeff> Mul<Polynomial<Var, C>> for PolynomialSlice<'a, Var, C>
 where
-    for<'b> PolynomialSlice<'a, Var, C>: Mul<PolynomialSlice<'b, Var, C>, Output=Polynomial<Var, C>>
+    for<'b> PolynomialSlice<'a, Var, C>:
+        Mul<PolynomialSlice<'b, Var, C>, Output = Polynomial<Var, C>>,
 {
     type Output = Polynomial<Var, C>;
 
@@ -303,9 +302,11 @@ where
     }
 }
 
-impl<'a, 'b, Var, C: Coeff> Mul<&'b Polynomial<Var, C>> for PolynomialSlice<'a, Var, C>
+impl<'a, 'b, Var, C: Coeff> Mul<&'b Polynomial<Var, C>>
+    for PolynomialSlice<'a, Var, C>
 where
-    PolynomialSlice<'a, Var, C>: Mul<PolynomialSlice<'b, Var, C>, Output=Polynomial<Var, C>>
+    PolynomialSlice<'a, Var, C>:
+        Mul<PolynomialSlice<'b, Var, C>, Output = Polynomial<Var, C>>,
 {
     type Output = Polynomial<Var, C>;
 
@@ -316,7 +317,7 @@ where
 
 impl<'a, Var: Clone, C: Coeff> Mul<C> for PolynomialSlice<'a, Var, C>
 where
-    for<'b> &'b C: Mul<Output=C>
+    for<'b> &'b C: Mul<Output = C>,
 {
     type Output = Polynomial<Var, C>;
 
@@ -328,7 +329,7 @@ where
 
 impl<'a, 'b, Var: Clone, C: Coeff> Mul<&'b C> for PolynomialSlice<'a, Var, C>
 where
-    for<'c> &'c C: Mul<Output=C>
+    for<'c> &'c C: Mul<Output = C>,
 {
     type Output = Polynomial<Var, C>;
 
@@ -340,7 +341,7 @@ where
 
 impl<'a, Var: Clone, C: Coeff> Div<C> for PolynomialSlice<'a, Var, C>
 where
-    for<'c> &'c C: Div<Output=C>
+    for<'c> &'c C: Div<Output = C>,
 {
     type Output = Polynomial<Var, C>;
 
@@ -352,7 +353,7 @@ where
 
 impl<'a, 'b, Var: Clone, C: Coeff> Div<&'b C> for PolynomialSlice<'a, Var, C>
 where
-    for<'c> &'c C: Div<Output=C>
+    for<'c> &'c C: Div<Output = C>,
 {
     type Output = Polynomial<Var, C>;
 
@@ -362,15 +363,18 @@ where
     }
 }
 
-impl<'a, 'b, Var: Clone, C: Coeff> KaratsubaMul<PolynomialSlice<'b, Var, C>> for PolynomialSlice<'a, Var, C>
+impl<'a, 'b, Var: Clone, C: Coeff> KaratsubaMul<PolynomialSlice<'b, Var, C>>
+    for PolynomialSlice<'a, Var, C>
 where
     Var: Clone + PartialEq + fmt::Debug,
     C: Clone,
-    for <'c> C: AddAssign,
-    for <'c> Polynomial<Var, C>: AddAssign<&'c Polynomial<Var, C>> + SubAssign<&'c Polynomial<Var, C>>,
-    Polynomial<Var, C>: AddAssign<Polynomial<Var, C>> + SubAssign<Polynomial<Var, C>>,
+    for<'c> C: AddAssign,
+    for<'c> Polynomial<Var, C>:
+        AddAssign<&'c Polynomial<Var, C>> + SubAssign<&'c Polynomial<Var, C>>,
+    Polynomial<Var, C>:
+        AddAssign<Polynomial<Var, C>> + SubAssign<Polynomial<Var, C>>,
     for<'c> PolynomialSlice<'c, Var, C>: Add<Output = Polynomial<Var, C>>,
-    for <'c> &'c C: Mul<Output=C>
+    for<'c> &'c C: Mul<Output = C>,
 {
     type Output = Polynomial<Var, C>;
 
@@ -379,26 +383,29 @@ where
         rhs: PolynomialSlice<'b, Var, C>,
         min_size: usize,
     ) -> Self::Output {
-        let mut result = Polynomial{
+        let mut result = Polynomial {
             var: self.var.clone(),
             min_pow: None,
             coeffs: vec![],
-            zero: C::from(0)
+            zero: C::from(0),
         };
         result.add_prod(self, rhs, min_size);
         result
     }
 }
 
-impl<'a, 'b, Var: Clone, C: Coeff> KaratsubaMul<&'b Polynomial<Var, C>> for PolynomialSlice<'a, Var, C>
+impl<'a, 'b, Var: Clone, C: Coeff> KaratsubaMul<&'b Polynomial<Var, C>>
+    for PolynomialSlice<'a, Var, C>
 where
     Var: Clone + PartialEq + fmt::Debug,
     C: Clone,
-    for <'c> C: AddAssign,
-    for <'c> Polynomial<Var, C>: AddAssign<&'c Polynomial<Var, C>> + SubAssign<&'c Polynomial<Var, C>>,
-    Polynomial<Var, C>: AddAssign<Polynomial<Var, C>> + SubAssign<Polynomial<Var, C>>,
+    for<'c> C: AddAssign,
+    for<'c> Polynomial<Var, C>:
+        AddAssign<&'c Polynomial<Var, C>> + SubAssign<&'c Polynomial<Var, C>>,
+    Polynomial<Var, C>:
+        AddAssign<Polynomial<Var, C>> + SubAssign<Polynomial<Var, C>>,
     for<'c> PolynomialSlice<'c, Var, C>: Add<Output = Polynomial<Var, C>>,
-    for <'c> &'c C: Mul<Output=C>
+    for<'c> &'c C: Mul<Output = C>,
 {
     type Output = Polynomial<Var, C>;
 

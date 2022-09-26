@@ -1,12 +1,11 @@
-use crate::{Series, Coeff, Iter, PolynomialSlice};
-use crate::traits::{MulInverse, ExpCoeff, AsSlice};
 use crate::ops::{Exp, Ln, Pow};
+use crate::traits::{AsSlice, ExpCoeff, MulInverse};
 use crate::util::trim_slice_start;
+use crate::{Coeff, Iter, PolynomialSlice, Series};
 
 use std::fmt;
 use std::ops::{
-    Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub,
-    SubAssign, Index
+    Add, AddAssign, Div, DivAssign, Index, Mul, MulAssign, Neg, Sub, SubAssign,
 };
 
 /// View into a Laurent series
@@ -21,11 +20,9 @@ pub struct SeriesSlice<'a, Var, C: Coeff> {
 
 // needs manual implementation,
 // #[derive(Copy)] can't deal with lifetimes in rust 1.36
-impl<'a, Var, C: Coeff> std::marker::Copy for SeriesSlice<'a, Var, C>
-{}
+impl<'a, Var, C: Coeff> std::marker::Copy for SeriesSlice<'a, Var, C> {}
 
-impl<'a, Var, C: Coeff> std::clone::Clone for SeriesSlice<'a, Var, C>
-{
+impl<'a, Var, C: Coeff> std::clone::Clone for SeriesSlice<'a, Var, C> {
     fn clone(&self) -> Self {
         *self
     }
@@ -38,7 +35,12 @@ impl<'a, Var, C: Coeff> SeriesSlice<'a, Var, C> {
         coeffs: &'a [C],
         zero: &'a C,
     ) -> Self {
-        let mut res = SeriesSlice{var, min_pow, coeffs, zero};
+        let mut res = SeriesSlice {
+            var,
+            min_pow,
+            coeffs,
+            zero,
+        };
         res.trim();
         res
     }
@@ -147,17 +149,17 @@ impl<'a, Var, C: Coeff> SeriesSlice<'a, Var, C> {
     pub fn split_at(&self, pos: isize) -> (Self, Self) {
         let upos = (pos - self.min_pow()) as usize;
         let (lower, upper) = self.coeffs.split_at(upos);
-        let lower = SeriesSlice{
+        let lower = SeriesSlice {
             var: self.var,
             min_pow: self.min_pow(),
             coeffs: lower,
-            zero: self.zero
+            zero: self.zero,
         };
-        let upper = SeriesSlice{
+        let upper = SeriesSlice {
             var: self.var,
             min_pow: pos,
             coeffs: upper,
-            zero: self.zero
+            zero: self.zero,
         };
         (lower, upper)
     }
@@ -183,7 +185,7 @@ impl<'a, Var, C: Coeff> Index<isize> for SeriesSlice<'a, Var, C> {
     type Output = C;
 
     fn index(&self, index: isize) -> &Self::Output {
-        &self.coeffs[(index-self.min_pow) as usize]
+        &self.coeffs[(index - self.min_pow) as usize]
     }
 }
 
@@ -273,7 +275,7 @@ impl<'a, Var, C: Coeff> Mul for SeriesSlice<'a, Var, C>
 where
     Var: Clone,
     C: Clone,
-    Series<Var, C>: Mul<SeriesSlice<'a, Var, C>, Output=Series<Var, C>>,
+    Series<Var, C>: Mul<SeriesSlice<'a, Var, C>, Output = Series<Var, C>>,
 {
     type Output = Series<Var, C>;
 
@@ -299,7 +301,8 @@ impl<'a, 'b, Var, C: Coeff> Mul<&'b Series<Var, C>> for SeriesSlice<'a, Var, C>
 where
     C: Clone,
     Var: Clone,
-    for<'c> Series<Var, C>: Mul<SeriesSlice<'c, Var, C>, Output=Series<Var, C>>,
+    for<'c> Series<Var, C>:
+        Mul<SeriesSlice<'c, Var, C>, Output = Series<Var, C>>,
 {
     type Output = Series<Var, C>;
 
@@ -311,34 +314,26 @@ where
 impl<'a, Var, C: Coeff> Mul<C> for SeriesSlice<'a, Var, C>
 where
     Var: Clone,
-    for<'c>  &'c C: Mul<Output=C>
+    for<'c> &'c C: Mul<Output = C>,
 {
     type Output = Series<Var, C>;
 
     fn mul(self, other: C) -> Self::Output {
         let coeffs = self.coeffs.iter().map(|c| c * &other).collect();
-        Series::new(
-            self.var.clone(),
-            self.min_pow(),
-            coeffs
-        )
+        Series::new(self.var.clone(), self.min_pow(), coeffs)
     }
 }
 
 impl<'a, 'b, Var, C: Coeff> Mul<&'b C> for SeriesSlice<'a, Var, C>
 where
     Var: Clone,
-    for<'c>  &'c C: Mul<Output=C>
+    for<'c> &'c C: Mul<Output = C>,
 {
     type Output = Series<Var, C>;
 
     fn mul(self, other: &'b C) -> Self::Output {
         let coeffs = self.coeffs.iter().map(|c| c * other).collect();
-        Series::new(
-            self.var.clone(),
-            self.min_pow(),
-            coeffs
-        )
+        Series::new(self.var.clone(), self.min_pow(), coeffs)
     }
 }
 

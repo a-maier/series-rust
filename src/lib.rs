@@ -7,22 +7,22 @@ extern crate num_traits;
 extern crate log;
 
 pub mod ops;
+pub mod poly;
+pub mod polyslice;
 pub mod series;
 pub mod slice;
-pub mod polyslice;
-pub mod poly;
-pub use self::series::{Series, SeriesParts};
+pub use self::ops::{Exp, Ln, Pow};
 pub use self::poly::{Polynomial, PolynomialParts};
-pub use self::slice::SeriesSlice;
 pub use self::polyslice::PolynomialSlice;
-pub use self::ops::{Exp,Ln,Pow};
+pub use self::series::{Series, SeriesParts};
+pub use self::slice::SeriesSlice;
 mod traits;
-pub use self::traits::{AsSlice, MulInverse, KaratsubaMul};
+pub use self::traits::{AsSlice, KaratsubaMul, MulInverse};
 mod util;
 
+use num_traits::{One, Zero};
 use std::iter::Zip;
 use std::ops::RangeFrom;
-use num_traits::{Zero,One};
 
 /// Minimum requirements on series coefficients
 pub trait Coeff: From<i32> + Zero + One + PartialEq {}
@@ -634,7 +634,7 @@ mod tests {
     fn tst_poly_display() {
         log_init();
 
-        let s = Polynomial::new("x", -10, vec!(0));
+        let s = Polynomial::new("x", -10, vec![0]);
         assert_eq!(format!("{}", s), "");
         let s = Polynomial::new("x", -3, vec![1., 0., -3.]);
         assert_eq!(format!("{}", s), "(1)*x^-3 + (-3)*x^-1");
@@ -756,7 +756,7 @@ mod tests {
 
         let s = Polynomial::new("x", -3, vec![1., 0., -3.]);
         let t = Polynomial::new("x", -1, vec![-3., 4., 5.]);
-        let res = Polynomial::new("x", -3, vec![1., 0., 0.,-4.,-5.]);
+        let res = Polynomial::new("x", -3, vec![1., 0., 0., -4., -5.]);
         assert_eq!(res, &s - &t);
         assert_eq!(res, &s - t.clone());
         assert_eq!(res, s.clone() - &t);
@@ -764,7 +764,8 @@ mod tests {
 
         let s = Polynomial::new("x", -3, vec![1., 0., -3.]);
         let t = Polynomial::new("x", 1, vec![3., 4., 5.]);
-        let res = Polynomial::new("x", -3, vec![1.,0.,-3., 0.,-3.,-4.,-5.]);
+        let res =
+            Polynomial::new("x", -3, vec![1., 0., -3., 0., -3., -4., -5.]);
         assert_eq!(res, &s - &t);
         assert_eq!(res, &s - t.clone());
         assert_eq!(res, s.clone() - &t);
@@ -791,7 +792,8 @@ mod tests {
 
         let mut s = Polynomial::new("x", -3, vec![1., 0., -3.]);
         let t = Polynomial::new("x", 1, vec![3., 4., 5.]);
-        let res = Polynomial::new("x", -3, vec![1., 0., -3., 0., -3., -4., -5.]);
+        let res =
+            Polynomial::new("x", -3, vec![1., 0., -3., 0., -3., -4., -5.]);
         s -= &t;
         assert_eq!(res, s);
         let mut s = Polynomial::new("x", -3, vec![1., 0., -3.]);
@@ -933,7 +935,6 @@ mod tests {
         let s = Polynomial::new("x", 0, vec![2., 0., -1.]);
         let res = Polynomial::new("x", 2, vec![-1.]);
         assert_eq!(res, s - 2.);
-
     }
 
     #[test]
@@ -965,5 +966,4 @@ mod tests {
         let t = Polynomial::new("y", -3, vec![1., 0., -3.]);
         let _ = s * t;
     }
-
 }

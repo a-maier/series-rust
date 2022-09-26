@@ -1,6 +1,6 @@
 // Helper traits
-use crate::Coeff;
 use crate::slice::SeriesSlice;
+use crate::Coeff;
 
 /// Multiplicative inverse
 pub trait MulInverse {
