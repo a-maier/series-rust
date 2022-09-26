@@ -9,7 +9,7 @@ use std::ops::{
 };
 
 /// View into a Laurent series
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(PartialEq, Eq, Debug, Hash, Ord, PartialOrd)]
 pub struct SeriesSlice<'a, Var, C: Coeff> {
     pub(crate) var: &'a Var,

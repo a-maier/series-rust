@@ -14,7 +14,7 @@ use std::ops::{
 };
 
 /// Laurent series in a single variable up to some power
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(PartialEq, Eq, Debug, Clone, Hash, Ord, PartialOrd)]
 pub struct Series<Var, C: Coeff> {
     pub(crate) var: Var,
@@ -1177,7 +1177,7 @@ impl<'a, Var: Clone, C: Coeff + Clone> From<SeriesSlice<'a, Var, C>>
 /// assert_eq!(min_pow, -1);
 /// assert_eq!(coeffs, vec![1,2,3]);
 /// ```
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(PartialEq, Eq, Debug, Clone, Hash, Ord, PartialOrd)]
 pub struct SeriesParts<Var, C> {
     pub var: Var,

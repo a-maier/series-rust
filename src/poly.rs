@@ -11,8 +11,10 @@ use std::ops::{
 };
 use std::{convert, fmt, iter};
 
+use log::trace;
+
 /// Laurent polynomial in a single variable
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(PartialEq, Eq, Debug, Clone, Hash, Ord, PartialOrd)]
 pub struct Polynomial<Var, C: Coeff> {
     pub(crate) var: Var,
@@ -987,7 +989,7 @@ impl<'a, Var: Clone, C: Coeff + Clone> From<PolynomialSlice<'a, Var, C>>
 /// assert_eq!(min_pow, Some(-1));
 /// assert_eq!(coeffs, vec![1,2,3]);
 /// ```
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(PartialEq, Eq, Debug, Clone, Hash, Ord, PartialOrd)]
 pub struct PolynomialParts<Var, C> {
     pub var: Var,

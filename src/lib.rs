@@ -1,11 +1,4 @@
 #![allow(clippy::suspicious_op_assign_impl)]
-#[cfg(feature = "serde")]
-#[macro_use]
-extern crate serde;
-extern crate num_traits;
-#[macro_use]
-extern crate log;
-
 pub mod ops;
 pub mod poly;
 pub mod polyslice;
@@ -20,9 +13,10 @@ mod traits;
 pub use self::traits::{AsSlice, KaratsubaMul, MulInverse};
 mod util;
 
-use num_traits::{One, Zero};
 use std::iter::Zip;
 use std::ops::RangeFrom;
+
+use num_traits::{One, Zero};
 
 /// Minimum requirements on series coefficients
 pub trait Coeff: From<i32> + Zero + One + PartialEq {}

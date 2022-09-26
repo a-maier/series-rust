@@ -7,7 +7,7 @@ use std::fmt;
 use std::ops::{Add, AddAssign, Div, Index, Mul, Neg, Sub, SubAssign};
 
 /// View into a Laurent polynomial
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(PartialEq, Eq, Debug, Hash, Ord, PartialOrd)]
 pub struct PolynomialSlice<'a, Var, C: Coeff> {
     pub(crate) var: &'a Var,
