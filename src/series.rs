@@ -870,10 +870,10 @@ where
     }
 }
 
-impl<'a, Var: Clone, C: Coeff + SubAssign> DivAssign for Series<Var, C>
+impl<Var: Clone, C: Coeff + SubAssign> DivAssign for Series<Var, C>
 where
     Series<Var, C>: MulAssign + MulInverse<Output = Series<Var, C>>,
-    for<'b> &'b C: Div<Output = C> + Mul<Output = C>,
+    for<'a> &'a C: Div<Output = C> + Mul<Output = C>,
 {
     /// Sets s = s / t for two series s,t
     ///
@@ -1088,7 +1088,7 @@ where
         } else {
             let mut new_coeffs = vec![rhs];
             new_coeffs.resize(self.min_pow() as usize, self.zero.clone());
-            new_coeffs.extend(self.coeffs.drain(..));
+            new_coeffs.append(&mut self.coeffs);
             self.coeffs = new_coeffs;
             self.min_pow = 0;
         }
@@ -1112,7 +1112,7 @@ where
         } else {
             let mut new_coeffs = vec![-rhs];
             new_coeffs.resize(self.min_pow() as usize, self.zero.clone());
-            new_coeffs.extend(self.coeffs.drain(..));
+            new_coeffs.append(&mut self.coeffs);
             self.coeffs = new_coeffs;
             self.min_pow = 0;
         }
