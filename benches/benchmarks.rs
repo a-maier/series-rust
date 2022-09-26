@@ -118,7 +118,7 @@ lazy_static! {
         let mut rng = rand_pcg::Pcg64::seed_from_u64(0);
         let mut array = [0.; MAX_ELEMENTS];
         for e in array.iter_mut() {
-            *e = rng.gen_range(-100.0, 100.0);
+            *e = rng.gen_range(-100.0..=100.0);
         }
         array
     };
@@ -128,7 +128,7 @@ lazy_static! {
         let mut array  = Vec::new();
         let mut digits = [0u8; MAX_DIGITS];
         for _ in 0..MAX_ELEMENTS {
-            let ndigits = rng.gen_range(1, MAX_DIGITS);
+            let ndigits = rng.gen_range(1..=MAX_DIGITS);
             rng.fill(&mut digits[..ndigits]);
             array.push(
                 Integer::from_digits(
@@ -214,14 +214,13 @@ fn mul_int_100(c: &mut Criterion) {
 
 fn mul_int_1000(c: &mut Criterion) {
     let s = Series::new("x", -2, RAN_INT[..1000].to_owned());
-    c.bench(
-        "",
-        criterion::Benchmark::new(
-            "multiply series with 1000 integer coefficients",
-            move |b| {
-                b.iter(|| &s * &s)
-            }
-        ).sample_size(20)
+    let mut group = c.benchmark_group("dummy name");
+    group.sample_size(20);
+    group.bench_function(
+        "multiply series with 1000 integer coefficients",
+        move |b| {
+            b.iter(|| &s * &s)
+        }
     );
 }
 
@@ -297,53 +296,49 @@ fn mul_poly_int_100(c: &mut Criterion) {
 
 fn mul_poly_int_1000(c: &mut Criterion) {
     let s = Polynomial::new("x", -2, RAN_INT[..1000].to_owned());
-    c.bench(
-        "",
-        criterion::Benchmark::new(
-            "multiply polynomials with 1000 integer coefficients",
-            move |b| {
-                b.iter(|| &s * &s)
-            }
-        ).sample_size(20)
+    let mut group = c.benchmark_group("dummy name");
+    group.sample_size(20);
+    group.bench_function(
+        "multiply polynomials with 1000 integer coefficients",
+        move |b| {
+            b.iter(|| &s * &s)
+        }
     );
 }
 
 fn mul_poly_int_karatsuba_4(c: &mut Criterion) {
     let s = Polynomial::new("x", -2, RAN_INT[..1000].to_owned());
-    c.bench(
-        "",
-        criterion::Benchmark::new(
-            "multiply int polynomials with Karatsuba threshold 4",
-            move |b| {
-                b.iter(|| s.karatsuba_mul(&s, 4))
-            }
-        ).sample_size(20)
+    let mut group = c.benchmark_group("dummy name");
+    group.sample_size(20);
+    group.bench_function(
+        "multiply int polynomials with Karatsuba threshold 4",
+        move |b| {
+            b.iter(|| s.karatsuba_mul(&s, 4))
+        }
     );
 }
 
 fn mul_poly_int_karatsuba_8(c: &mut Criterion) {
     let s = Polynomial::new("x", -2, RAN_INT[..1000].to_owned());
-    c.bench(
-        "",
-        criterion::Benchmark::new(
-            "multiply int polynomials with Karatsuba threshold 8",
-            move |b| {
-                b.iter(|| s.karatsuba_mul(&s, 8))
-            }
-        ).sample_size(20)
+    let mut group = c.benchmark_group("dummy name");
+    group.sample_size(20);
+    group.bench_function(
+        "multiply int polynomials with Karatsuba threshold 8",
+        move |b| {
+            b.iter(|| s.karatsuba_mul(&s, 8))
+        }
     );
 }
 
 fn mul_poly_int_karatsuba_16(c: &mut Criterion) {
     let s = Polynomial::new("x", -2, RAN_INT[..1000].to_owned());
-    c.bench(
-        "",
-        criterion::Benchmark::new(
-            "multiply int polynomials with Karatsuba threshold 16",
-            move |b| {
-                b.iter(|| s.karatsuba_mul(&s, 16))
-            }
-        ).sample_size(20)
+    let mut group = c.benchmark_group("dummy name");
+    group.sample_size(20);
+    group.bench_function(
+        "multiply int polynomials with Karatsuba threshold 16",
+        move |b| {
+            b.iter(|| s.karatsuba_mul(&s, 16))
+        }
     );
 }
 
