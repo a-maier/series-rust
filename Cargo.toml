@@ -16,8 +16,8 @@ num-traits = "0.2"
 log = "0.4"
 
 [dev-dependencies]
-env_logger = "0.9"
-criterion = "0.4"
+env_logger = "0.10"
+criterion = "0.5"
 rand = "0.8"
 rand_pcg = "0.3"
 lazy_static = "1.4"
