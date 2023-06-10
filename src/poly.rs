@@ -378,7 +378,7 @@ impl<Var, C: Coeff> Polynomial<Var, C> {
     }
 
     fn extend_min(&mut self, extend: usize) {
-        debug_assert!(self.min_pow != None);
+        debug_assert!(self.min_pow.is_some());
         let to_insert = iter::repeat_with(C::zero).take(extend);
         self.coeffs.splice(0..0, to_insert);
         if let Some(min_pow) = self.min_pow.as_mut() {
@@ -471,10 +471,10 @@ where
 {
     fn add_assign(&mut self, other: PolynomialSlice<'a, Var, C>) {
         assert_eq!(self.var, *other.var);
-        if other.min_pow() == None {
+        if other.min_pow().is_none() {
             return;
         }
-        if self.min_pow() == None {
+        if self.min_pow().is_none() {
             self.coeffs = other.coeffs.to_owned();
             self.min_pow = other.min_pow();
             return;
@@ -524,10 +524,10 @@ where
     fn add_assign(&mut self, other: Polynomial<Var, C>) {
         //TODO: code duplication with AddAssign<PolynomialSlice>
         assert_eq!(self.var, other.var);
-        if other.min_pow() == None {
+        if other.min_pow().is_none() {
             return;
         }
-        if self.min_pow() == None {
+        if self.min_pow().is_none() {
             self.coeffs = other.coeffs.to_owned();
             self.min_pow = other.min_pow();
             return;
@@ -1111,7 +1111,7 @@ where
         b: PolynomialSlice<'b, Var, C>,
         min_karatsuba_size: usize,
     ) {
-        if a.min_pow() == None || b.min_pow() == None {
+        if a.min_pow().is_none() || b.min_pow().is_none() {
             return;
         }
         self.resize_to_fit(a, b);
