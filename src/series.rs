@@ -402,7 +402,7 @@ impl<Var, C: Coeff> std::iter::IntoIterator for Series<Var, C> {
     /// assert_eq!(iter.next(), None);
     /// ```
     fn into_iter(self) -> IntoIter<C> {
-        (self.min_pow..).zip(self.coeffs.into_iter())
+        (self.min_pow..).zip(self.coeffs)
     }
 }
 

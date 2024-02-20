@@ -360,7 +360,7 @@ impl<Var, C: Coeff> std::iter::IntoIterator for Polynomial<Var, C> {
     /// assert_eq!(iter.next(), None);
     /// ```
     fn into_iter(self) -> IntoIter<C> {
-        (self.min_pow().unwrap_or(0)..).zip(self.coeffs.into_iter())
+        (self.min_pow().unwrap_or(0)..).zip(self.coeffs)
     }
 }
 
