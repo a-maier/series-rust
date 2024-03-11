@@ -35,6 +35,11 @@ pub type Iter<'a, C> = Zip<RangeFrom<isize>, std::slice::Iter<'a, C>>;
 /// This `struct` is created by the `into_iter` method on `Series`
 pub type IntoIter<C> = Zip<RangeFrom<isize>, std::vec::IntoIter<C>>;
 
+// test code in readme
+#[doc = include_str!("../Readme.md")]
+#[cfg(doctest)]
+pub struct ReadmeDoctests;
+
 #[cfg(test)]
 mod tests {
     use super::*;
