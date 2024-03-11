@@ -4,7 +4,7 @@ This is a crate for handling truncated Laurent series and Laurent
 polynomials in a single variable about zero, i.e. expressions of the
 form
 
-```
+```no_test
 s = a_n0*x^n0 + ... + a_N*x^N + O(x^{N+1})
 p = a_n0*x^n0 + ... + a_N*x^N
 ```
@@ -33,7 +33,7 @@ series = "0.9"
 # Examples
 
 ```rust
-use series::{SeriesIn, PolynomialIn};
+use series::{MulInverse, SeriesIn, PolynomialIn};
 use series::ops::{Ln,Exp,Pow};
 
 // Create a new series in x, starting at order x^2 with coefficients 1, 2, 3,
@@ -44,7 +44,7 @@ println!("s = {}", s);
 // The corresponding polynomial
 // p = 1*x^2 + 2*x^3 + 3*x^4.
 let p = PolynomialIn::new("x", 2, vec![1, 2, 3]);
-assert_eq!(p, Polynomial::from(s));
+assert_eq!(p, PolynomialIn::from(s));
 
 // series with a cutoff power of 7
 // s = 1*x^2 + 2*x^3 + 3*x^4 + O(x^7).
@@ -56,7 +56,7 @@ let s = SeriesIn::with_cutoff("x", 2, 7, vec![1, 2, 3]);
 // Now s = 1 - x + O(x^5).
 let s = SeriesIn::with_cutoff("x", 0, 5, vec![1., -1.]);
 // Expand 1/(1-x) up to x^4.
-let t = s.mul_inverse();
+let t = (&s).mul_inverse();
 println!("1/(1-x) = {}", t);
 
 // Series and polynomials can be added, subtracted, multiplied.
@@ -96,6 +96,6 @@ let s = SeriesIn::new(Variable("x"), 0, vec![1., -3., 5.]);
 println!("exp(s) = {}", s.clone().exp());
 println!("ln(s) = {}", s.clone().ln());
 let t = s.clone();
-println!("s^s = {}", s.pow(&t));
+println!("s^s = {}", (&s).pow(&t));
 println!("s^4 = {}", s.powi(4));
 ```
