@@ -1,5 +1,5 @@
 // Helper traits
-use crate::slice::SeriesSlice;
+use crate::slice::SeriesSliceIn;
 use crate::Coeff;
 
 /// Multiplicative inverse
@@ -36,9 +36,9 @@ pub(crate) trait LnVarFree {
 // Spurious traits, needed for rust >= 1.28
 // direct implementation used to work in 1.24
 pub(crate) trait AddAssignHelper<Var, C: Coeff> {
-    fn truncate_cutoff_pow(&mut self, other: SeriesSlice<'_, Var, C>);
-    fn add_overlap(&mut self, other: SeriesSlice<'_, Var, C>);
-    fn num_leading(&mut self, other: SeriesSlice<'_, Var, C>) -> usize;
+    fn truncate_cutoff_pow(&mut self, other: SeriesSliceIn<'_, Var, C>);
+    fn add_overlap(&mut self, other: SeriesSliceIn<'_, Var, C>);
+    fn num_leading(&mut self, other: SeriesSliceIn<'_, Var, C>) -> usize;
 }
 
 pub(crate) trait ExpCoeff {

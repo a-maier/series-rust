@@ -8,7 +8,7 @@ use criterion::Criterion;
 use rand::prelude::*;
 use rand::SeedableRng;
 
-use series::{KaratsubaMul, Polynomial, Series};
+use series::{KaratsubaMul, PolynomialIn, SeriesIn};
 
 const MAX_ELEMENTS: usize = 2000;
 const MAX_DIGITS: usize = 20;
@@ -139,42 +139,42 @@ lazy_static! {
 }
 
 fn mul_f64_1(c: &mut Criterion) {
-    let s = Series::new("x", -2, RAN_F64[..1].to_owned());
+    let s = SeriesIn::new("x", -2, RAN_F64[..1].to_owned());
     c.bench_function("multiply series with 1 f64 coefficient", move |b| {
         b.iter(|| &s * &s)
     });
 }
 
 fn mul_f64_10(c: &mut Criterion) {
-    let s = Series::new("x", -2, RAN_F64[..10].to_owned());
+    let s = SeriesIn::new("x", -2, RAN_F64[..10].to_owned());
     c.bench_function("multiply series with 10 f64 coefficients", move |b| {
         b.iter(|| &s * &s)
     });
 }
 
 fn mul_f64_100(c: &mut Criterion) {
-    let s = Series::new("x", -2, RAN_F64[..100].to_owned());
+    let s = SeriesIn::new("x", -2, RAN_F64[..100].to_owned());
     c.bench_function("multiply series with 100 f64 coefficients", move |b| {
         b.iter(|| &s * &s)
     });
 }
 
 fn mul_f64_1000(c: &mut Criterion) {
-    let s = Series::new("x", -2, RAN_F64[..1000].to_owned());
+    let s = SeriesIn::new("x", -2, RAN_F64[..1000].to_owned());
     c.bench_function("multiply series with 1000 f64 coefficients", move |b| {
         b.iter(|| &s * &s)
     });
 }
 
 fn mul_int_1(c: &mut Criterion) {
-    let s = Series::new("x", -2, RAN_INT[..1].to_owned());
+    let s = SeriesIn::new("x", -2, RAN_INT[..1].to_owned());
     c.bench_function("multiply series with 1 integer coefficient", move |b| {
         b.iter(|| &s * &s)
     });
 }
 
 fn mul_int_10(c: &mut Criterion) {
-    let s = Series::new("x", -2, RAN_INT[..10].to_owned());
+    let s = SeriesIn::new("x", -2, RAN_INT[..10].to_owned());
     c.bench_function(
         "multiply series with 10 integer coefficients",
         move |b| b.iter(|| &s * &s),
@@ -182,7 +182,7 @@ fn mul_int_10(c: &mut Criterion) {
 }
 
 fn mul_int_100(c: &mut Criterion) {
-    let s = Series::new("x", -2, RAN_INT[..100].to_owned());
+    let s = SeriesIn::new("x", -2, RAN_INT[..100].to_owned());
     c.bench_function(
         "multiply series with 100 integer coefficients",
         move |b| b.iter(|| &s * &s),
@@ -190,7 +190,7 @@ fn mul_int_100(c: &mut Criterion) {
 }
 
 fn mul_int_1000(c: &mut Criterion) {
-    let s = Series::new("x", -2, RAN_INT[..1000].to_owned());
+    let s = SeriesIn::new("x", -2, RAN_INT[..1000].to_owned());
     let mut group = c.benchmark_group("dummy name");
     group.sample_size(20);
     group.bench_function(
@@ -200,14 +200,14 @@ fn mul_int_1000(c: &mut Criterion) {
 }
 
 fn mul_poly_f64_1(c: &mut Criterion) {
-    let s = Polynomial::new("x", -2, RAN_F64[..1].to_owned());
+    let s = PolynomialIn::new("x", -2, RAN_F64[..1].to_owned());
     c.bench_function("multiply polynomials with 1 f64 coefficient", move |b| {
         b.iter(|| &s * &s)
     });
 }
 
 fn mul_poly_f64_10(c: &mut Criterion) {
-    let s = Polynomial::new("x", -2, RAN_F64[..10].to_owned());
+    let s = PolynomialIn::new("x", -2, RAN_F64[..10].to_owned());
     c.bench_function(
         "multiply polynomials with 10 f64 coefficients",
         move |b| b.iter(|| &s * &s),
@@ -215,7 +215,7 @@ fn mul_poly_f64_10(c: &mut Criterion) {
 }
 
 fn mul_poly_f64_100(c: &mut Criterion) {
-    let s = Polynomial::new("x", -2, RAN_F64[..100].to_owned());
+    let s = PolynomialIn::new("x", -2, RAN_F64[..100].to_owned());
     c.bench_function(
         "multiply polynomials with 100 f64 coefficients",
         move |b| b.iter(|| &s * &s),
@@ -223,7 +223,7 @@ fn mul_poly_f64_100(c: &mut Criterion) {
 }
 
 fn mul_poly_f64_1000(c: &mut Criterion) {
-    let s = Polynomial::new("x", -2, RAN_F64[..1000].to_owned());
+    let s = PolynomialIn::new("x", -2, RAN_F64[..1000].to_owned());
     c.bench_function(
         "multiply polynomials with 1000 f64 coefficients",
         move |b| b.iter(|| &s * &s),
@@ -231,7 +231,7 @@ fn mul_poly_f64_1000(c: &mut Criterion) {
 }
 
 fn mul_poly_int_1(c: &mut Criterion) {
-    let s = Polynomial::new("x", -2, RAN_INT[..1].to_owned());
+    let s = PolynomialIn::new("x", -2, RAN_INT[..1].to_owned());
     c.bench_function(
         "multiply polynomials with 1 integer coefficient",
         move |b| b.iter(|| &s * &s),
@@ -239,7 +239,7 @@ fn mul_poly_int_1(c: &mut Criterion) {
 }
 
 fn mul_poly_int_10(c: &mut Criterion) {
-    let s = Polynomial::new("x", -2, RAN_INT[..10].to_owned());
+    let s = PolynomialIn::new("x", -2, RAN_INT[..10].to_owned());
     c.bench_function(
         "multiply polynomials with 10 integer coefficients",
         move |b| b.iter(|| &s * &s),
@@ -247,7 +247,7 @@ fn mul_poly_int_10(c: &mut Criterion) {
 }
 
 fn mul_poly_int_100(c: &mut Criterion) {
-    let s = Polynomial::new("x", -2, RAN_INT[..100].to_owned());
+    let s = PolynomialIn::new("x", -2, RAN_INT[..100].to_owned());
     c.bench_function(
         "multiply polynomials with 100 integer coefficients",
         move |b| b.iter(|| &s * &s),
@@ -255,7 +255,7 @@ fn mul_poly_int_100(c: &mut Criterion) {
 }
 
 fn mul_poly_int_1000(c: &mut Criterion) {
-    let s = Polynomial::new("x", -2, RAN_INT[..1000].to_owned());
+    let s = PolynomialIn::new("x", -2, RAN_INT[..1000].to_owned());
     let mut group = c.benchmark_group("dummy name");
     group.sample_size(20);
     group.bench_function(
@@ -265,7 +265,7 @@ fn mul_poly_int_1000(c: &mut Criterion) {
 }
 
 fn mul_poly_int_karatsuba_4(c: &mut Criterion) {
-    let s = Polynomial::new("x", -2, RAN_INT[..1000].to_owned());
+    let s = PolynomialIn::new("x", -2, RAN_INT[..1000].to_owned());
     let mut group = c.benchmark_group("dummy name");
     group.sample_size(20);
     group.bench_function(
@@ -275,7 +275,7 @@ fn mul_poly_int_karatsuba_4(c: &mut Criterion) {
 }
 
 fn mul_poly_int_karatsuba_8(c: &mut Criterion) {
-    let s = Polynomial::new("x", -2, RAN_INT[..1000].to_owned());
+    let s = PolynomialIn::new("x", -2, RAN_INT[..1000].to_owned());
     let mut group = c.benchmark_group("dummy name");
     group.sample_size(20);
     group.bench_function(
@@ -285,7 +285,7 @@ fn mul_poly_int_karatsuba_8(c: &mut Criterion) {
 }
 
 fn mul_poly_int_karatsuba_16(c: &mut Criterion) {
-    let s = Polynomial::new("x", -2, RAN_INT[..1000].to_owned());
+    let s = PolynomialIn::new("x", -2, RAN_INT[..1000].to_owned());
     let mut group = c.benchmark_group("dummy name");
     group.sample_size(20);
     group.bench_function(
@@ -295,7 +295,7 @@ fn mul_poly_int_karatsuba_16(c: &mut Criterion) {
 }
 
 fn mul_poly_f64_karatsuba_4(c: &mut Criterion) {
-    let s = Polynomial::new("x", -2, RAN_F64[..1000].to_owned());
+    let s = PolynomialIn::new("x", -2, RAN_F64[..1000].to_owned());
     c.bench_function(
         "multiply f64 polynomials with Karatsuba threshold 4",
         move |b| b.iter(|| s.karatsuba_mul(&s, 4)),
@@ -303,7 +303,7 @@ fn mul_poly_f64_karatsuba_4(c: &mut Criterion) {
 }
 
 fn mul_poly_f64_karatsuba_8(c: &mut Criterion) {
-    let s = Polynomial::new("x", -2, RAN_F64[..1000].to_owned());
+    let s = PolynomialIn::new("x", -2, RAN_F64[..1000].to_owned());
     c.bench_function(
         "multiply f64 polynomials with Karatsuba threshold 8",
         move |b| b.iter(|| s.karatsuba_mul(&s, 8)),
@@ -311,7 +311,7 @@ fn mul_poly_f64_karatsuba_8(c: &mut Criterion) {
 }
 
 fn mul_poly_f64_karatsuba_16(c: &mut Criterion) {
-    let s = Polynomial::new("x", -2, RAN_F64[..1000].to_owned());
+    let s = PolynomialIn::new("x", -2, RAN_F64[..1000].to_owned());
     c.bench_function(
         "multiply f64 polynomials with Karatsuba threshold 16",
         move |b| b.iter(|| s.karatsuba_mul(&s, 16)),

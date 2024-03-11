@@ -1,5 +1,5 @@
-use crate::polyslice::PolynomialSlice;
-use crate::series::Series;
+use crate::polyslice::PolynomialSliceIn;
+use crate::series::SeriesIn;
 use crate::traits::{AsSlice, KaratsubaMul};
 use crate::util::{trim_end, trim_start};
 use crate::{Coeff, IntoIter, Iter};
@@ -13,17 +13,20 @@ use std::{convert, fmt, iter};
 
 use log::trace;
 
+#[deprecated(note = "Use PolynomialIn instead")]
+pub type Polynomial<Var, C> = PolynomialIn<Var, C>;
+
 /// Laurent polynomial in a single variable
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(PartialEq, Eq, Debug, Clone, Hash, Ord, PartialOrd)]
-pub struct Polynomial<Var, C: Coeff> {
+pub struct PolynomialIn<Var, C: Coeff> {
     pub(crate) var: Var,
     pub(crate) min_pow: Option<isize>,
     pub(crate) coeffs: Vec<C>,
     pub(crate) zero: C, // TODO: evil hack, learn how to do this better
 }
 
-impl<Var, C: Coeff> Polynomial<Var, C> {
+impl<Var, C: Coeff> PolynomialIn<Var, C> {
     /// Create a new Laurent polynomial
     ///
     /// # Example
@@ -32,10 +35,10 @@ impl<Var, C: Coeff> Polynomial<Var, C> {
     /// at "x"^-1 with coefficients 1, 2, 3. In other words, the polynomial
     /// x^-1 + 2 + 3*x.
     /// ```rust
-    /// let p = series::Polynomial::new("x", -1, vec!(1,2,3));
+    /// let p = series::PolynomialIn::new("x", -1, vec!(1,2,3));
     /// ```
-    pub fn new(var: Var, min_pow: isize, coeffs: Vec<C>) -> Polynomial<Var, C> {
-        let mut res = Polynomial {
+    pub fn new(var: Var, min_pow: isize, coeffs: Vec<C>) -> PolynomialIn<Var, C> {
+        let mut res = PolynomialIn {
             var,
             min_pow: Some(min_pow),
             coeffs,
@@ -50,7 +53,7 @@ impl<Var, C: Coeff> Polynomial<Var, C> {
     /// # Example
     ///
     /// ```rust
-    /// let p = series::Polynomial::new("x", -1, vec!(1,2,3));
+    /// let p = series::PolynomialIn::new("x", -1, vec!(1,2,3));
     /// assert_eq!(p.var(), &"x");
     /// ```
     pub fn var(&self) -> &Var {
@@ -63,7 +66,7 @@ impl<Var, C: Coeff> Polynomial<Var, C> {
     /// # Example
     ///
     /// ```rust
-    /// let p = series::Polynomial::new("x", -1, vec!(1,2,3));
+    /// let p = series::PolynomialIn::new("x", -1, vec!(1,2,3));
     /// assert_eq!(p.coeff(-5), &0);
     /// assert_eq!(p.coeff(-2), &0);
     /// assert_eq!(p.coeff(-1), &1);
@@ -83,9 +86,9 @@ impl<Var, C: Coeff> Polynomial<Var, C> {
     /// # Example
     ///
     /// ```rust
-    /// let p = series::Polynomial::new("x", -1, vec!(1,2,3));
+    /// let p = series::PolynomialIn::new("x", -1, vec!(1,2,3));
     /// assert_eq!(p.min_pow(), Some(-1));
-    /// let p = series::Polynomial::new("x", -1, vec![0]);
+    /// let p = series::PolynomialIn::new("x", -1, vec![0]);
     /// assert_eq!(p.min_pow(), None);
     /// ```
     pub fn min_pow(&self) -> Option<isize> {
@@ -99,9 +102,9 @@ impl<Var, C: Coeff> Polynomial<Var, C> {
     /// # Example
     ///
     /// ```rust
-    /// let p = series::Polynomial::new("x", -1, vec!(1,2,3));
+    /// let p = series::PolynomialIn::new("x", -1, vec!(1,2,3));
     /// assert_eq!(p.max_pow(), Some(1));
-    /// let p = series::Polynomial::new("x", -1, vec![0]);
+    /// let p = series::PolynomialIn::new("x", -1, vec![0]);
     /// assert_eq!(p.max_pow(), None);
     /// ```
     pub fn max_pow(&self) -> Option<isize> {
@@ -114,7 +117,7 @@ impl<Var, C: Coeff> Polynomial<Var, C> {
     /// # Example
     ///
     /// ```rust
-    /// let p = series::Polynomial::new("x", -1, vec!(1,2,3));
+    /// let p = series::PolynomialIn::new("x", -1, vec!(1,2,3));
     /// assert_eq!(p.len(), 3);
     /// ```
     pub fn len(&self) -> usize {
@@ -126,10 +129,10 @@ impl<Var, C: Coeff> Polynomial<Var, C> {
     /// # Example
     ///
     /// ```rust
-    /// let p = series::Polynomial::new("x", -1, vec!(1,2,3));
+    /// let p = series::PolynomialIn::new("x", -1, vec!(1,2,3));
     /// assert!(!p.is_empty());
     ///
-    /// let p = series::Polynomial::new("x", -1, vec!(0));
+    /// let p = series::PolynomialIn::new("x", -1, vec!(0));
     /// assert!(p.is_empty());
     /// ```
     pub fn is_empty(&self) -> bool {
@@ -141,7 +144,7 @@ impl<Var, C: Coeff> Polynomial<Var, C> {
     /// # Example
     ///
     /// ```rust
-    /// let p = series::Polynomial::new("x", -1, vec!(1,2,3));
+    /// let p = series::PolynomialIn::new("x", -1, vec!(1,2,3));
     /// let mut iter = p.iter();
     /// assert_eq!(iter.next(), Some((-1, &1)));
     /// assert_eq!(iter.next(), Some((0, &2)));
@@ -157,12 +160,12 @@ impl<Var, C: Coeff> Polynomial<Var, C> {
     /// # Example
     ///
     /// ```rust
-    /// let p = series::Polynomial::new("x", -1, vec!(1,2,3));
-    /// let s = series::Series::with_cutoff("x", -1, 5, vec!(1,2,3));
+    /// let p = series::PolynomialIn::new("x", -1, vec!(1,2,3));
+    /// let s = series::SeriesIn::with_cutoff("x", -1, 5, vec!(1,2,3));
     /// assert_eq!(p.cutoff_at(5), s);
     /// ```
-    pub fn cutoff_at(self, cutoff_pow: isize) -> Series<Var, C> {
-        Series::with_cutoff(
+    pub fn cutoff_at(self, cutoff_pow: isize) -> SeriesIn<Var, C> {
+        SeriesIn::with_cutoff(
             self.var,
             self.min_pow.unwrap_or(cutoff_pow),
             cutoff_pow,
@@ -170,8 +173,8 @@ impl<Var, C: Coeff> Polynomial<Var, C> {
         )
     }
 
-    fn as_empty_slice(&self) -> PolynomialSlice<'_, Var, C> {
-        PolynomialSlice::new(
+    fn as_empty_slice(&self) -> PolynomialSliceIn<'_, Var, C> {
+        PolynomialSliceIn::new(
             &self.var,
             0,
             &self.coeffs[self.len()..],
@@ -181,15 +184,15 @@ impl<Var, C: Coeff> Polynomial<Var, C> {
 }
 
 impl<'a, Var: 'a, C: 'a + Coeff> AsSlice<'a, Range<isize>>
-    for Polynomial<Var, C>
+    for PolynomialIn<Var, C>
 {
-    type Output = PolynomialSlice<'a, Var, C>;
+    type Output = PolynomialSliceIn<'a, Var, C>;
 
     fn as_slice(&'a self, r: Range<isize>) -> Self::Output {
         if let Some(min_pow) = self.min_pow() {
             let start = (r.start - min_pow) as usize;
             let end = (r.end - min_pow) as usize;
-            PolynomialSlice::new(
+            PolynomialSliceIn::new(
                 &self.var,
                 r.start,
                 &self.coeffs[start..end],
@@ -202,16 +205,16 @@ impl<'a, Var: 'a, C: 'a + Coeff> AsSlice<'a, Range<isize>>
 }
 
 impl<'a, Var: 'a, C: 'a + Coeff> AsSlice<'a, RangeInclusive<isize>>
-    for Polynomial<Var, C>
+    for PolynomialIn<Var, C>
 {
-    type Output = PolynomialSlice<'a, Var, C>;
+    type Output = PolynomialSliceIn<'a, Var, C>;
 
     fn as_slice(&'a self, r: RangeInclusive<isize>) -> Self::Output {
         if let Some(min_pow) = self.min_pow() {
             let (start, end) = r.into_inner();
             let ustart = (start - min_pow) as usize;
             let end = (end - min_pow) as usize;
-            PolynomialSlice::new(
+            PolynomialSliceIn::new(
                 &self.var,
                 start,
                 &self.coeffs[ustart..=end],
@@ -224,14 +227,14 @@ impl<'a, Var: 'a, C: 'a + Coeff> AsSlice<'a, RangeInclusive<isize>>
 }
 
 impl<'a, Var: 'a, C: 'a + Coeff> AsSlice<'a, RangeToInclusive<isize>>
-    for Polynomial<Var, C>
+    for PolynomialIn<Var, C>
 {
-    type Output = PolynomialSlice<'a, Var, C>;
+    type Output = PolynomialSliceIn<'a, Var, C>;
 
     fn as_slice(&'a self, r: RangeToInclusive<isize>) -> Self::Output {
         if let Some(min_pow) = self.min_pow() {
             let end = (r.end - min_pow) as usize;
-            PolynomialSlice::new(
+            PolynomialSliceIn::new(
                 &self.var,
                 min_pow,
                 &self.coeffs[..=end],
@@ -244,14 +247,14 @@ impl<'a, Var: 'a, C: 'a + Coeff> AsSlice<'a, RangeToInclusive<isize>>
 }
 
 impl<'a, Var: 'a, C: 'a + Coeff> AsSlice<'a, RangeFrom<isize>>
-    for Polynomial<Var, C>
+    for PolynomialIn<Var, C>
 {
-    type Output = PolynomialSlice<'a, Var, C>;
+    type Output = PolynomialSliceIn<'a, Var, C>;
 
     fn as_slice(&'a self, r: RangeFrom<isize>) -> Self::Output {
         if let Some(min_pow) = self.min_pow() {
             let start = r.start - min_pow;
-            PolynomialSlice::new(
+            PolynomialSliceIn::new(
                 &self.var,
                 r.start,
                 &self.coeffs[(start as usize)..],
@@ -264,14 +267,14 @@ impl<'a, Var: 'a, C: 'a + Coeff> AsSlice<'a, RangeFrom<isize>>
 }
 
 impl<'a, Var: 'a, C: 'a + Coeff> AsSlice<'a, RangeTo<isize>>
-    for Polynomial<Var, C>
+    for PolynomialIn<Var, C>
 {
-    type Output = PolynomialSlice<'a, Var, C>;
+    type Output = PolynomialSliceIn<'a, Var, C>;
 
     fn as_slice(&'a self, r: RangeTo<isize>) -> Self::Output {
         if let Some(min_pow) = self.min_pow() {
             let end = (r.end - min_pow) as usize;
-            PolynomialSlice::new(
+            PolynomialSliceIn::new(
                 &self.var,
                 min_pow,
                 &self.coeffs[..end],
@@ -283,12 +286,12 @@ impl<'a, Var: 'a, C: 'a + Coeff> AsSlice<'a, RangeTo<isize>>
     }
 }
 
-impl<'a, Var: 'a, C: 'a + Coeff> AsSlice<'a, RangeFull> for Polynomial<Var, C> {
-    type Output = PolynomialSlice<'a, Var, C>;
+impl<'a, Var: 'a, C: 'a + Coeff> AsSlice<'a, RangeFull> for PolynomialIn<Var, C> {
+    type Output = PolynomialSliceIn<'a, Var, C>;
 
     fn as_slice(&'a self, r: RangeFull) -> Self::Output {
         if let Some(min_pow) = self.min_pow() {
-            PolynomialSlice::new(
+            PolynomialSliceIn::new(
                 &self.var,
                 min_pow,
                 &self.coeffs[r],
@@ -300,13 +303,13 @@ impl<'a, Var: 'a, C: 'a + Coeff> AsSlice<'a, RangeFull> for Polynomial<Var, C> {
     }
 }
 
-impl<Var, C: Coeff> convert::From<Series<Var, C>> for Polynomial<Var, C> {
-    fn from(s: Series<Var, C>) -> Self {
-        Polynomial::new(s.var, s.min_pow, s.coeffs)
+impl<Var, C: Coeff> convert::From<SeriesIn<Var, C>> for PolynomialIn<Var, C> {
+    fn from(s: SeriesIn<Var, C>) -> Self {
+        PolynomialIn::new(s.var, s.min_pow, s.coeffs)
     }
 }
 
-impl<Var, C: Coeff> Index<isize> for Polynomial<Var, C> {
+impl<Var, C: Coeff> Index<isize> for PolynomialIn<Var, C> {
     type Output = C;
 
     /// Get the coefficient of the polynomial variable to the
@@ -320,7 +323,7 @@ impl<Var, C: Coeff> Index<isize> for Polynomial<Var, C> {
     /// # Example
     ///
     /// ```rust
-    /// let p = series::Polynomial::new("x", -1, vec!(1,2,3));
+    /// let p = series::PolynomialIn::new("x", -1, vec!(1,2,3));
     /// assert_eq!(p[-1], 1);
     /// assert_eq!(p[0], 2);
     /// assert_eq!(p[1], 3);
@@ -332,7 +335,7 @@ impl<Var, C: Coeff> Index<isize> for Polynomial<Var, C> {
     }
 }
 
-impl<Var, C: Coeff> std::iter::IntoIterator for Polynomial<Var, C> {
+impl<Var, C: Coeff> std::iter::IntoIterator for PolynomialIn<Var, C> {
     type Item = (isize, C);
     type IntoIter = crate::IntoIter<C>;
 
@@ -341,7 +344,7 @@ impl<Var, C: Coeff> std::iter::IntoIterator for Polynomial<Var, C> {
     /// # Example
     ///
     /// ```rust
-    /// let p = series::Polynomial::new("x", -1, vec!(1,2,3));
+    /// let p = series::PolynomialIn::new("x", -1, vec!(1,2,3));
     /// let mut iter = p.into_iter();
     /// assert_eq!(iter.next(), Some((-1, 1)));
     /// assert_eq!(iter.next(), Some((0, 2)));
@@ -353,7 +356,7 @@ impl<Var, C: Coeff> std::iter::IntoIterator for Polynomial<Var, C> {
     }
 }
 
-impl<Var, C: Coeff> Polynomial<Var, C> {
+impl<Var, C: Coeff> PolynomialIn<Var, C> {
     fn trim(&mut self) {
         trim_end(&mut self.coeffs, &self.zero);
         if self.coeffs.is_empty() {
@@ -382,44 +385,44 @@ impl<Var, C: Coeff> Polynomial<Var, C> {
 }
 
 impl<Var: fmt::Display, C: Coeff + fmt::Display> fmt::Display
-    for Polynomial<Var, C>
+    for PolynomialIn<Var, C>
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         self.as_slice(..).fmt(f)
     }
 }
 
-impl<Var, C: Coeff + Neg<Output = C>> Neg for Polynomial<Var, C> {
-    type Output = Polynomial<Var, C>;
+impl<Var, C: Coeff + Neg<Output = C>> Neg for PolynomialIn<Var, C> {
+    type Output = PolynomialIn<Var, C>;
 
     /// Compute -p for a Laurent polynomial p
     ///
     /// # Example
     ///
     /// ```rust
-    /// let p = series::Polynomial::new("x", -3, vec!(1.,0.,-3.));
-    /// let minus_p = series::Polynomial::new("x", -3, vec!(-1.,0.,3.));
+    /// let p = series::PolynomialIn::new("x", -3, vec!(1.,0.,-3.));
+    /// let minus_p = series::PolynomialIn::new("x", -3, vec!(-1.,0.,3.));
     /// assert_eq!(-p, minus_p);
     /// ```
     fn neg(self) -> Self::Output {
         let neg_coeff = self.coeffs.into_iter().map(|c| -c).collect();
-        Polynomial::new(self.var, self.min_pow.unwrap_or(0), neg_coeff)
+        PolynomialIn::new(self.var, self.min_pow.unwrap_or(0), neg_coeff)
     }
 }
 
-impl<'a, Var: Clone, C: Coeff> Neg for &'a Polynomial<Var, C>
+impl<'a, Var: Clone, C: Coeff> Neg for &'a PolynomialIn<Var, C>
 where
-    PolynomialSlice<'a, Var, C>: Neg,
+    PolynomialSliceIn<'a, Var, C>: Neg,
 {
-    type Output = <PolynomialSlice<'a, Var, C> as Neg>::Output;
+    type Output = <PolynomialSliceIn<'a, Var, C> as Neg>::Output;
 
     /// Compute -p for a Laurent polynomial p
     ///
     /// # Example
     ///
     /// ```rust
-    /// let p = series::Polynomial::new("x", -3, vec!(1.,0.,-3.));
-    /// let minus_p = series::Polynomial::new("x", -3, vec!(-1.,0.,3.));
+    /// let p = series::PolynomialIn::new("x", -3, vec!(1.,0.,-3.));
+    /// let minus_p = series::PolynomialIn::new("x", -3, vec!(-1.,0.,3.));
     /// assert_eq!(-&p, minus_p);
     /// ```
     fn neg(self) -> Self::Output {
@@ -428,7 +431,7 @@ where
 }
 
 impl<'a, Var: PartialEq + fmt::Debug, C: Coeff + Clone>
-    AddAssign<&'a Polynomial<Var, C>> for Polynomial<Var, C>
+    AddAssign<&'a PolynomialIn<Var, C>> for PolynomialIn<Var, C>
 where
     for<'c> C: AddAssign<&'c C>,
 {
@@ -437,10 +440,10 @@ where
     /// # Example
     ///
     /// ```rust
-    /// use series::Polynomial;
-    /// let mut p = Polynomial::new("x", -3, vec!(1.,0.,-3.));
-    /// let q = Polynomial::new("x", -1, vec!(3., 4., 5.));
-    /// let res = Polynomial::new("x", -3, vec!(1.,0.,0.,4.,5.));
+    /// use series::PolynomialIn;
+    /// let mut p = PolynomialIn::new("x", -3, vec!(1.,0.,-3.));
+    /// let q = PolynomialIn::new("x", -1, vec!(3., 4., 5.));
+    /// let res = PolynomialIn::new("x", -3, vec!(1.,0.,0.,4.,5.));
     /// p += &q;
     /// assert_eq!(res, p);
     /// ```
@@ -448,17 +451,17 @@ where
     /// # Panics
     ///
     /// Panics if the polynomials have different expansion variables.
-    fn add_assign(&mut self, other: &'a Polynomial<Var, C>) {
+    fn add_assign(&mut self, other: &'a PolynomialIn<Var, C>) {
         self.add_assign(other.as_slice(..))
     }
 }
 
 impl<'a, Var: PartialEq + fmt::Debug, C: Coeff + Clone>
-    AddAssign<PolynomialSlice<'a, Var, C>> for Polynomial<Var, C>
+    AddAssign<PolynomialSliceIn<'a, Var, C>> for PolynomialIn<Var, C>
 where
     for<'c> C: AddAssign<&'c C>,
 {
-    fn add_assign(&mut self, other: PolynomialSlice<'a, Var, C>) {
+    fn add_assign(&mut self, other: PolynomialSliceIn<'a, Var, C>) {
         assert_eq!(self.var, *other.var);
         if other.min_pow().is_none() {
             return;
@@ -488,7 +491,7 @@ where
     }
 }
 
-impl<Var, C: Coeff> AddAssign<Polynomial<Var, C>> for Polynomial<Var, C>
+impl<Var, C: Coeff> AddAssign<PolynomialIn<Var, C>> for PolynomialIn<Var, C>
 where
     for<'c> C: AddAssign<&'c C>,
     Var: PartialEq + fmt::Debug,
@@ -499,10 +502,10 @@ where
     /// # Example
     ///
     /// ```rust
-    /// use series::Polynomial;
-    /// let mut p = Polynomial::new("x", -3, vec!(1.,0.,-3.));
-    /// let q = Polynomial::new("x", -1, vec!(3., 4., 5.));
-    /// let res = Polynomial::new("x", -3, vec!(1.,0.,0.,4.,5.));
+    /// use series::PolynomialIn;
+    /// let mut p = PolynomialIn::new("x", -3, vec!(1.,0.,-3.));
+    /// let q = PolynomialIn::new("x", -1, vec!(3., 4., 5.));
+    /// let res = PolynomialIn::new("x", -3, vec!(1.,0.,0.,4.,5.));
     /// p += q;
     /// assert_eq!(res, p);
     /// ```
@@ -510,7 +513,7 @@ where
     /// # Panics
     ///
     /// Panics if the polynomials have different expansion variables.
-    fn add_assign(&mut self, other: Polynomial<Var, C>) {
+    fn add_assign(&mut self, other: PolynomialIn<Var, C>) {
         //TODO: code duplication with AddAssign<PolynomialSlice>
         assert_eq!(self.var, other.var);
         if other.min_pow().is_none() {
@@ -541,11 +544,11 @@ where
     }
 }
 
-impl<Var: Clone, C: Coeff + Clone, Rhs> Add<Rhs> for Polynomial<Var, C>
+impl<Var: Clone, C: Coeff + Clone, Rhs> Add<Rhs> for PolynomialIn<Var, C>
 where
-    Polynomial<Var, C>: AddAssign<Rhs>,
+    PolynomialIn<Var, C>: AddAssign<Rhs>,
 {
-    type Output = Polynomial<Var, C>;
+    type Output = PolynomialIn<Var, C>;
 
     fn add(mut self, other: Rhs) -> Self::Output {
         self += other;
@@ -553,19 +556,19 @@ where
     }
 }
 
-impl<'a, Var, C: Coeff> SubAssign<&'a Polynomial<Var, C>> for Polynomial<Var, C>
+impl<'a, Var, C: Coeff> SubAssign<&'a PolynomialIn<Var, C>> for PolynomialIn<Var, C>
 where
-    for<'c> &'c Polynomial<Var, C>: Neg<Output = Polynomial<Var, C>>,
-    Polynomial<Var, C>: AddAssign<Polynomial<Var, C>>,
+    for<'c> &'c PolynomialIn<Var, C>: Neg<Output = PolynomialIn<Var, C>>,
+    PolynomialIn<Var, C>: AddAssign<PolynomialIn<Var, C>>,
 {
     /// Set p = p - q for two polynomial p and q
     ///
     /// # Example
     ///
     /// ```rust
-    /// use series::Polynomial;
-    /// let mut p = Polynomial::new("x", -3, vec!(1.,0.,-3.));
-    /// let res = Polynomial::new("x", 0, vec!());
+    /// use series::PolynomialIn;
+    /// let mut p = PolynomialIn::new("x", -3, vec!(1.,0.,-3.));
+    /// let res = PolynomialIn::new("x", 0, vec!());
     /// p -= &p.clone();
     /// assert_eq!(res, p);
     /// ```
@@ -573,34 +576,34 @@ where
     /// # Panics
     ///
     /// Panics if the polynomials have different expansion variables.
-    fn sub_assign(&mut self, other: &'a Polynomial<Var, C>) {
+    fn sub_assign(&mut self, other: &'a PolynomialIn<Var, C>) {
         *self += -other;
     }
 }
 
-impl<'a, Var, C: Coeff> SubAssign<PolynomialSlice<'a, Var, C>>
-    for Polynomial<Var, C>
+impl<'a, Var, C: Coeff> SubAssign<PolynomialSliceIn<'a, Var, C>>
+    for PolynomialIn<Var, C>
 where
-    for<'c> PolynomialSlice<'c, Var, C>: Neg<Output = Polynomial<Var, C>>,
-    Polynomial<Var, C>: AddAssign<Polynomial<Var, C>>,
+    for<'c> PolynomialSliceIn<'c, Var, C>: Neg<Output = PolynomialIn<Var, C>>,
+    PolynomialIn<Var, C>: AddAssign<PolynomialIn<Var, C>>,
 {
-    fn sub_assign(&mut self, other: PolynomialSlice<'a, Var, C>) {
+    fn sub_assign(&mut self, other: PolynomialSliceIn<'a, Var, C>) {
         *self += -other;
     }
 }
 
-impl<Var, C: Coeff> SubAssign<Polynomial<Var, C>> for Polynomial<Var, C>
+impl<Var, C: Coeff> SubAssign<PolynomialIn<Var, C>> for PolynomialIn<Var, C>
 where
-    Polynomial<Var, C>: AddAssign + Neg<Output = Polynomial<Var, C>>,
+    PolynomialIn<Var, C>: AddAssign + Neg<Output = PolynomialIn<Var, C>>,
 {
     /// Set p = p - q for two polynomial p and q
     ///
     /// # Example
     ///
     /// ```rust
-    /// use series::Polynomial;
-    /// let mut p = Polynomial::new("x", -3, vec!(1.,0.,-3.));
-    /// let res = Polynomial::new("x", 0, vec!());
+    /// use series::PolynomialIn;
+    /// let mut p = PolynomialIn::new("x", -3, vec!(1.,0.,-3.));
+    /// let res = PolynomialIn::new("x", 0, vec!());
     /// p -= p.clone();
     /// assert_eq!(res, p);
     /// ```
@@ -608,16 +611,16 @@ where
     /// # Panics
     ///
     /// Panics if the polynomial have different expansion variables.
-    fn sub_assign(&mut self, other: Polynomial<Var, C>) {
+    fn sub_assign(&mut self, other: PolynomialIn<Var, C>) {
         *self += -other;
     }
 }
 
-impl<Var, C: Coeff, T> Sub<T> for Polynomial<Var, C>
+impl<Var, C: Coeff, T> Sub<T> for PolynomialIn<Var, C>
 where
-    Polynomial<Var, C>: SubAssign<T>,
+    PolynomialIn<Var, C>: SubAssign<T>,
 {
-    type Output = Polynomial<Var, C>;
+    type Output = PolynomialIn<Var, C>;
 
     fn sub(mut self, other: T) -> Self::Output {
         self -= other;
@@ -626,67 +629,67 @@ where
 }
 
 impl<'a, Var: PartialEq + fmt::Debug, C: Coeff + Clone + AddAssign>
-    MulAssign<&'a Polynomial<Var, C>> for Polynomial<Var, C>
+    MulAssign<&'a PolynomialIn<Var, C>> for PolynomialIn<Var, C>
 where
-    Polynomial<Var, C>: MulAssign<PolynomialSlice<'a, Var, C>>,
+    PolynomialIn<Var, C>: MulAssign<PolynomialSliceIn<'a, Var, C>>,
 {
     /// Set p = p * q for two polynomials p,q
     ///
     /// # Example
     ///
     /// ```rust
-    /// use series::Polynomial;
-    /// let mut p = Polynomial::new("x", -3, vec!(1.,0.,-3.));
+    /// use series::PolynomialIn;
+    /// let mut p = PolynomialIn::new("x", -3, vec!(1.,0.,-3.));
     /// p *= &p.clone();
-    /// let res = Polynomial::new("x", -6, vec!(1.,0.,-6.,0.,9.));
+    /// let res = PolynomialIn::new("x", -6, vec!(1.,0.,-6.,0.,9.));
     /// assert_eq!(res, p);
     /// ```
     ///
     /// # Panics
     ///
     /// Panics if the polynomials have different expansion variables.
-    fn mul_assign(&mut self, other: &'a Polynomial<Var, C>) {
+    fn mul_assign(&mut self, other: &'a PolynomialIn<Var, C>) {
         self.mul_assign(other.as_slice(..))
     }
 }
 
-impl<'a, Var, C: Coeff> MulAssign<PolynomialSlice<'a, Var, C>>
-    for Polynomial<Var, C>
+impl<'a, Var, C: Coeff> MulAssign<PolynomialSliceIn<'a, Var, C>>
+    for PolynomialIn<Var, C>
 where
-    for<'b> PolynomialSlice<'b, Var, C>:
-        Mul<PolynomialSlice<'a, Var, C>, Output = Polynomial<Var, C>>,
+    for<'b> PolynomialSliceIn<'b, Var, C>:
+        Mul<PolynomialSliceIn<'a, Var, C>, Output = PolynomialIn<Var, C>>,
 {
-    fn mul_assign(&mut self, other: PolynomialSlice<'a, Var, C>) {
+    fn mul_assign(&mut self, other: PolynomialSliceIn<'a, Var, C>) {
         let prod = self.as_slice(..) * other;
         *self = prod;
     }
 }
 
-impl<Var, C: Coeff> MulAssign for Polynomial<Var, C>
+impl<Var, C: Coeff> MulAssign for PolynomialIn<Var, C>
 where
-    for<'a> Polynomial<Var, C>: MulAssign<&'a Polynomial<Var, C>>,
+    for<'a> PolynomialIn<Var, C>: MulAssign<&'a PolynomialIn<Var, C>>,
 {
     /// Set p = p * q for two polynomials p,q
     ///
     /// # Example
     ///
     /// ```rust
-    /// use series::Polynomial;
-    /// let mut p = Polynomial::new("x", -3, vec!(1.,0.,-3.));
+    /// use series::PolynomialIn;
+    /// let mut p = PolynomialIn::new("x", -3, vec!(1.,0.,-3.));
     /// p *= &p.clone();
-    /// let res = Polynomial::new("x", -6, vec!(1.,0.,-6.,0.,9.));
+    /// let res = PolynomialIn::new("x", -6, vec!(1.,0.,-6.,0.,9.));
     /// assert_eq!(res, p);
     /// ```
     ///
     /// # Panics
     ///
     /// Panics if the series have different expansion variables.
-    fn mul_assign(&mut self, other: Polynomial<Var, C>) {
+    fn mul_assign(&mut self, other: PolynomialIn<Var, C>) {
         *self *= &other
     }
 }
 
-impl<Var, C: Coeff> MulAssign<C> for Polynomial<Var, C>
+impl<Var, C: Coeff> MulAssign<C> for PolynomialIn<Var, C>
 where
     for<'a> C: MulAssign<&'a C>,
 {
@@ -695,10 +698,10 @@ where
     /// # Example
     ///
     /// ```rust
-    /// use series::Polynomial;
-    /// let mut p = Polynomial::new("x", -3, vec!(1.,0.,-3.));
+    /// use series::PolynomialIn;
+    /// let mut p = PolynomialIn::new("x", -3, vec!(1.,0.,-3.));
     /// p *= 2.;
-    /// let res = Polynomial::new("x", -3, vec!(2.,0.,-6.));
+    /// let res = PolynomialIn::new("x", -3, vec!(2.,0.,-6.));
     /// assert_eq!(res, p);
     /// ```
     fn mul_assign(&mut self, other: C) {
@@ -706,7 +709,7 @@ where
     }
 }
 
-impl<'a, Var, C: Coeff> MulAssign<&'a C> for Polynomial<Var, C>
+impl<'a, Var, C: Coeff> MulAssign<&'a C> for PolynomialIn<Var, C>
 where
     C: MulAssign<&'a C>,
 {
@@ -715,10 +718,10 @@ where
     /// # Example
     ///
     /// ```rust
-    /// use series::Polynomial;
-    /// let mut p = Polynomial::new("x", -3, vec!(1.,0.,-3.));
+    /// use series::PolynomialIn;
+    /// let mut p = PolynomialIn::new("x", -3, vec!(1.,0.,-3.));
     /// p *= &2.;
-    /// let res = Polynomial::new("x", -3, vec!(2.,0.,-6.));
+    /// let res = PolynomialIn::new("x", -3, vec!(2.,0.,-6.));
     /// assert_eq!(res, p);
     /// ```
     fn mul_assign(&mut self, other: &'a C) {
@@ -728,7 +731,7 @@ where
     }
 }
 
-impl<Var, C: Coeff> DivAssign<C> for Polynomial<Var, C>
+impl<Var, C: Coeff> DivAssign<C> for PolynomialIn<Var, C>
 where
     for<'a> C: DivAssign<&'a C>,
 {
@@ -737,10 +740,10 @@ where
     /// # Example
     ///
     /// ```rust
-    /// use series::Polynomial;
-    /// let mut p = Polynomial::new("x", -3, vec!(1.,0.,-3.));
+    /// use series::PolynomialIn;
+    /// let mut p = PolynomialIn::new("x", -3, vec!(1.,0.,-3.));
     /// p /= 2.;
-    /// let res = Polynomial::new("x", -3, vec!(0.5,0.,-1.5));
+    /// let res = PolynomialIn::new("x", -3, vec!(0.5,0.,-1.5));
     /// assert_eq!(res, p);
     /// ```
     fn div_assign(&mut self, other: C) {
@@ -748,7 +751,7 @@ where
     }
 }
 
-impl<'a, Var, C: Coeff> DivAssign<&'a C> for Polynomial<Var, C>
+impl<'a, Var, C: Coeff> DivAssign<&'a C> for PolynomialIn<Var, C>
 where
     C: DivAssign<&'a C>,
 {
@@ -757,10 +760,10 @@ where
     /// # Example
     ///
     /// ```rust
-    /// use series::Polynomial;
-    /// let mut p = Polynomial::new("x", -3, vec!(1.,0.,-3.));
+    /// use series::PolynomialIn;
+    /// let mut p = PolynomialIn::new("x", -3, vec!(1.,0.,-3.));
     /// p /= &2.;
-    /// let res = Polynomial::new("x", -3, vec!(0.5,0.,-1.5));
+    /// let res = PolynomialIn::new("x", -3, vec!(0.5,0.,-1.5));
     /// assert_eq!(res, p);
     /// ```
     fn div_assign(&mut self, other: &'a C) {
@@ -770,18 +773,18 @@ where
     }
 }
 
-impl<Var, C: Coeff> AddAssign<C> for Polynomial<Var, C>
+impl<Var, C: Coeff> AddAssign<C> for PolynomialIn<Var, C>
 where
-    for<'c> Polynomial<Var, C>: AddAssign<&'c C>,
+    for<'c> PolynomialIn<Var, C>: AddAssign<&'c C>,
 {
     fn add_assign(&mut self, other: C) {
         self.add_assign(&other)
     }
 }
 
-impl<'a, Var, C: Coeff> AddAssign<&'a C> for Polynomial<Var, C>
+impl<'a, Var, C: Coeff> AddAssign<&'a C> for PolynomialIn<Var, C>
 where
-    Polynomial<Var, C>: AddAssign,
+    PolynomialIn<Var, C>: AddAssign,
     C: Clone + AddAssign<&'a C>,
 {
     fn add_assign(&mut self, other: &'a C) {
@@ -806,9 +809,9 @@ where
     }
 }
 
-impl<Var, C: Coeff> SubAssign<C> for Polynomial<Var, C>
+impl<Var, C: Coeff> SubAssign<C> for PolynomialIn<Var, C>
 where
-    Polynomial<Var, C>: AddAssign<C>,
+    PolynomialIn<Var, C>: AddAssign<C>,
     C: Neg<Output = C> + AddAssign,
 {
     fn sub_assign(&mut self, other: C) {
@@ -816,9 +819,9 @@ where
     }
 }
 
-impl<'c, Var, C: Coeff> SubAssign<&'c C> for Polynomial<Var, C>
+impl<'c, Var, C: Coeff> SubAssign<&'c C> for PolynomialIn<Var, C>
 where
-    Polynomial<Var, C>: AddAssign<C>,
+    PolynomialIn<Var, C>: AddAssign<C>,
     C: AddAssign,
     &'c C: Neg<Output = C>,
 {
@@ -827,46 +830,46 @@ where
     }
 }
 
-impl<Var, C: Coeff> Mul for Polynomial<Var, C>
+impl<Var, C: Coeff> Mul for PolynomialIn<Var, C>
 where
-    Polynomial<Var, C>: MulAssign,
+    PolynomialIn<Var, C>: MulAssign,
 {
-    type Output = Polynomial<Var, C>;
+    type Output = PolynomialIn<Var, C>;
 
-    fn mul(mut self, other: Polynomial<Var, C>) -> Self::Output {
+    fn mul(mut self, other: PolynomialIn<Var, C>) -> Self::Output {
         self *= other;
         self
     }
 }
 
-impl<'a, Var, C: Coeff> Mul<&'a Polynomial<Var, C>> for Polynomial<Var, C>
+impl<'a, Var, C: Coeff> Mul<&'a PolynomialIn<Var, C>> for PolynomialIn<Var, C>
 where
-    Polynomial<Var, C>: MulAssign<PolynomialSlice<'a, Var, C>>,
+    PolynomialIn<Var, C>: MulAssign<PolynomialSliceIn<'a, Var, C>>,
 {
-    type Output = Polynomial<Var, C>;
+    type Output = PolynomialIn<Var, C>;
 
-    fn mul(self, other: &'a Polynomial<Var, C>) -> Self::Output {
+    fn mul(self, other: &'a PolynomialIn<Var, C>) -> Self::Output {
         self * other.as_slice(..)
     }
 }
 
-impl<'a, Var, C: Coeff> Mul<PolynomialSlice<'a, Var, C>> for Polynomial<Var, C>
+impl<'a, Var, C: Coeff> Mul<PolynomialSliceIn<'a, Var, C>> for PolynomialIn<Var, C>
 where
-    Polynomial<Var, C>: MulAssign<PolynomialSlice<'a, Var, C>>,
+    PolynomialIn<Var, C>: MulAssign<PolynomialSliceIn<'a, Var, C>>,
 {
-    type Output = Polynomial<Var, C>;
+    type Output = PolynomialIn<Var, C>;
 
-    fn mul(mut self, other: PolynomialSlice<'a, Var, C>) -> Self::Output {
+    fn mul(mut self, other: PolynomialSliceIn<'a, Var, C>) -> Self::Output {
         self *= other;
         self
     }
 }
 
-impl<Var, C: Coeff> Mul<C> for Polynomial<Var, C>
+impl<Var, C: Coeff> Mul<C> for PolynomialIn<Var, C>
 where
     for<'c> C: MulAssign<&'c C>,
 {
-    type Output = Polynomial<Var, C>;
+    type Output = PolynomialIn<Var, C>;
 
     fn mul(mut self, other: C) -> Self::Output {
         self *= &other;
@@ -874,11 +877,11 @@ where
     }
 }
 
-impl<'a, Var, C: Coeff> Mul<&'a C> for Polynomial<Var, C>
+impl<'a, Var, C: Coeff> Mul<&'a C> for PolynomialIn<Var, C>
 where
     for<'c> C: MulAssign<&'c C>,
 {
-    type Output = Polynomial<Var, C>;
+    type Output = PolynomialIn<Var, C>;
 
     fn mul(mut self, other: &'a C) -> Self::Output {
         self *= other;
@@ -886,11 +889,11 @@ where
     }
 }
 
-impl<Var, C: Coeff> Div<C> for Polynomial<Var, C>
+impl<Var, C: Coeff> Div<C> for PolynomialIn<Var, C>
 where
     for<'c> C: DivAssign<&'c C>,
 {
-    type Output = Polynomial<Var, C>;
+    type Output = PolynomialIn<Var, C>;
 
     fn div(mut self, other: C) -> Self::Output {
         self /= &other;
@@ -898,11 +901,11 @@ where
     }
 }
 
-impl<'a, Var, C: Coeff> Div<&'a C> for Polynomial<Var, C>
+impl<'a, Var, C: Coeff> Div<&'a C> for PolynomialIn<Var, C>
 where
     for<'c> C: DivAssign<&'c C>,
 {
-    type Output = Polynomial<Var, C>;
+    type Output = PolynomialIn<Var, C>;
 
     fn div(mut self, other: &'a C) -> Self::Output {
         self /= other;
@@ -910,55 +913,55 @@ where
     }
 }
 
-impl<'a, Var, C: Coeff, T> Mul<T> for &'a Polynomial<Var, C>
+impl<'a, Var, C: Coeff, T> Mul<T> for &'a PolynomialIn<Var, C>
 where
-    PolynomialSlice<'a, Var, C>: Mul<T, Output = Polynomial<Var, C>>,
+    PolynomialSliceIn<'a, Var, C>: Mul<T, Output = PolynomialIn<Var, C>>,
 {
-    type Output = Polynomial<Var, C>;
+    type Output = PolynomialIn<Var, C>;
 
     fn mul(self, other: T) -> Self::Output {
         self.as_slice(..) * other
     }
 }
 
-impl<'a, Var, C: Coeff, T> Div<T> for &'a Polynomial<Var, C>
+impl<'a, Var, C: Coeff, T> Div<T> for &'a PolynomialIn<Var, C>
 where
-    PolynomialSlice<'a, Var, C>: Div<T, Output = Polynomial<Var, C>>,
+    PolynomialSliceIn<'a, Var, C>: Div<T, Output = PolynomialIn<Var, C>>,
 {
-    type Output = Polynomial<Var, C>;
+    type Output = PolynomialIn<Var, C>;
 
     fn div(self, other: T) -> Self::Output {
         self.as_slice(..) / other
     }
 }
 
-impl<'a, Var, C: Coeff, T> Add<T> for &'a Polynomial<Var, C>
+impl<'a, Var, C: Coeff, T> Add<T> for &'a PolynomialIn<Var, C>
 where
-    PolynomialSlice<'a, Var, C>: Add<T, Output = Polynomial<Var, C>>,
+    PolynomialSliceIn<'a, Var, C>: Add<T, Output = PolynomialIn<Var, C>>,
 {
-    type Output = Polynomial<Var, C>;
+    type Output = PolynomialIn<Var, C>;
 
     fn add(self, other: T) -> Self::Output {
         self.as_slice(..) + other
     }
 }
 
-impl<'a, Var, C: Coeff, T> Sub<T> for &'a Polynomial<Var, C>
+impl<'a, Var, C: Coeff, T> Sub<T> for &'a PolynomialIn<Var, C>
 where
-    PolynomialSlice<'a, Var, C>: Sub<T, Output = Polynomial<Var, C>>,
+    PolynomialSliceIn<'a, Var, C>: Sub<T, Output = PolynomialIn<Var, C>>,
 {
-    type Output = Polynomial<Var, C>;
+    type Output = PolynomialIn<Var, C>;
 
     fn sub(self, other: T) -> Self::Output {
         self.as_slice(..) - other
     }
 }
 
-impl<'a, Var: Clone, C: Coeff + Clone> From<PolynomialSlice<'a, Var, C>>
-    for Polynomial<Var, C>
+impl<'a, Var: Clone, C: Coeff + Clone> From<PolynomialSliceIn<'a, Var, C>>
+    for PolynomialIn<Var, C>
 {
-    fn from(s: PolynomialSlice<'a, Var, C>) -> Polynomial<Var, C> {
-        Polynomial::new(
+    fn from(s: PolynomialSliceIn<'a, Var, C>) -> PolynomialIn<Var, C> {
+        PolynomialIn::new(
             s.var.clone(),
             s.min_pow.unwrap_or(0),
             s.coeffs.to_vec(),
@@ -966,29 +969,32 @@ impl<'a, Var: Clone, C: Coeff + Clone> From<PolynomialSlice<'a, Var, C>>
     }
 }
 
+#[deprecated(note = "Use PolynomialInParts instead")]
+pub type PolynomialParts<Var, C> = PolynomialInParts<Var, C>;
+
 /// Data parts of a polynomial
 ///
 /// # Example
 ///
 /// ```rust
 /// // destructure a polynomial
-/// let p = series::Polynomial::new("x", -1, vec![1,2,3]);
-/// let series::PolynomialParts{var, min_pow, coeffs} = p.into();
+/// let p = series::PolynomialIn::new("x", -1, vec![1,2,3]);
+/// let series::PolynomialInParts{var, min_pow, coeffs} = p.into();
 /// assert_eq!(var, "x");
 /// assert_eq!(min_pow, Some(-1));
 /// assert_eq!(coeffs, vec![1,2,3]);
 /// ```
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(PartialEq, Eq, Debug, Clone, Hash, Ord, PartialOrd)]
-pub struct PolynomialParts<Var, C> {
+pub struct PolynomialInParts<Var, C> {
     pub var: Var,
     pub min_pow: Option<isize>,
     pub coeffs: Vec<C>,
 }
 
-impl<Var, C: Coeff> From<Polynomial<Var, C>> for PolynomialParts<Var, C> {
-    fn from(p: Polynomial<Var, C>) -> Self {
-        PolynomialParts {
+impl<Var, C: Coeff> From<PolynomialIn<Var, C>> for PolynomialInParts<Var, C> {
+    fn from(p: PolynomialIn<Var, C>) -> Self {
+        PolynomialInParts {
             var: p.var,
             min_pow: p.min_pow,
             coeffs: p.coeffs,
@@ -996,48 +1002,48 @@ impl<Var, C: Coeff> From<Polynomial<Var, C>> for PolynomialParts<Var, C> {
     }
 }
 
-impl<'a, 'b, Var: Clone, C: Coeff> KaratsubaMul<&'b Polynomial<Var, C>>
-    for &'a Polynomial<Var, C>
+impl<'a, 'b, Var: Clone, C: Coeff> KaratsubaMul<&'b PolynomialIn<Var, C>>
+    for &'a PolynomialIn<Var, C>
 where
     Var: Clone + PartialEq + fmt::Debug,
     C: Clone,
     for<'c> C: AddAssign,
-    for<'c> Polynomial<Var, C>:
-        AddAssign<&'c Polynomial<Var, C>> + SubAssign<&'c Polynomial<Var, C>>,
-    Polynomial<Var, C>:
-        AddAssign<Polynomial<Var, C>> + SubAssign<Polynomial<Var, C>>,
-    for<'c> PolynomialSlice<'c, Var, C>: Add<Output = Polynomial<Var, C>>,
+    for<'c> PolynomialIn<Var, C>:
+        AddAssign<&'c PolynomialIn<Var, C>> + SubAssign<&'c PolynomialIn<Var, C>>,
+    PolynomialIn<Var, C>:
+        AddAssign<PolynomialIn<Var, C>> + SubAssign<PolynomialIn<Var, C>>,
+    for<'c> PolynomialSliceIn<'c, Var, C>: Add<Output = PolynomialIn<Var, C>>,
     for<'c> &'c C: Mul<Output = C>,
 {
-    type Output = Polynomial<Var, C>;
+    type Output = PolynomialIn<Var, C>;
 
     fn karatsuba_mul(
         self,
-        rhs: &'b Polynomial<Var, C>,
+        rhs: &'b PolynomialIn<Var, C>,
         min_size: usize,
     ) -> Self::Output {
         self.as_slice(..).karatsuba_mul(rhs.as_slice(..), min_size)
     }
 }
 
-impl<'a, 'b, Var: Clone, C: Coeff> KaratsubaMul<PolynomialSlice<'b, Var, C>>
-    for &'a Polynomial<Var, C>
+impl<'a, 'b, Var: Clone, C: Coeff> KaratsubaMul<PolynomialSliceIn<'b, Var, C>>
+    for &'a PolynomialIn<Var, C>
 where
     Var: Clone + PartialEq + fmt::Debug,
     C: Clone,
     for<'c> C: AddAssign,
-    for<'c> Polynomial<Var, C>:
-        AddAssign<&'c Polynomial<Var, C>> + SubAssign<&'c Polynomial<Var, C>>,
-    Polynomial<Var, C>:
-        AddAssign<Polynomial<Var, C>> + SubAssign<Polynomial<Var, C>>,
-    for<'c> PolynomialSlice<'c, Var, C>: Add<Output = Polynomial<Var, C>>,
+    for<'c> PolynomialIn<Var, C>:
+        AddAssign<&'c PolynomialIn<Var, C>> + SubAssign<&'c PolynomialIn<Var, C>>,
+    PolynomialIn<Var, C>:
+        AddAssign<PolynomialIn<Var, C>> + SubAssign<PolynomialIn<Var, C>>,
+    for<'c> PolynomialSliceIn<'c, Var, C>: Add<Output = PolynomialIn<Var, C>>,
     for<'c> &'c C: Mul<Output = C>,
 {
-    type Output = Polynomial<Var, C>;
+    type Output = PolynomialIn<Var, C>;
 
     fn karatsuba_mul(
         self,
-        rhs: PolynomialSlice<'b, Var, C>,
+        rhs: PolynomialSliceIn<'b, Var, C>,
         min_size: usize,
     ) -> Self::Output {
         self.as_slice(..).karatsuba_mul(rhs, min_size)
@@ -1049,55 +1055,55 @@ where
 pub(crate) trait MulHelper<'a, 'b, Var, C: Coeff> {
     fn add_prod(
         &mut self,
-        a: PolynomialSlice<'a, Var, C>,
-        b: PolynomialSlice<'b, Var, C>,
+        a: PolynomialSliceIn<'a, Var, C>,
+        b: PolynomialSliceIn<'b, Var, C>,
         min_karatsuba_size: usize,
     );
 
     fn add_prod_naive(
         &mut self,
-        a: PolynomialSlice<'a, Var, C>,
-        b: PolynomialSlice<'b, Var, C>,
+        a: PolynomialSliceIn<'a, Var, C>,
+        b: PolynomialSliceIn<'b, Var, C>,
     );
 
     fn add_prod_karatsuba(
         &mut self,
-        a: PolynomialSlice<'a, Var, C>,
-        b: PolynomialSlice<'b, Var, C>,
+        a: PolynomialSliceIn<'a, Var, C>,
+        b: PolynomialSliceIn<'b, Var, C>,
         min_karatsuba_size: usize,
     );
 
     fn add_prod_unchecked(
         &mut self,
-        a: PolynomialSlice<'a, Var, C>,
-        b: PolynomialSlice<'b, Var, C>,
+        a: PolynomialSliceIn<'a, Var, C>,
+        b: PolynomialSliceIn<'b, Var, C>,
         min_karatsuba_size: usize,
     );
 
     fn resize_to_fit(
         &mut self,
-        a: PolynomialSlice<'a, Var, C>,
-        b: PolynomialSlice<'b, Var, C>,
+        a: PolynomialSliceIn<'a, Var, C>,
+        b: PolynomialSliceIn<'b, Var, C>,
     );
 }
 
-impl<'a, 'b, Var, C: Coeff> MulHelper<'a, 'b, Var, C> for Polynomial<Var, C>
+impl<'a, 'b, Var, C: Coeff> MulHelper<'a, 'b, Var, C> for PolynomialIn<Var, C>
 where
     Var: 'a + 'b,
     C: 'a + 'b + Clone,
     for<'c> C: AddAssign,
-    for<'c> Polynomial<Var, C>:
-        AddAssign<&'c Polynomial<Var, C>> + SubAssign<&'c Polynomial<Var, C>>,
-    Polynomial<Var, C>:
-        AddAssign<Polynomial<Var, C>> + SubAssign<Polynomial<Var, C>>,
-    for<'c> PolynomialSlice<'c, Var, C>:
-        Add<Output = Polynomial<Var, C>> + Mul<Output = Polynomial<Var, C>>,
+    for<'c> PolynomialIn<Var, C>:
+        AddAssign<&'c PolynomialIn<Var, C>> + SubAssign<&'c PolynomialIn<Var, C>>,
+    PolynomialIn<Var, C>:
+        AddAssign<PolynomialIn<Var, C>> + SubAssign<PolynomialIn<Var, C>>,
+    for<'c> PolynomialSliceIn<'c, Var, C>:
+        Add<Output = PolynomialIn<Var, C>> + Mul<Output = PolynomialIn<Var, C>>,
     for<'c> &'c C: Mul<Output = C>,
 {
     fn add_prod(
         &mut self,
-        a: PolynomialSlice<'a, Var, C>,
-        b: PolynomialSlice<'b, Var, C>,
+        a: PolynomialSliceIn<'a, Var, C>,
+        b: PolynomialSliceIn<'b, Var, C>,
         min_karatsuba_size: usize,
     ) {
         if a.min_pow().is_none() || b.min_pow().is_none() {
@@ -1110,8 +1116,8 @@ where
 
     fn resize_to_fit(
         &mut self,
-        a: PolynomialSlice<'a, Var, C>,
-        b: PolynomialSlice<'b, Var, C>,
+        a: PolynomialSliceIn<'a, Var, C>,
+        b: PolynomialSliceIn<'b, Var, C>,
     ) {
         debug_assert_ne!(a.min_pow(), None);
         debug_assert_ne!(b.min_pow(), None);
@@ -1137,8 +1143,8 @@ where
 
     fn add_prod_unchecked(
         &mut self,
-        a: PolynomialSlice<'a, Var, C>,
-        b: PolynomialSlice<'b, Var, C>,
+        a: PolynomialSliceIn<'a, Var, C>,
+        b: PolynomialSliceIn<'b, Var, C>,
         min_karatsuba_size: usize,
     ) {
         if std::cmp::min(a.len(), b.len()) < min_karatsuba_size {
@@ -1161,8 +1167,8 @@ where
 
     fn add_prod_karatsuba(
         &mut self,
-        a: PolynomialSlice<'a, Var, C>,
-        b: PolynomialSlice<'b, Var, C>,
+        a: PolynomialSliceIn<'a, Var, C>,
+        b: PolynomialSliceIn<'b, Var, C>,
         min_karatsuba_size: usize,
     ) {
         let mid = ((std::cmp::min(a.len(), b.len()) + 1) / 2) as isize;
@@ -1203,8 +1209,8 @@ where
 
     fn add_prod_naive(
         &mut self,
-        a: PolynomialSlice<'a, Var, C>,
-        b: PolynomialSlice<'b, Var, C>,
+        a: PolynomialSliceIn<'a, Var, C>,
+        b: PolynomialSliceIn<'b, Var, C>,
     ) {
         let min_pow = self.min_pow().unwrap();
         for (i, a) in a.iter() {

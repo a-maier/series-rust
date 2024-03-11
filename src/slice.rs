@@ -1,16 +1,19 @@
 use crate::ops::{Exp, Ln, Pow};
 use crate::traits::{AsSlice, ExpCoeff, MulInverse};
 use crate::util::trim_slice_start;
-use crate::{Coeff, Iter, PolynomialSlice, Series};
+use crate::{Coeff, Iter, PolynomialSliceIn, SeriesIn};
 
 use std::fmt;
 use std::ops::{
     Add, AddAssign, Div, DivAssign, Index, Mul, MulAssign, Neg, Sub, SubAssign,
 };
 
+#[deprecated(note = "Use SeriesSliceIn instead")]
+pub type SeriesSlice<'a, Var, C> = SeriesSliceIn<'a, Var, C>;
+
 /// View into a Laurent series
 #[derive(PartialEq, Eq, Debug, Hash, Ord, PartialOrd)]
-pub struct SeriesSlice<'a, Var, C: Coeff> {
+pub struct SeriesSliceIn<'a, Var, C: Coeff> {
     pub(crate) var: &'a Var,
     pub(crate) min_pow: isize,
     pub(crate) coeffs: &'a [C],
@@ -19,22 +22,22 @@ pub struct SeriesSlice<'a, Var, C: Coeff> {
 
 // needs manual implementation,
 // #[derive(Copy)] can't deal with lifetimes in rust 1.36
-impl<'a, Var, C: Coeff> std::marker::Copy for SeriesSlice<'a, Var, C> {}
+impl<'a, Var, C: Coeff> std::marker::Copy for SeriesSliceIn<'a, Var, C> {}
 
-impl<'a, Var, C: Coeff> std::clone::Clone for SeriesSlice<'a, Var, C> {
+impl<'a, Var, C: Coeff> std::clone::Clone for SeriesSliceIn<'a, Var, C> {
     fn clone(&self) -> Self {
         *self
     }
 }
 
-impl<'a, Var, C: Coeff> SeriesSlice<'a, Var, C> {
+impl<'a, Var, C: Coeff> SeriesSliceIn<'a, Var, C> {
     pub(super) fn new(
         var: &'a Var,
         min_pow: isize,
         coeffs: &'a [C],
         zero: &'a C,
     ) -> Self {
-        let mut res = SeriesSlice {
+        let mut res = SeriesSliceIn {
             var,
             min_pow,
             coeffs,
@@ -57,7 +60,7 @@ impl<'a, Var, C: Coeff> SeriesSlice<'a, Var, C> {
     /// ```rust
     /// use series::AsSlice;
     ///
-    /// let s = series::Series::new("x", -1, vec![1,2,3]);
+    /// let s = series::SeriesIn::new("x", -1, vec![1,2,3]);
     /// assert_eq!(s.as_slice(..).min_pow(), -1);
     /// assert_eq!(s.as_slice(0..).min_pow(), 0);
     /// ```
@@ -73,7 +76,7 @@ impl<'a, Var, C: Coeff> SeriesSlice<'a, Var, C> {
     /// ```rust
     /// use series::AsSlice;
     ///
-    /// let s = series::Series::new("x", -1, vec!(1,2,3));
+    /// let s = series::SeriesIn::new("x", -1, vec!(1,2,3));
     /// assert_eq!(s.as_slice(..).cutoff_pow(), 2);
     /// assert_eq!(s.as_slice(..1).cutoff_pow(), 1);
     /// ```
@@ -92,7 +95,7 @@ impl<'a, Var, C: Coeff> SeriesSlice<'a, Var, C> {
     /// ```rust
     /// use series::AsSlice;
     ///
-    /// let s = series::Series::new("x", -1, vec!(1,2,3));
+    /// let s = series::SeriesIn::new("x", -1, vec!(1,2,3));
     /// let slice = s.as_slice(..);
     /// assert_eq!(slice.coeff(-5), Some(&0));
     /// assert_eq!(slice.coeff(-2), Some(&0));
@@ -120,7 +123,7 @@ impl<'a, Var, C: Coeff> SeriesSlice<'a, Var, C> {
     /// ```rust
     /// use series::AsSlice;
     ///
-    /// let s = series::Series::new("x", -1, vec!(1,2,3));
+    /// let s = series::SeriesIn::new("x", -1, vec!(1,2,3));
     /// let slice = s.as_slice(..);
     /// let mut iter = slice.iter();
     /// assert_eq!(iter.next(), Some((-1, &1)));
@@ -140,7 +143,7 @@ impl<'a, Var, C: Coeff> SeriesSlice<'a, Var, C> {
     /// ```rust
     /// use series::AsSlice;
     ///
-    /// let s = series::Series::new("x", -1, vec!(1,2,3));
+    /// let s = series::SeriesIn::new("x", -1, vec!(1,2,3));
     /// let (lower, upper) = s.as_slice(..).split_at(0);
     /// assert_eq!(lower.min_pow(), -1);
     /// assert_eq!(upper.min_pow(), 0);
@@ -148,13 +151,13 @@ impl<'a, Var, C: Coeff> SeriesSlice<'a, Var, C> {
     pub fn split_at(&self, pos: isize) -> (Self, Self) {
         let upos = (pos - self.min_pow()) as usize;
         let (lower, upper) = self.coeffs.split_at(upos);
-        let lower = SeriesSlice {
+        let lower = SeriesSliceIn {
             var: self.var,
             min_pow: self.min_pow(),
             coeffs: lower,
             zero: self.zero,
         };
-        let upper = SeriesSlice {
+        let upper = SeriesSliceIn {
             var: self.var,
             min_pow: pos,
             coeffs: upper,
@@ -170,17 +173,17 @@ impl<'a, Var, C: Coeff> SeriesSlice<'a, Var, C> {
     /// ```rust
     /// use series::AsSlice;
     ///
-    /// let s = series::Series::new("x", -1, vec!(1,2,3));
+    /// let s = series::SeriesIn::new("x", -1, vec!(1,2,3));
     /// let slice = s.as_slice(..).as_poly();
-    /// let p = series::Polynomial::from(s.clone());
+    /// let p = series::PolynomialIn::from(s.clone());
     /// assert_eq!(slice, p.as_slice(..));
     /// ```
-    pub fn as_poly(&self) -> PolynomialSlice<'a, Var, C> {
-        PolynomialSlice::new(self.var, self.min_pow, self.coeffs, self.zero)
+    pub fn as_poly(&self) -> PolynomialSliceIn<'a, Var, C> {
+        PolynomialSliceIn::new(self.var, self.min_pow, self.coeffs, self.zero)
     }
 }
 
-impl<'a, Var, C: Coeff> Index<isize> for SeriesSlice<'a, Var, C> {
+impl<'a, Var, C: Coeff> Index<isize> for SeriesSliceIn<'a, Var, C> {
     type Output = C;
 
     fn index(&self, index: isize) -> &Self::Output {
@@ -188,18 +191,18 @@ impl<'a, Var, C: Coeff> Index<isize> for SeriesSlice<'a, Var, C> {
     }
 }
 
-impl<'a, Var, C> MulInverse for SeriesSlice<'a, Var, C>
+impl<'a, Var, C> MulInverse for SeriesSliceIn<'a, Var, C>
 where
     Var: Clone,
     C: Coeff + SubAssign,
     for<'b> &'b C: Div<Output = C> + Mul<Output = C>,
 {
-    type Output = Series<Var, C>;
+    type Output = SeriesIn<Var, C>;
 
     fn mul_inverse(self) -> Self::Output {
         let inv_min_pow = -self.min_pow;
         if self.coeffs.is_empty() {
-            return Series::new(self.var.clone(), inv_min_pow, vec![]);
+            return SeriesIn::new(self.var.clone(), inv_min_pow, vec![]);
         }
         let a: Vec<_> =
             self.coeffs.iter().map(|c| c / &self.coeffs[0]).collect();
@@ -214,12 +217,12 @@ where
         }
         let inv_coeffs: Vec<_> =
             b.iter().map(|b| b / &self.coeffs[0]).collect();
-        Series::new(self.var.clone(), inv_min_pow, inv_coeffs)
+        SeriesIn::new(self.var.clone(), inv_min_pow, inv_coeffs)
     }
 }
 
 impl<'a, Var: fmt::Display, C: Coeff + fmt::Display> fmt::Display
-    for SeriesSlice<'a, Var, C>
+    for SeriesSliceIn<'a, Var, C>
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         if !self.coeffs.is_empty() {
@@ -230,142 +233,142 @@ impl<'a, Var: fmt::Display, C: Coeff + fmt::Display> fmt::Display
     }
 }
 
-impl<'a, Var: Clone, C: Coeff> Neg for SeriesSlice<'a, Var, C>
+impl<'a, Var: Clone, C: Coeff> Neg for SeriesSliceIn<'a, Var, C>
 where
     for<'c> &'c C: Neg<Output = C>,
 {
-    type Output = Series<Var, C>;
+    type Output = SeriesIn<Var, C>;
 
     fn neg(self) -> Self::Output {
         let neg_coeff = self.coeffs.iter().map(|c| -c).collect();
-        Series::new(self.var.clone(), self.min_pow, neg_coeff)
+        SeriesIn::new(self.var.clone(), self.min_pow, neg_coeff)
     }
 }
 
-impl<'a, Var: Clone, C: Coeff + Clone, Rhs> Add<Rhs> for SeriesSlice<'a, Var, C>
+impl<'a, Var: Clone, C: Coeff + Clone, Rhs> Add<Rhs> for SeriesSliceIn<'a, Var, C>
 where
-    Series<Var, C>: AddAssign<Rhs>,
+    SeriesIn<Var, C>: AddAssign<Rhs>,
 {
-    type Output = Series<Var, C>;
+    type Output = SeriesIn<Var, C>;
 
     fn add(self, other: Rhs) -> Self::Output {
-        let mut res = Series::from(self);
+        let mut res = SeriesIn::from(self);
         res += other;
         res
     }
 }
 
-impl<'a, Var, C: Coeff, T> Sub<T> for SeriesSlice<'a, Var, C>
+impl<'a, Var, C: Coeff, T> Sub<T> for SeriesSliceIn<'a, Var, C>
 where
     C: Clone,
     Var: Clone,
-    Series<Var, C>: SubAssign<T>,
+    SeriesIn<Var, C>: SubAssign<T>,
 {
-    type Output = Series<Var, C>;
+    type Output = SeriesIn<Var, C>;
 
     fn sub(self, other: T) -> Self::Output {
-        let mut res = Series::from(self);
+        let mut res = SeriesIn::from(self);
         res -= other;
         res
     }
 }
 
-impl<'a, Var, C: Coeff> Mul for SeriesSlice<'a, Var, C>
+impl<'a, Var, C: Coeff> Mul for SeriesSliceIn<'a, Var, C>
 where
     Var: Clone,
     C: Clone,
-    Series<Var, C>: Mul<SeriesSlice<'a, Var, C>, Output = Series<Var, C>>,
+    SeriesIn<Var, C>: Mul<SeriesSliceIn<'a, Var, C>, Output = SeriesIn<Var, C>>,
 {
-    type Output = Series<Var, C>;
+    type Output = SeriesIn<Var, C>;
 
-    fn mul(self, other: SeriesSlice<'a, Var, C>) -> Self::Output {
-        Series::from(self) * other
+    fn mul(self, other: SeriesSliceIn<'a, Var, C>) -> Self::Output {
+        SeriesIn::from(self) * other
     }
 }
 
-impl<'a, Var, C: Coeff> Mul<Series<Var, C>> for SeriesSlice<'a, Var, C>
+impl<'a, Var, C: Coeff> Mul<SeriesIn<Var, C>> for SeriesSliceIn<'a, Var, C>
 where
     Var: Clone,
     C: Clone,
-    Series<Var, C>: MulAssign<Series<Var, C>>,
+    SeriesIn<Var, C>: MulAssign<SeriesIn<Var, C>>,
 {
-    type Output = Series<Var, C>;
+    type Output = SeriesIn<Var, C>;
 
-    fn mul(self, other: Series<Var, C>) -> Self::Output {
-        Series::from(self) * other
+    fn mul(self, other: SeriesIn<Var, C>) -> Self::Output {
+        SeriesIn::from(self) * other
     }
 }
 
-impl<'a, 'b, Var, C: Coeff> Mul<&'b Series<Var, C>> for SeriesSlice<'a, Var, C>
+impl<'a, 'b, Var, C: Coeff> Mul<&'b SeriesIn<Var, C>> for SeriesSliceIn<'a, Var, C>
 where
     C: Clone,
     Var: Clone,
-    for<'c> Series<Var, C>:
-        Mul<SeriesSlice<'c, Var, C>, Output = Series<Var, C>>,
+    for<'c> SeriesIn<Var, C>:
+        Mul<SeriesSliceIn<'c, Var, C>, Output = SeriesIn<Var, C>>,
 {
-    type Output = Series<Var, C>;
+    type Output = SeriesIn<Var, C>;
 
-    fn mul(self, other: &'b Series<Var, C>) -> Self::Output {
+    fn mul(self, other: &'b SeriesIn<Var, C>) -> Self::Output {
         self * other.as_slice(..)
     }
 }
 
-impl<'a, Var, C: Coeff> Mul<C> for SeriesSlice<'a, Var, C>
+impl<'a, Var, C: Coeff> Mul<C> for SeriesSliceIn<'a, Var, C>
 where
     Var: Clone,
     for<'c> &'c C: Mul<Output = C>,
 {
-    type Output = Series<Var, C>;
+    type Output = SeriesIn<Var, C>;
 
     fn mul(self, other: C) -> Self::Output {
         let coeffs = self.coeffs.iter().map(|c| c * &other).collect();
-        Series::new(self.var.clone(), self.min_pow(), coeffs)
+        SeriesIn::new(self.var.clone(), self.min_pow(), coeffs)
     }
 }
 
-impl<'a, 'b, Var, C: Coeff> Mul<&'b C> for SeriesSlice<'a, Var, C>
+impl<'a, 'b, Var, C: Coeff> Mul<&'b C> for SeriesSliceIn<'a, Var, C>
 where
     Var: Clone,
     for<'c> &'c C: Mul<Output = C>,
 {
-    type Output = Series<Var, C>;
+    type Output = SeriesIn<Var, C>;
 
     fn mul(self, other: &'b C) -> Self::Output {
         let coeffs = self.coeffs.iter().map(|c| c * other).collect();
-        Series::new(self.var.clone(), self.min_pow(), coeffs)
+        SeriesIn::new(self.var.clone(), self.min_pow(), coeffs)
     }
 }
 
-impl<'a, Var, C: Coeff, T> Div<T> for SeriesSlice<'a, Var, C>
+impl<'a, Var, C: Coeff, T> Div<T> for SeriesSliceIn<'a, Var, C>
 where
     Var: Clone,
     C: Clone,
-    Series<Var, C>: DivAssign<T>,
+    SeriesIn<Var, C>: DivAssign<T>,
 {
-    type Output = Series<Var, C>;
+    type Output = SeriesIn<Var, C>;
 
     fn div(self, other: T) -> Self::Output {
-        let mut res = Series::from(self);
+        let mut res = SeriesIn::from(self);
         res /= other;
         res
     }
 }
 
-impl<'a, Var, C: Coeff> Exp for SeriesSlice<'a, Var, C>
+impl<'a, Var, C: Coeff> Exp for SeriesSliceIn<'a, Var, C>
 where
     for<'b> &'b C: Mul<Output = C>,
     for<'b> C: MulAssign<&'b C>,
     Var: Clone,
     C: Clone + Div<Output = C> + Mul<Output = C> + AddAssign + Exp<Output = C>,
 {
-    type Output = Series<Var, C>;
+    type Output = SeriesIn<Var, C>;
 
     fn exp(self) -> Self::Output {
-        Series::new(self.var.clone(), 0, self.exp_coeff())
+        SeriesIn::new(self.var.clone(), 0, self.exp_coeff())
     }
 }
 
-impl<'a, Var, C: Coeff> Ln for SeriesSlice<'a, Var, C>
+impl<'a, Var, C: Coeff> Ln for SeriesSliceIn<'a, Var, C>
 where
     for<'b> C: Div<&'b C, Output = C>,
     for<'b> &'b C: Mul<Output = C> + Ln<Output = C>,
@@ -377,7 +380,7 @@ where
         + From<Var>,
     Var: Clone,
 {
-    type Output = Series<Var, C>;
+    type Output = SeriesIn<Var, C>;
 
     /// Computes the logarithm of a series
     ///
@@ -409,17 +412,17 @@ where
                 b[n] -= tmp;
             }
         }
-        Series::new(self.var.clone(), 0, b)
+        SeriesIn::new(self.var.clone(), 0, b)
     }
 }
 
-impl<'a, Var, C: Coeff, T> Pow<T> for SeriesSlice<'a, Var, C>
+impl<'a, Var, C: Coeff, T> Pow<T> for SeriesSliceIn<'a, Var, C>
 where
-    for<'b> SeriesSlice<'b, Var, C>: Ln<Output = Series<Var, C>>,
-    Series<Var, C>: Mul<T>,
-    <Series<Var, C> as Mul<T>>::Output: Exp,
+    for<'b> SeriesSliceIn<'b, Var, C>: Ln<Output = SeriesIn<Var, C>>,
+    SeriesIn<Var, C>: Mul<T>,
+    <SeriesIn<Var, C> as Mul<T>>::Output: Exp,
 {
-    type Output = <<Series<Var, C> as Mul<T>>::Output as Exp>::Output;
+    type Output = <<SeriesIn<Var, C> as Mul<T>>::Output as Exp>::Output;
 
     fn pow(self, exponent: T) -> Self::Output {
         (self.ln() * exponent).exp()
