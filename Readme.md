@@ -27,34 +27,34 @@ Add this to your Cargo.toml:
 
 ```toml
 [dependencies]
-series = "0.8"
+series = "0.9"
 ```
 
 # Examples
 
 ```rust
-use series::{Series, Polynomial};
+use series::{SeriesIn, PolynomialIn};
 use series::ops::{Ln,Exp,Pow};
 
 // Create a new series in x, starting at order x^2 with coefficients 1, 2, 3,
 // i.e. s = 1*x^2 + 2*x^3 + 3*x^4 + O(x^5).
-let s = Series::new("x", 2, vec![1, 2, 3]);
+let s = SeriesIn::new("x", 2, vec![1, 2, 3]);
 println!("s = {}", s);
 
 // The corresponding polynomial
 // p = 1*x^2 + 2*x^3 + 3*x^4.
-let p = Polynomial::new("x", 2, vec![1, 2, 3]);
+let p = PolynomialIn::new("x", 2, vec![1, 2, 3]);
 assert_eq!(p, Polynomial::from(s));
 
 // series with a cutoff power of 7
 // s = 1*x^2 + 2*x^3 + 3*x^4 + O(x^7).
-let s = Series::with_cutoff("x", 2, 7, vec![1, 2, 3]);
+let s = SeriesIn::with_cutoff("x", 2, 7, vec![1, 2, 3]);
 
 // To show various kinds of operations we now switch to floating-point
 // coefficients
 
 // Now s = 1 - x + O(x^5).
-let s = Series::with_cutoff("x", 0, 5, vec![1., -1.]);
+let s = SeriesIn::with_cutoff("x", 0, 5, vec![1., -1.]);
 // Expand 1/(1-x) up to x^4.
 let t = s.mul_inverse();
 println!("1/(1-x) = {}", t);
@@ -92,7 +92,7 @@ impl<'a> std::fmt::Display for Variable<'a> {
 }
 
 // Now we can calculate logarithms, exponentials, and powers:
-let s = Series::new(Variable("x"), 0, vec![1., -3., 5.]);
+let s = SeriesIn::new(Variable("x"), 0, vec![1., -3., 5.]);
 println!("exp(s) = {}", s.clone().exp());
 println!("ln(s) = {}", s.clone().ln());
 let t = s.clone();
