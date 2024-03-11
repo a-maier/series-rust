@@ -1,5 +1,5 @@
 use crate::ops::{Exp, Ln, Pow};
-use crate::slice::*;
+use crate::series_slice_in::*;
 use crate::traits::*;
 use crate::util::trim_start;
 use crate::{Coeff, IntoIter, Iter};

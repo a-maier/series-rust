@@ -1,5 +1,5 @@
 // Helper traits
-use crate::slice::SeriesSliceIn;
+use crate::SeriesSliceIn;
 use crate::Coeff;
 
 /// Multiplicative inverse

@@ -1,5 +1,5 @@
-use crate::polyslice::PolynomialSliceIn;
-use crate::series::SeriesIn;
+use crate::PolynomialSliceIn;
+use crate::SeriesIn;
 use crate::traits::{AsSlice, KaratsubaMul};
 use crate::util::{trim_end, trim_start};
 use crate::{Coeff, IntoIter, Iter};

@@ -1,14 +1,14 @@
 #![allow(clippy::suspicious_op_assign_impl)]
 pub mod ops;
-pub mod poly;
-pub mod polyslice;
-pub mod series;
-pub mod slice;
+pub mod poly_in;
+pub mod poly_slice_in;
+pub mod series_in;
+pub mod series_slice_in;
 pub use self::ops::{Exp, Ln, Pow};
-pub use self::poly::{PolynomialIn, PolynomialInParts};
-pub use self::polyslice::PolynomialSliceIn;
-pub use self::series::{SeriesIn, SeriesInParts};
-pub use self::slice::SeriesSliceIn;
+pub use self::poly_in::{PolynomialIn, PolynomialInParts};
+pub use self::poly_slice_in::PolynomialSliceIn;
+pub use self::series_in::{SeriesIn, SeriesInParts};
+pub use self::series_slice_in::SeriesSliceIn;
 mod traits;
 pub use self::traits::{AsSlice, KaratsubaMul, MulInverse};
 mod util;

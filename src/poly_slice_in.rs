@@ -1,4 +1,4 @@
-use crate::poly::MulHelper;
+use crate::poly_in::MulHelper;
 use crate::traits::{AsSlice, KaratsubaMul};
 use crate::util::{trim_slice_end, trim_slice_start};
 use crate::{Coeff, Iter, PolynomialIn};
