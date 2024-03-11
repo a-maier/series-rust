@@ -1,3 +1,15 @@
+# Version 0.9.0
+
+- Renamed all structs:
+  `Series` -> `SeriesIn`
+  `Polynomial` -> `PolynomialIn`
+  `SeriesSlice` -> `SeriesSliceIn`
+  `PolynomialSlice` -> `PolynomialSliceIn`
+  `SeriesParts` -> `SeriesInParts`
+  `PolynomialParts` -> `PolynomialInParts`
+- Fixed lifetime in `coeff` method return values.
+- Fixed off-by-one error in the `PolynomialSlice` `coeff` method.
+
 # Version 0.8.0
 
 - Update to Rust 2021.
