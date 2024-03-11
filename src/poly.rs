@@ -11,6 +11,7 @@ use std::ops::{
 use std::{convert, iter};
 
 use log::trace;
+use num_traits::{Zero, One};
 
 /// Laurent polynomial in a single variable
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -923,6 +924,32 @@ impl<'a, C: Coeff + Clone> From<PolynomialSlice<'a, C>>
             s.min_pow.unwrap_or(0),
             s.coeffs.to_vec(),
         )
+    }
+}
+
+impl<C: Coeff> Zero for Polynomial<C>
+    where Polynomial<C>: Add<Output = Polynomial<C>>
+{
+    fn zero() -> Self {
+        Self{ min_pow: None, coeffs: vec![], zero: C::zero() }
+    }
+
+    fn is_zero(&self) -> bool {
+        self.coeffs.is_empty()
+    }
+}
+
+impl<C: Coeff> One for Polynomial<C>
+    where Polynomial<C>: Mul<Output = Polynomial<C>>
+{
+    fn one() -> Self {
+        Self{ min_pow: Some(0), coeffs: vec![C::one()], zero: C::zero() }
+    }
+
+    fn is_one(&self) -> bool {
+        self.min_pow == Some(0)
+            && self.coeffs.len() == 1
+            && self.coeff(0).is_one()
     }
 }
 
