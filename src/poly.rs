@@ -13,9 +13,6 @@ use std::{convert, fmt, iter};
 
 use log::trace;
 
-#[deprecated(note = "Use PolynomialIn instead")]
-pub type Polynomial<Var, C> = PolynomialIn<Var, C>;
-
 /// Laurent polynomial in a single variable
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(PartialEq, Eq, Debug, Clone, Hash, Ord, PartialOrd)]
@@ -968,9 +965,6 @@ impl<'a, Var: Clone, C: Coeff + Clone> From<PolynomialSliceIn<'a, Var, C>>
         )
     }
 }
-
-#[deprecated(note = "Use PolynomialInParts instead")]
-pub type PolynomialParts<Var, C> = PolynomialInParts<Var, C>;
 
 /// Data parts of a polynomial
 ///

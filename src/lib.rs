@@ -5,14 +5,10 @@ pub mod polyslice;
 pub mod series;
 pub mod slice;
 pub use self::ops::{Exp, Ln, Pow};
-#[allow(deprecated)]
-pub use self::poly::{Polynomial, PolynomialIn, PolynomialInParts, PolynomialParts};
-#[allow(deprecated)]
-pub use self::polyslice::{PolynomialSlice, PolynomialSliceIn};
-#[allow(deprecated)]
-pub use self::series::{Series, SeriesIn, SeriesInParts, SeriesParts};
-#[allow(deprecated)]
-pub use self::slice::{SeriesSlice, SeriesSliceIn};
+pub use self::poly::{PolynomialIn, PolynomialInParts};
+pub use self::polyslice::PolynomialSliceIn;
+pub use self::series::{SeriesIn, SeriesInParts};
+pub use self::slice::SeriesSliceIn;
 mod traits;
 pub use self::traits::{AsSlice, KaratsubaMul, MulInverse};
 mod util;

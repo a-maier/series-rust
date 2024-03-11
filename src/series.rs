@@ -13,9 +13,6 @@ use std::ops::{
     SubAssign,
 };
 
-#[deprecated(note = "Use SeriesIn instead")]
-pub type Series<Var, C> = SeriesIn<Var, C>;
-
 /// Laurent series in a single variable up to some power
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(PartialEq, Eq, Debug, Clone, Hash, Ord, PartialOrd)]
@@ -1160,9 +1157,6 @@ impl<'a, Var: Clone, C: Coeff + Clone> From<SeriesSliceIn<'a, Var, C>>
         SeriesIn::new(s.var.clone(), s.min_pow, s.coeffs.to_vec())
     }
 }
-
-#[deprecated(note = "Use SeriesInParts instead")]
-pub type SeriesParts<Var, C> = SeriesInParts<Var, C>;
 
 /// Data parts of a series
 ///

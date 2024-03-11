@@ -6,9 +6,6 @@ use crate::{Coeff, Iter, PolynomialIn};
 use std::fmt;
 use std::ops::{Add, AddAssign, Div, Index, Mul, Neg, Sub, SubAssign};
 
-#[deprecated(note = "Use PolynomialSliceIn instead")]
-pub type PolynomialSlice<'a, Var, C> = PolynomialSliceIn<'a, Var, C>;
-
 /// View into a Laurent polynomial
 #[derive(PartialEq, Eq, Debug, Hash, Ord, PartialOrd)]
 pub struct PolynomialSliceIn<'a, Var, C: Coeff> {

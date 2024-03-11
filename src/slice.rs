@@ -8,9 +8,6 @@ use std::ops::{
     Add, AddAssign, Div, DivAssign, Index, Mul, MulAssign, Neg, Sub, SubAssign,
 };
 
-#[deprecated(note = "Use SeriesSliceIn instead")]
-pub type SeriesSlice<'a, Var, C> = SeriesSliceIn<'a, Var, C>;
-
 /// View into a Laurent series
 #[derive(PartialEq, Eq, Debug, Hash, Ord, PartialOrd)]
 pub struct SeriesSliceIn<'a, Var, C: Coeff> {
