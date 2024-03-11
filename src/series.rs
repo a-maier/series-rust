@@ -113,14 +113,7 @@ impl<Var, C: Coeff> Series<Var, C> {
     /// assert_eq!(s.coeff(5), None);
     /// ```
     pub fn coeff(&self, pow: isize) -> Option<&C> {
-        if pow < self.min_pow() {
-            return Some(&self.zero); // TODO this is a bad hack
-        }
-        if pow >= self.cutoff_pow() {
-            return None;
-        }
-        let idx = (pow - self.min_pow()) as usize;
-        Some(&self.coeffs[idx])
+        self.as_slice(..).coeff(pow)
     }
 
     /// Get the leading power of the series expansion variable

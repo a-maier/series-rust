@@ -73,18 +73,7 @@ impl<Var, C: Coeff> Polynomial<Var, C> {
     /// assert_eq!(p.coeff(5), &0);
     /// ```
     pub fn coeff(&self, pow: isize) -> &C {
-        //TODO: code duplication with PolynomialSlice
-        // (can't use a temporary slice because it doesn't live long enough)
-        if let Some(min_pow) = self.min_pow() {
-            let idx = pow - min_pow;
-            if idx < 0 || idx >= self.len() as isize {
-                &self.zero
-            } else {
-                &self.coeffs[idx as usize]
-            }
-        } else {
-            &self.zero
-        }
+        self.as_slice(..).coeff(pow)
     }
 
     /// Get the leading power of the polynomial variable

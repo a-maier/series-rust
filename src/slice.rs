@@ -102,7 +102,7 @@ impl<'a, Var, C: Coeff> SeriesSlice<'a, Var, C> {
     /// assert_eq!(slice.coeff(2), None);
     /// assert_eq!(slice.coeff(5), None);
     /// ```
-    pub fn coeff(&self, pow: isize) -> Option<&C> {
+    pub fn coeff(&self, pow: isize) -> Option<&'a C> {
         if pow < self.min_pow() {
             return Some(self.zero); // TODO this is a bad hack
         }

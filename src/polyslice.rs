@@ -127,7 +127,7 @@ impl<'a, Var, C: Coeff> PolynomialSlice<'a, Var, C> {
         self.coeffs.is_empty()
     }
 
-    pub fn coeff(&self, pow: isize) -> &C {
+    pub fn coeff(&self, pow: isize) -> &'a C {
         if let Some(min_pow) = self.min_pow() {
             let idx = pow - min_pow;
             if idx < 0 || idx >= self.len() as isize {
