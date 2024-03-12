@@ -345,7 +345,7 @@ impl<'a, C: Coeff> Exp for SeriesSlice<'a, C>
 where
     for<'b> &'b C: Mul<Output = C>,
     for<'b> C: MulAssign<&'b C>,
-    C: Clone + Div<Output = C> + Mul<Output = C> + AddAssign + Exp<Output = C>,
+    C: Clone + Div<Output = C> + Mul<Output = C> + AddAssign + Exp<Output = C> + From<i32>,
 {
     type Output = Series<C>;
 
@@ -363,6 +363,7 @@ where
         + Add<Output = C>
         + Mul<Output = C>
         + Div<Output = C>
+        + From<i32>
 {
     type Output = Series<C>;
 

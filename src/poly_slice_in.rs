@@ -400,7 +400,7 @@ where
             var: self.var.clone(),
             min_pow: None,
             coeffs: vec![],
-            zero: C::from(0),
+            zero: C::zero(),
         };
         result.add_prod(self, rhs, min_size);
         result

@@ -27,8 +27,8 @@ use std::ops::RangeFrom;
 use num_traits::{One, Zero};
 
 /// Minimum requirements on series coefficients
-pub trait Coeff: From<i32> + Zero + One + PartialEq {}
-impl<T: From<i32> + Zero + One + PartialEq> Coeff for T {}
+pub trait Coeff: Zero + One + PartialEq {}
+impl<T: Zero + One + PartialEq> Coeff for T {}
 
 /// Immutable `Series` iterator.
 ///

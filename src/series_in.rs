@@ -927,7 +927,7 @@ impl<Var, C: Coeff> Exp for SeriesIn<Var, C>
 where
     for<'a> &'a C: Mul<Output = C>,
     for<'a> C: MulAssign<&'a C>,
-    C: Clone + Div<Output = C> + Mul<Output = C> + AddAssign + Exp<Output = C>,
+    C: Clone + Div<Output = C> + Mul<Output = C> + AddAssign + Exp<Output = C> + From<i32>,
 {
     type Output = Self;
 
@@ -948,7 +948,7 @@ where
     for<'b> &'b C: Mul<Output = C>,
     for<'b> C: MulAssign<&'b C>,
     Var: Clone,
-    C: Clone + Div<Output = C> + Mul<Output = C> + AddAssign + Exp<Output = C>,
+    C: Clone + Div<Output = C> + Mul<Output = C> + AddAssign + Exp<Output = C> + From<i32>,
 {
     type Output = SeriesIn<Var, C>;
 
@@ -963,7 +963,7 @@ where
     }
 }
 
-impl<Var, C: Coeff> Ln for SeriesIn<Var, C>
+impl<Var, C: Coeff + From<i32>> Ln for SeriesIn<Var, C>
 where
     for<'a> C: DivAssign<&'a C>,
     for<'a> &'a C: Mul<Output = C>,
@@ -1021,7 +1021,8 @@ where
         + Add<Output = C>
         + Mul<Output = C>
         + Div<Output = C>
-        + From<Var>,
+        + From<Var>
+        + From<i32>,
     Var: Clone,
 {
     type Output = SeriesIn<Var, C>;
@@ -1194,7 +1195,7 @@ impl<Var, C: Coeff> From<SeriesInParts<Var, C>> for SeriesIn<Var, C> {
     }
 }
 
-impl<Var, C: Coeff> LnVarFree for SeriesIn<Var, C>
+impl<Var, C: Coeff + From<i32>> LnVarFree for SeriesIn<Var, C>
 where
     for<'a> C: DivAssign<&'a C>,
     for<'a> &'a C: Mul<Output = C>,
@@ -1226,7 +1227,7 @@ where
     }
 }
 
-impl<Var, C: Coeff> SeriesIn<Var, C> {
+impl<Var, C: Coeff + From<i32>> SeriesIn<Var, C> {
     /// Calculate series to some integer power
     ///
     /// In contrast to the more general `pow` method this does _not_ require
@@ -1296,7 +1297,7 @@ where
     }
 }
 
-impl<Var, C: Coeff> ExpCoeff for SeriesIn<Var, C>
+impl<Var, C: Coeff + From<i32>> ExpCoeff for SeriesIn<Var, C>
 where
     for<'a> &'a C: Mul<Output = C>,
     for<'a> C: MulAssign<&'a C>,
@@ -1309,7 +1310,7 @@ where
     }
 }
 
-impl<'a, Var, C: Coeff> ExpCoeff for SeriesSliceIn<'a, Var, C>
+impl<'a, Var, C: Coeff + From<i32>> ExpCoeff for SeriesSliceIn<'a, Var, C>
 where
     for<'c> &'c C: Mul<Output = C>,
     for<'c> C: MulAssign<&'c C>,

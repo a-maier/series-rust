@@ -370,7 +370,7 @@ where
     for<'b> &'b C: Mul<Output = C>,
     for<'b> C: MulAssign<&'b C>,
     Var: Clone,
-    C: Clone + Div<Output = C> + Mul<Output = C> + AddAssign + Exp<Output = C>,
+    C: Clone + Div<Output = C> + Mul<Output = C> + AddAssign + Exp<Output = C> + From<i32>,
 {
     type Output = SeriesIn<Var, C>;
 
@@ -388,6 +388,7 @@ where
         + Add<Output = C>
         + Mul<Output = C>
         + Div<Output = C>
+        + From<i32>
         + From<Var>,
     Var: Clone,
 {

@@ -873,7 +873,7 @@ impl<C: Coeff> Exp for Series<C>
 where
     for<'a> &'a C: Mul<Output = C>,
     for<'a> C: MulAssign<&'a C>,
-    C: Clone + Div<Output = C> + Mul<Output = C> + AddAssign + Exp<Output = C>,
+    C: Clone + Div<Output = C> + Mul<Output = C> + AddAssign + Exp<Output = C> + From<i32>,
 {
     type Output = Self;
 
@@ -893,7 +893,7 @@ impl<'a, C: Coeff> Exp for &'a Series<C>
 where
     for<'b> &'b C: Mul<Output = C>,
     for<'b> C: MulAssign<&'b C>,
-    C: Clone + Div<Output = C> + Mul<Output = C> + AddAssign + Exp<Output = C>,
+    C: Clone + Div<Output = C> + Mul<Output = C> + AddAssign + Exp<Output = C> + From<i32>,
 {
     type Output = Series<C>;
 
@@ -918,6 +918,7 @@ where
         + Mul<Output = C>
         + Div<Output = C>
         + Ln<Output = C>
+        + From<i32>
 {
     type Output = Self;
 
@@ -945,6 +946,7 @@ where
         + Add<Output = C>
         + Mul<Output = C>
         + Div<Output = C>
+        + From<i32>
 {
     type Output = Series<C>;
 
@@ -1120,7 +1122,7 @@ impl<C: Coeff> LnVarFree for Series<C>
 where
     for<'a> C: DivAssign<&'a C>,
     for<'a> &'a C: Mul<Output = C>,
-    C: Clone + SubAssign + Ln<Output = C> + Div<Output = C> + Mul<Output = C>,
+    C: Clone + SubAssign + Ln<Output = C> + Div<Output = C> + Mul<Output = C> + From<i32>,
 {
     type Output = Self;
 
@@ -1165,7 +1167,8 @@ impl<C: Coeff> Series<C> {
             + SubAssign
             + Ln<Output = C>
             + Div<Output = C>
-            + Mul<Output = C>,
+            + Mul<Output = C>
+            + From<i32>,
         Series<C>: Mul<C, Output = Self>
             + Exp<Output = Self>
             + MulInverse<Output = Self>,
@@ -1217,7 +1220,7 @@ impl<C: Coeff> ExpCoeff for Series<C>
 where
     for<'a> &'a C: Mul<Output = C>,
     for<'a> C: MulAssign<&'a C>,
-    C: Clone + Div<Output = C> + Mul<Output = C> + AddAssign + Exp<Output = C>,
+    C: Clone + Div<Output = C> + Mul<Output = C> + AddAssign + Exp<Output = C> + From<i32>,
 {
     type Output = Vec<C>;
 
@@ -1230,7 +1233,7 @@ impl<'a, C: Coeff> ExpCoeff for SeriesSlice<'a, C>
 where
     for<'c> &'c C: Mul<Output = C>,
     for<'c> C: MulAssign<&'c C>,
-    C: Clone + Div<Output = C> + Mul<Output = C> + AddAssign + Exp<Output = C>,
+    C: Clone + Div<Output = C> + Mul<Output = C> + AddAssign + Exp<Output = C> + From<i32>,
 {
     type Output = Vec<C>;
 
