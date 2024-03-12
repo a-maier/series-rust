@@ -62,7 +62,7 @@ impl<C: Coeff> Series<C> {
         mut coeffs: Vec<C>,
     ) -> Self {
         let min_pow = powers.start;
-        let cutoff_pow = powers.start;
+        let cutoff_pow = powers.end;
         assert!(cutoff_pow >= min_pow);
         let len = (cutoff_pow - min_pow) as usize;
         // can't use resize here, because C is not Clone
