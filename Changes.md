@@ -1,3 +1,10 @@
+# Version 0.10.0
+
+- `Series`, `SeriesSlice`, `Polynomial`, `PolynomialSlice` now
+  represent Laurent series and polynomials in an anonymous expansion
+  variable.
+- Relaxed trait bounds on coefficient types.
+
 # Version 0.9.0
 
 - Renamed all structs:
