@@ -190,7 +190,7 @@ impl<'a, Var, C: Coeff> SeriesSliceIn<'a, Var, C> {
     /// assert_eq!(s.as_slice(..).var(), &"x");
     /// ```
     pub fn var(&self) -> &Var {
-        &self.var
+        self.var
     }
 }
 

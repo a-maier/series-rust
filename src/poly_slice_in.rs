@@ -201,7 +201,7 @@ impl<'a, Var, C: Coeff> PolynomialSliceIn<'a, Var, C> {
     /// assert_eq!(s.as_slice(..).var(), &"x");
     /// ```
     pub fn var(&self) -> &Var {
-        &self.var
+        self.var
     }
 }
 
