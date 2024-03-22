@@ -1,7 +1,7 @@
-use crate::PolynomialSliceIn;
-use crate::SeriesIn;
 use crate::traits::{AsSlice, KaratsubaMul};
 use crate::util::{trim_end, trim_start};
+use crate::PolynomialSliceIn;
+use crate::SeriesIn;
 use crate::{Coeff, IntoIter, Iter};
 
 use std::ops::{
@@ -34,7 +34,11 @@ impl<Var, C: Coeff> PolynomialIn<Var, C> {
     /// ```rust
     /// let p = series::PolynomialIn::new("x", -1, vec!(1,2,3));
     /// ```
-    pub fn new(var: Var, min_pow: isize, coeffs: Vec<C>) -> PolynomialIn<Var, C> {
+    pub fn new(
+        var: Var,
+        min_pow: isize,
+        coeffs: Vec<C>,
+    ) -> PolynomialIn<Var, C> {
         let mut res = PolynomialIn {
             var,
             min_pow: Some(min_pow),
@@ -289,7 +293,9 @@ impl<'a, Var: 'a, C: 'a + Coeff> AsSlice<'a, RangeTo<isize>>
     }
 }
 
-impl<'a, Var: 'a, C: 'a + Coeff> AsSlice<'a, RangeFull> for PolynomialIn<Var, C> {
+impl<'a, Var: 'a, C: 'a + Coeff> AsSlice<'a, RangeFull>
+    for PolynomialIn<Var, C>
+{
     type Output = PolynomialSliceIn<'a, Var, C>;
 
     fn as_slice(&'a self, r: RangeFull) -> Self::Output {
@@ -559,7 +565,8 @@ where
     }
 }
 
-impl<'a, Var, C: Coeff> SubAssign<&'a PolynomialIn<Var, C>> for PolynomialIn<Var, C>
+impl<'a, Var, C: Coeff> SubAssign<&'a PolynomialIn<Var, C>>
+    for PolynomialIn<Var, C>
 where
     for<'c> &'c PolynomialIn<Var, C>: Neg<Output = PolynomialIn<Var, C>>,
     PolynomialIn<Var, C>: AddAssign<PolynomialIn<Var, C>>,
@@ -856,7 +863,8 @@ where
     }
 }
 
-impl<'a, Var, C: Coeff> Mul<PolynomialSliceIn<'a, Var, C>> for PolynomialIn<Var, C>
+impl<'a, Var, C: Coeff> Mul<PolynomialSliceIn<'a, Var, C>>
+    for PolynomialIn<Var, C>
 where
     PolynomialIn<Var, C>: MulAssign<PolynomialSliceIn<'a, Var, C>>,
 {
@@ -1008,8 +1016,8 @@ where
     Var: Clone + PartialEq + fmt::Debug,
     C: Clone,
     for<'c> C: AddAssign,
-    for<'c> PolynomialIn<Var, C>:
-        AddAssign<&'c PolynomialIn<Var, C>> + SubAssign<&'c PolynomialIn<Var, C>>,
+    for<'c> PolynomialIn<Var, C>: AddAssign<&'c PolynomialIn<Var, C>>
+        + SubAssign<&'c PolynomialIn<Var, C>>,
     PolynomialIn<Var, C>:
         AddAssign<PolynomialIn<Var, C>> + SubAssign<PolynomialIn<Var, C>>,
     for<'c> PolynomialSliceIn<'c, Var, C>: Add<Output = PolynomialIn<Var, C>>,
@@ -1032,8 +1040,8 @@ where
     Var: Clone + PartialEq + fmt::Debug,
     C: Clone,
     for<'c> C: AddAssign,
-    for<'c> PolynomialIn<Var, C>:
-        AddAssign<&'c PolynomialIn<Var, C>> + SubAssign<&'c PolynomialIn<Var, C>>,
+    for<'c> PolynomialIn<Var, C>: AddAssign<&'c PolynomialIn<Var, C>>
+        + SubAssign<&'c PolynomialIn<Var, C>>,
     PolynomialIn<Var, C>:
         AddAssign<PolynomialIn<Var, C>> + SubAssign<PolynomialIn<Var, C>>,
     for<'c> PolynomialSliceIn<'c, Var, C>: Add<Output = PolynomialIn<Var, C>>,
@@ -1092,8 +1100,8 @@ where
     Var: 'a + 'b,
     C: 'a + 'b + Clone,
     for<'c> C: AddAssign,
-    for<'c> PolynomialIn<Var, C>:
-        AddAssign<&'c PolynomialIn<Var, C>> + SubAssign<&'c PolynomialIn<Var, C>>,
+    for<'c> PolynomialIn<Var, C>: AddAssign<&'c PolynomialIn<Var, C>>
+        + SubAssign<&'c PolynomialIn<Var, C>>,
     PolynomialIn<Var, C>:
         AddAssign<PolynomialIn<Var, C>> + SubAssign<PolynomialIn<Var, C>>,
     for<'c> PolynomialSliceIn<'c, Var, C>:

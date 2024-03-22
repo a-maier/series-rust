@@ -256,7 +256,8 @@ where
     }
 }
 
-impl<'a, Var: Clone, C: Coeff + Clone, Rhs> Add<Rhs> for SeriesSliceIn<'a, Var, C>
+impl<'a, Var: Clone, C: Coeff + Clone, Rhs> Add<Rhs>
+    for SeriesSliceIn<'a, Var, C>
 where
     SeriesIn<Var, C>: AddAssign<Rhs>,
 {
@@ -310,7 +311,8 @@ where
     }
 }
 
-impl<'a, 'b, Var, C: Coeff> Mul<&'b SeriesIn<Var, C>> for SeriesSliceIn<'a, Var, C>
+impl<'a, 'b, Var, C: Coeff> Mul<&'b SeriesIn<Var, C>>
+    for SeriesSliceIn<'a, Var, C>
 where
     C: Clone,
     Var: Clone,
@@ -370,7 +372,12 @@ where
     for<'b> &'b C: Mul<Output = C>,
     for<'b> C: MulAssign<&'b C>,
     Var: Clone,
-    C: Clone + Div<Output = C> + Mul<Output = C> + AddAssign + Exp<Output = C> + From<i32>,
+    C: Clone
+        + Div<Output = C>
+        + Mul<Output = C>
+        + AddAssign
+        + Exp<Output = C>
+        + From<i32>,
 {
     type Output = SeriesIn<Var, C>;
 

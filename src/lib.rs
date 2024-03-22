@@ -1,22 +1,22 @@
 #![allow(clippy::suspicious_op_assign_impl)]
 pub mod ops;
-pub mod poly_in;
-pub mod poly_slice_in;
-pub mod series_in;
-pub mod series_slice_in;
-pub mod series;
-pub mod series_slice;
-pub mod poly_slice;
 pub mod poly;
+pub mod poly_in;
+pub mod poly_slice;
+pub mod poly_slice_in;
+pub mod series;
+pub mod series_in;
+pub mod series_slice;
+pub mod series_slice_in;
 pub use self::ops::{Exp, Ln, Pow};
 pub use self::poly::{Polynomial, PolynomialParts};
 pub use self::poly_in::{PolynomialIn, PolynomialInParts};
-pub use self::poly_slice_in::PolynomialSliceIn;
 pub use self::poly_slice::PolynomialSlice;
-pub use self::series_in::{SeriesIn, SeriesInParts};
+pub use self::poly_slice_in::PolynomialSliceIn;
 pub use self::series::{Series, SeriesParts};
-pub use self::series_slice_in::SeriesSliceIn;
+pub use self::series_in::{SeriesIn, SeriesInParts};
 pub use self::series_slice::SeriesSlice;
+pub use self::series_slice_in::SeriesSliceIn;
 mod traits;
 pub use self::traits::{AsSlice, KaratsubaMul, MulInverse};
 mod util;
@@ -821,7 +821,8 @@ mod tests {
 
         let s = PolynomialIn::new("x", -3, vec![1., 0., -3.]);
         let t = PolynomialIn::new("x", -1, vec![3., 4., 5., 7.]);
-        let res = PolynomialIn::new("x", -4, vec![3., 4., -4., -5., -15., -21.]);
+        let res =
+            PolynomialIn::new("x", -4, vec![3., 4., -4., -5., -15., -21.]);
         assert_eq!(res, &s * &t);
         assert_eq!(res, &t * &s);
         assert_eq!(res, &s * t.clone());
@@ -866,7 +867,8 @@ mod tests {
 
         let mut s = PolynomialIn::new("x", -3, vec![1., 0., -3.]);
         let t = PolynomialIn::new("x", -1, vec![3., 4., 5., 7.]);
-        let res = PolynomialIn::new("x", -4, vec![3., 4., -4., -5., -15., -21.]);
+        let res =
+            PolynomialIn::new("x", -4, vec![3., 4., -4., -5., -15., -21.]);
         s *= &t;
         assert_eq!(res, s);
         let mut s = PolynomialIn::new("x", -3, vec![1., 0., -3.]);

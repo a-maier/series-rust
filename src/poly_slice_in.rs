@@ -247,7 +247,11 @@ where
 
     fn neg(self) -> Self::Output {
         let neg_coeff = self.coeffs.iter().map(|c| -c).collect();
-        PolynomialIn::new(self.var.clone(), self.min_pow.unwrap_or(0), neg_coeff)
+        PolynomialIn::new(
+            self.var.clone(),
+            self.min_pow.unwrap_or(0),
+            neg_coeff,
+        )
     }
 }
 
@@ -288,8 +292,8 @@ where
     Var: Clone + PartialEq + fmt::Debug,
     C: Clone,
     for<'c> C: AddAssign,
-    for<'c> PolynomialIn<Var, C>:
-        AddAssign<&'c PolynomialIn<Var, C>> + SubAssign<&'c PolynomialIn<Var, C>>,
+    for<'c> PolynomialIn<Var, C>: AddAssign<&'c PolynomialIn<Var, C>>
+        + SubAssign<&'c PolynomialIn<Var, C>>,
     PolynomialIn<Var, C>:
         AddAssign<PolynomialIn<Var, C>> + SubAssign<PolynomialIn<Var, C>>,
     for<'c> PolynomialSliceIn<'c, Var, C>: Add<Output = PolynomialIn<Var, C>>,
@@ -303,7 +307,8 @@ where
     }
 }
 
-impl<'a, Var, C: Coeff> Mul<PolynomialIn<Var, C>> for PolynomialSliceIn<'a, Var, C>
+impl<'a, Var, C: Coeff> Mul<PolynomialIn<Var, C>>
+    for PolynomialSliceIn<'a, Var, C>
 where
     for<'b> PolynomialSliceIn<'a, Var, C>:
         Mul<PolynomialSliceIn<'b, Var, C>, Output = PolynomialIn<Var, C>>,
@@ -382,8 +387,8 @@ where
     Var: Clone + PartialEq + fmt::Debug,
     C: Clone,
     for<'c> C: AddAssign,
-    for<'c> PolynomialIn<Var, C>:
-        AddAssign<&'c PolynomialIn<Var, C>> + SubAssign<&'c PolynomialIn<Var, C>>,
+    for<'c> PolynomialIn<Var, C>: AddAssign<&'c PolynomialIn<Var, C>>
+        + SubAssign<&'c PolynomialIn<Var, C>>,
     PolynomialIn<Var, C>:
         AddAssign<PolynomialIn<Var, C>> + SubAssign<PolynomialIn<Var, C>>,
     for<'c> PolynomialSliceIn<'c, Var, C>: Add<Output = PolynomialIn<Var, C>>,
@@ -413,8 +418,8 @@ where
     Var: Clone + PartialEq + fmt::Debug,
     C: Clone,
     for<'c> C: AddAssign,
-    for<'c> PolynomialIn<Var, C>:
-        AddAssign<&'c PolynomialIn<Var, C>> + SubAssign<&'c PolynomialIn<Var, C>>,
+    for<'c> PolynomialIn<Var, C>: AddAssign<&'c PolynomialIn<Var, C>>
+        + SubAssign<&'c PolynomialIn<Var, C>>,
     PolynomialIn<Var, C>:
         AddAssign<PolynomialIn<Var, C>> + SubAssign<PolynomialIn<Var, C>>,
     for<'c> PolynomialSliceIn<'c, Var, C>: Add<Output = PolynomialIn<Var, C>>,

@@ -1,7 +1,7 @@
 use crate::ops::{Exp, Ln, Pow};
 use crate::traits::{AsSlice, ExpCoeff, MulInverse};
 use crate::util::trim_slice_start;
-use crate::{Coeff, Iter, Series, SeriesSliceIn, PolynomialSlice};
+use crate::{Coeff, Iter, PolynomialSlice, Series, SeriesSliceIn};
 
 use std::ops::{
     Add, AddAssign, Div, DivAssign, Index, Mul, MulAssign, Neg, Sub, SubAssign,
@@ -26,11 +26,7 @@ impl<'a, C: Coeff> std::clone::Clone for SeriesSlice<'a, C> {
 }
 
 impl<'a, C: Coeff> SeriesSlice<'a, C> {
-    pub(super) fn new(
-        min_pow: isize,
-        coeffs: &'a [C],
-        zero: &'a C,
-    ) -> Self {
+    pub(super) fn new(min_pow: isize, coeffs: &'a [C], zero: &'a C) -> Self {
         let mut res = SeriesSlice {
             min_pow,
             coeffs,
@@ -185,7 +181,11 @@ impl<'a, C: Coeff> SeriesSlice<'a, C> {
     /// assert_eq!(s.var(), &"x");
     /// ```
     pub fn in_var<Var>(self, var: &'a Var) -> SeriesSliceIn<Var, C> {
-        let Self{ min_pow, coeffs, zero } = self;
+        let Self {
+            min_pow,
+            coeffs,
+            zero,
+        } = self;
         SeriesSliceIn::new(var, min_pow, coeffs, zero)
     }
 }
@@ -293,8 +293,7 @@ where
 impl<'a, 'b, C: Coeff> Mul<&'b Series<C>> for SeriesSlice<'a, C>
 where
     C: Clone,
-    for<'c> Series<C>:
-        Mul<SeriesSlice<'c, C>, Output = Series<C>>,
+    for<'c> Series<C>: Mul<SeriesSlice<'c, C>, Output = Series<C>>,
 {
     type Output = Series<C>;
 
@@ -345,7 +344,12 @@ impl<'a, C: Coeff> Exp for SeriesSlice<'a, C>
 where
     for<'b> &'b C: Mul<Output = C>,
     for<'b> C: MulAssign<&'b C>,
-    C: Clone + Div<Output = C> + Mul<Output = C> + AddAssign + Exp<Output = C> + From<i32>,
+    C: Clone
+        + Div<Output = C>
+        + Mul<Output = C>
+        + AddAssign
+        + Exp<Output = C>
+        + From<i32>,
 {
     type Output = Series<C>;
 
@@ -363,7 +367,7 @@ where
         + Add<Output = C>
         + Mul<Output = C>
         + Div<Output = C>
-        + From<i32>
+        + From<i32>,
 {
     type Output = Series<C>;
 

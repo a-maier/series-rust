@@ -159,7 +159,9 @@ impl<Var, C: Coeff> SeriesIn<Var, C> {
     }
 }
 
-impl<'a, Var: 'a, C: 'a + Coeff> AsSlice<'a, Range<isize>> for SeriesIn<Var, C> {
+impl<'a, Var: 'a, C: 'a + Coeff> AsSlice<'a, Range<isize>>
+    for SeriesIn<Var, C>
+{
     type Output = SeriesSliceIn<'a, Var, C>;
 
     /// A slice of the series truncated to the given range of powers.
@@ -290,7 +292,12 @@ impl<'a, Var: 'a, C: 'a + Coeff> AsSlice<'a, RangeFrom<isize>>
     /// ```
     fn as_slice(&'a self, r: RangeFrom<isize>) -> Self::Output {
         let start = (r.start - self.min_pow()) as usize;
-        SeriesSliceIn::new(&self.var, r.start, &self.coeffs[start..], &self.zero)
+        SeriesSliceIn::new(
+            &self.var,
+            r.start,
+            &self.coeffs[start..],
+            &self.zero,
+        )
     }
 }
 
@@ -628,7 +635,8 @@ where
     }
 }
 
-impl<'a, Var, C: Coeff> SubAssign<SeriesSliceIn<'a, Var, C>> for SeriesIn<Var, C>
+impl<'a, Var, C: Coeff> SubAssign<SeriesSliceIn<'a, Var, C>>
+    for SeriesIn<Var, C>
 where
     for<'c> SeriesSliceIn<'c, Var, C>: Neg<Output = SeriesIn<Var, C>>,
     SeriesIn<Var, C>: AddAssign<SeriesIn<Var, C>>,
@@ -927,7 +935,12 @@ impl<Var, C: Coeff> Exp for SeriesIn<Var, C>
 where
     for<'a> &'a C: Mul<Output = C>,
     for<'a> C: MulAssign<&'a C>,
-    C: Clone + Div<Output = C> + Mul<Output = C> + AddAssign + Exp<Output = C> + From<i32>,
+    C: Clone
+        + Div<Output = C>
+        + Mul<Output = C>
+        + AddAssign
+        + Exp<Output = C>
+        + From<i32>,
 {
     type Output = Self;
 
@@ -948,7 +961,12 @@ where
     for<'b> &'b C: Mul<Output = C>,
     for<'b> C: MulAssign<&'b C>,
     Var: Clone,
-    C: Clone + Div<Output = C> + Mul<Output = C> + AddAssign + Exp<Output = C> + From<i32>,
+    C: Clone
+        + Div<Output = C>
+        + Mul<Output = C>
+        + AddAssign
+        + Exp<Output = C>
+        + From<i32>,
 {
     type Output = SeriesIn<Var, C>;
 
