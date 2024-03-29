@@ -1272,6 +1272,10 @@ impl<Var, C: Coeff + From<i32>> SeriesIn<Var, C> {
             + Exp<Output = Self>
             + MulInverse<Output = Self>,
     {
+        if self.coeffs.is_empty() {
+            self.min_pow *= exp as isize;
+            return self;
+        }
         let new_min_pow = self.min_pow * (exp as isize);
         self.min_pow = 0;
         let pow = (self.ln_var_free() * C::from(exp)).exp();
