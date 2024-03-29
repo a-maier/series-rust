@@ -1,3 +1,10 @@
+# Version 0.11.0
+
+- Fixed the behaviour of `powi` for series without coefficients,
+  i.e. series of the form O(x^n).
+- Replaced the custom `Pow` trait by the
+  [`num_traits`](https://crates.io/crates/num-traits) equivalent.
+
 # Version 0.10.0
 
 - `Series`, `SeriesSlice`, `Polynomial`, `PolynomialSlice` now
