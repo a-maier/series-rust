@@ -1,6 +1,6 @@
 [package]
 name = "series"
-version = "0.11.0"
+version = "0.12.0"
 authors = ["Andreas Maier <andreas.martin.maier@desy.de>"]
 edition = "2021"
 description = "Laurent series in a single variable"
