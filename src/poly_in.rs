@@ -170,7 +170,6 @@ impl<Var, C: Coeff> PolynomialIn<Var, C> {
     ///
     /// Panics if the cutoff power is lower than the starting power
     ///
-    /// ```
     pub fn cutoff_at(self, cutoff_pow: isize) -> SeriesIn<Var, C> {
         SeriesIn::with_cutoff(
             self.var,

@@ -174,7 +174,6 @@ impl<C: Coeff> Polynomial<C> {
     ///
     /// Panics if the cutoff power is lower than the starting power
     ///
-    /// ```
     pub fn cutoff_at(self, cutoff_pow: isize) -> Series<C> {
         Series::with_cutoff(
             self.min_pow.unwrap_or(cutoff_pow)..cutoff_pow,
