@@ -1,3 +1,11 @@
+# Version 0.12.0
+
+- Added Conversions
+  `SeriesIn` -> `Series`
+  `PolynomialIn` -> `Polynomial`
+  `SeriesSliceIn` -> `SeriesSlice`
+  `PolynomialSliceIn` -> `PolynomialSlice`
+
 # Version 0.11.0
 
 - Fixed the behaviour of `powi` for series without coefficients,
