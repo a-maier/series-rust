@@ -1,6 +1,6 @@
 use crate::traits::{AsSlice, KaratsubaMul};
 use crate::util::{trim_end, trim_start};
-use crate::{Coeff, IntoIter, Iter, PolynomialIn};
+use crate::{Coeff, IntoIter, Iter, PolynomialIn, PolynomialInParts};
 use crate::{PolynomialSlice, Series};
 
 use std::ops::{
@@ -926,6 +926,13 @@ where
         self.min_pow == Some(0)
             && self.coeffs.len() == 1
             && self.coeff(0).is_one()
+    }
+}
+
+impl<C: Coeff, Var> From<PolynomialIn<Var, C>> for Polynomial<C> {
+    fn from(source: PolynomialIn<Var, C>) -> Self {
+        let PolynomialInParts { var: _, min_pow, coeffs  } = source.into();
+        Self { min_pow, coeffs, zero: C::zero() }
     }
 }
 

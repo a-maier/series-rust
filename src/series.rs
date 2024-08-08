@@ -1,5 +1,5 @@
 use crate::ops::{Exp, Ln, Pow};
-use crate::traits::*;
+use crate::{traits::*, SeriesInParts};
 use crate::util::trim_start;
 use crate::{Coeff, IntoIter, Iter};
 use crate::{SeriesIn, SeriesSlice};
@@ -1066,6 +1066,13 @@ where
 impl<'a, C: Coeff + Clone> From<SeriesSlice<'a, C>> for Series<C> {
     fn from(s: SeriesSlice<'a, C>) -> Self {
         Series::new(s.min_pow, s.coeffs.to_vec())
+    }
+}
+
+impl<C: Coeff, Var> From<SeriesIn<Var, C>> for Series<C> {
+    fn from(source: SeriesIn<Var, C>) -> Self {
+        let SeriesInParts { var: _, min_pow, coeffs  } = source.into();
+        Self { min_pow, coeffs, zero: C::zero() }
     }
 }
 
