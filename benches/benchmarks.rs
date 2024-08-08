@@ -1,7 +1,7 @@
 #[macro_use]
 extern crate criterion;
-#[macro_use]
-extern crate lazy_static;
+
+use std::sync::LazyLock;
 
 use criterion::Criterion;
 
@@ -113,30 +113,29 @@ impl std::fmt::Display for Integer {
     }
 }
 
-lazy_static! {
-    static ref RAN_F64: [f64; MAX_ELEMENTS] = {
-        let mut rng = rand_pcg::Pcg64::seed_from_u64(0);
-        let mut array = [0.; MAX_ELEMENTS];
-        for e in array.iter_mut() {
-            *e = rng.gen_range(-100.0..=100.0);
-        }
-        array
-    };
-    static ref RAN_INT: Vec<Integer> = {
-        let mut rng = rand_pcg::Pcg64::seed_from_u64(0);
-        let mut array = Vec::new();
-        let mut digits = [0u8; MAX_DIGITS];
-        for _ in 0..MAX_ELEMENTS {
-            let ndigits = rng.gen_range(1..=MAX_DIGITS);
-            rng.fill(&mut digits[..ndigits]);
-            array.push(Integer::from_digits(
-                &digits[..ndigits],
-                rug::integer::Order::Lsf,
-            ));
-        }
-        array
-    };
-}
+static RAN_F64: LazyLock<[f64; MAX_ELEMENTS]> = LazyLock::new(|| {
+    let mut rng = rand_pcg::Pcg64::seed_from_u64(0);
+    let mut array = [0.; MAX_ELEMENTS];
+    for e in array.iter_mut() {
+        *e = rng.gen_range(-100.0..=100.0);
+    }
+    array
+});
+
+static RAN_INT: LazyLock<Vec<Integer>> = LazyLock::new(|| {
+    let mut rng = rand_pcg::Pcg64::seed_from_u64(0);
+    let mut array = Vec::new();
+    let mut digits = [0u8; MAX_DIGITS];
+    for _ in 0..MAX_ELEMENTS {
+        let ndigits = rng.gen_range(1..=MAX_DIGITS);
+        rng.fill(&mut digits[..ndigits]);
+        array.push(Integer::from_digits(
+            &digits[..ndigits],
+            rug::integer::Order::Lsf,
+        ));
+    }
+    array
+});
 
 fn mul_f64_1(c: &mut Criterion) {
     let s = SeriesIn::new("x", -2, RAN_F64[..1].to_owned());
