@@ -415,3 +415,10 @@ where
         (self.ln() * exponent).exp()
     }
 }
+
+impl<'a, C: Coeff, Var> From<SeriesSliceIn<'a, Var, C>> for SeriesSlice<'a, C> {
+    fn from(source: SeriesSliceIn<'a, Var, C>) -> Self {
+        let SeriesSliceIn { var: _, min_pow, coeffs, zero } = source;
+        Self { min_pow, coeffs, zero }
+    }
+}
