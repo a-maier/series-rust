@@ -930,8 +930,16 @@ where
 
 impl<C: Coeff, Var> From<PolynomialIn<Var, C>> for Polynomial<C> {
     fn from(source: PolynomialIn<Var, C>) -> Self {
-        let PolynomialInParts { var: _, min_pow, coeffs  } = source.into();
-        Self { min_pow, coeffs, zero: C::zero() }
+        let PolynomialInParts {
+            var: _,
+            min_pow,
+            coeffs,
+        } = source.into();
+        Self {
+            min_pow,
+            coeffs,
+            zero: C::zero(),
+        }
     }
 }
 

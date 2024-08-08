@@ -343,10 +343,21 @@ where
     }
 }
 
-impl<'a, C: Coeff, Var> From<PolynomialSliceIn<'a, Var, C>> for PolynomialSlice<'a, C> {
+impl<'a, C: Coeff, Var> From<PolynomialSliceIn<'a, Var, C>>
+    for PolynomialSlice<'a, C>
+{
     fn from(source: PolynomialSliceIn<'a, Var, C>) -> Self {
-        let PolynomialSliceIn { var: _, min_pow, coeffs, zero } = source;
-        Self { min_pow, coeffs, zero }
+        let PolynomialSliceIn {
+            var: _,
+            min_pow,
+            coeffs,
+            zero,
+        } = source;
+        Self {
+            min_pow,
+            coeffs,
+            zero,
+        }
     }
 }
 
