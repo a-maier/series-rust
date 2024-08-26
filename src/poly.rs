@@ -186,6 +186,16 @@ impl<C: Coeff> Polynomial<C> {
     }
 }
 
+impl<C: Coeff> Default for Polynomial<C> {
+    fn default() -> Self {
+        Self {
+            min_pow: None,
+            coeffs: vec![],
+            zero: C::zero(),
+        }
+    }
+}
+
 impl<'a, C: 'a + Coeff> AsSlice<'a, Range<isize>> for Polynomial<C> {
     type Output = PolynomialSlice<'a, C>;
 
