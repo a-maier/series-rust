@@ -28,8 +28,7 @@ impl<C: Coeff> Polynomial<C> {
     /// # Example
     ///
     /// This creates a Laurent polynomial starting at power -1 with
-    /// coefficients 1, 2, 3. In other words, the polynomial x^-1 + 2
-    /// + 3*x.
+    /// coefficients 1, 2, 3. In other words, the polynomial x^-1 + 2 + 3*x.
     /// ```rust
     /// let p = series::Polynomial::new(-1, vec!(1,2,3));
     /// ```
