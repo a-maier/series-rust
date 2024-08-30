@@ -1,4 +1,5 @@
 #![allow(clippy::suspicious_op_assign_impl)]
+#![doc = include_str!("../Readme.md")]
 pub mod ops;
 pub mod poly;
 pub mod poly_in;
