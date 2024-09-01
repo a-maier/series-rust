@@ -1,7 +1,7 @@
 use crate::poly_in::MulHelper;
 use crate::traits::{AsSlice, KaratsubaMul};
 use crate::util::{trim_slice_end, trim_slice_start};
-use crate::{Coeff, Iter, PolynomialIn};
+use crate::{zero_ref::zero_ref, Coeff, Iter, PolynomialIn};
 
 use std::fmt;
 use std::ops::{Add, AddAssign, Div, Index, Mul, Neg, Sub, SubAssign};
@@ -12,7 +12,6 @@ pub struct PolynomialSliceIn<'a, Var, C: Coeff> {
     pub(crate) var: &'a Var,
     pub(crate) min_pow: Option<isize>,
     pub(crate) coeffs: &'a [C],
-    pub(crate) zero: &'a C,
 }
 
 // needs manual implementation,
@@ -30,25 +29,24 @@ impl<'a, Var, C: Coeff> PolynomialSliceIn<'a, Var, C> {
         var: &'a Var,
         min_pow: isize,
         coeffs: &'a [C],
-        zero: &'a C,
     ) -> Self {
         let mut res = PolynomialSliceIn {
             var,
             min_pow: Some(min_pow),
             coeffs,
-            zero,
         };
         res.trim();
         res
     }
 
     fn trim(&mut self) {
-        let (coeffs, _removed) = trim_slice_end(self.coeffs, self.zero);
+        let zero = C::zero();
+        let (coeffs, _removed) = trim_slice_end(self.coeffs, &zero);
         self.coeffs = coeffs;
         if self.coeffs.is_empty() {
             self.min_pow = None;
         } else {
-            let (coeffs, removed) = trim_slice_start(self.coeffs, self.zero);
+            let (coeffs, removed) = trim_slice_start(self.coeffs, &zero);
             self.coeffs = coeffs;
             if let Some(min_pow) = self.min_pow.as_mut() {
                 *min_pow += removed as isize
@@ -127,19 +125,6 @@ impl<'a, Var, C: Coeff> PolynomialSliceIn<'a, Var, C> {
         self.coeffs.is_empty()
     }
 
-    pub fn coeff(&self, pow: isize) -> &'a C {
-        if let Some(min_pow) = self.min_pow() {
-            let idx = pow - min_pow;
-            if idx < 0 || idx >= self.len() as isize {
-                self.zero
-            } else {
-                &self.coeffs[idx as usize]
-            }
-        } else {
-            self.zero
-        }
-    }
-
     /// Iterator over the polynomial powers and coefficients.
     ///
     /// # Example
@@ -179,13 +164,11 @@ impl<'a, Var, C: Coeff> PolynomialSliceIn<'a, Var, C> {
             var: self.var,
             min_pow: self.min_pow(),
             coeffs: lower,
-            zero: self.zero,
         };
         let upper = PolynomialSliceIn {
             var: self.var,
             min_pow: Some(pos),
             coeffs: upper,
-            zero: self.zero,
         };
         (lower, upper)
     }
@@ -202,6 +185,27 @@ impl<'a, Var, C: Coeff> PolynomialSliceIn<'a, Var, C> {
     /// ```
     pub fn var(&self) -> &Var {
         self.var
+    }
+
+    // TODO: code duplication with PolynomialSlice
+    pub fn try_coeff(&self, pow: isize) -> Option<&'a C> {
+        let min_pow = self.min_pow()?;
+        self.coeffs.get((pow - min_pow) as usize)
+    }
+}
+
+impl<'a, Var, C: 'static + Coeff + Send + Sync> PolynomialSliceIn<'a, Var, C> {
+    pub fn coeff(&self, pow: isize) -> &'a C {
+        if let Some(min_pow) = self.min_pow() {
+            let idx = pow - min_pow;
+            if idx < 0 || idx >= self.len() as isize {
+                zero_ref()
+            } else {
+                &self.coeffs[idx as usize]
+            }
+        } else {
+            zero_ref()
+        }
     }
 }
 
@@ -405,7 +409,6 @@ where
             var: self.var.clone(),
             min_pow: None,
             coeffs: vec![],
-            zero: C::zero(),
         };
         result.add_prod(self, rhs, min_size);
         result

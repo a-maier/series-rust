@@ -1,6 +1,7 @@
 use crate::ops::{Exp, Ln, Pow};
 use crate::traits::{AsSlice, ExpCoeff, MulInverse};
 use crate::util::trim_slice_start;
+use crate::zero_ref::zero_ref;
 use crate::{Coeff, Iter, PolynomialSlice, Series, SeriesSliceIn};
 
 use std::ops::{
@@ -12,7 +13,6 @@ use std::ops::{
 pub struct SeriesSlice<'a, C: Coeff> {
     pub(crate) min_pow: isize,
     pub(crate) coeffs: &'a [C],
-    pub(crate) zero: &'a C,
 }
 
 // needs manual implementation,
@@ -26,18 +26,17 @@ impl<'a, C: Coeff> std::clone::Clone for SeriesSlice<'a, C> {
 }
 
 impl<'a, C: Coeff> SeriesSlice<'a, C> {
-    pub(super) fn new(min_pow: isize, coeffs: &'a [C], zero: &'a C) -> Self {
+    pub(super) fn new(min_pow: isize, coeffs: &'a [C]) -> Self {
         let mut res = SeriesSlice {
             min_pow,
             coeffs,
-            zero,
         };
         res.trim();
         res
     }
 
     fn trim(&mut self) {
-        let (coeffs, removed) = trim_slice_start(self.coeffs, self.zero);
+        let (coeffs, removed) = trim_slice_start(self.coeffs, &C::zero());
         self.coeffs = coeffs;
         self.min_pow += removed as isize;
     }
@@ -71,38 +70,6 @@ impl<'a, C: Coeff> SeriesSlice<'a, C> {
     /// ```
     pub fn cutoff_pow(&self) -> isize {
         self.min_pow + (self.coeffs.len() as isize)
-    }
-
-    /// Get the series coefficient of the expansion variable to the
-    /// given power.
-    ///
-    /// Returns None if the requested power is above the highest known
-    /// power. Coefficients below the leading power are zero.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use series::AsSlice;
-    ///
-    /// let s = series::Series::new(-1, vec!(1,2,3));
-    /// let slice = s.as_slice(..);
-    /// assert_eq!(slice.coeff(-5), Some(&0));
-    /// assert_eq!(slice.coeff(-2), Some(&0));
-    /// assert_eq!(slice.coeff(-1), Some(&1));
-    /// assert_eq!(slice.coeff(0), Some(&2));
-    /// assert_eq!(slice.coeff(1), Some(&3));
-    /// assert_eq!(slice.coeff(2), None);
-    /// assert_eq!(slice.coeff(5), None);
-    /// ```
-    pub fn coeff(&self, pow: isize) -> Option<&'a C> {
-        if pow < self.min_pow() {
-            return Some(self.zero); // TODO this is a bad hack
-        }
-        if pow >= self.cutoff_pow() {
-            return None;
-        }
-        let idx = (pow - self.min_pow()) as usize;
-        Some(&self.coeffs[idx])
     }
 
     /// Iterator over the series powers and coefficients.
@@ -143,12 +110,10 @@ impl<'a, C: Coeff> SeriesSlice<'a, C> {
         let lower = SeriesSlice {
             min_pow: self.min_pow(),
             coeffs: lower,
-            zero: self.zero,
         };
         let upper = SeriesSlice {
             min_pow: pos,
             coeffs: upper,
-            zero: self.zero,
         };
         (lower, upper)
     }
@@ -166,7 +131,7 @@ impl<'a, C: Coeff> SeriesSlice<'a, C> {
     /// assert_eq!(slice, p.as_slice(..));
     /// ```
     pub fn as_poly(&self) -> PolynomialSlice<'a, C> {
-        PolynomialSlice::new(self.min_pow, self.coeffs, self.zero)
+        PolynomialSlice::new(self.min_pow, self.coeffs)
     }
 
     /// Turn into a slice with a named expansion variable
@@ -184,9 +149,77 @@ impl<'a, C: Coeff> SeriesSlice<'a, C> {
         let Self {
             min_pow,
             coeffs,
-            zero,
         } = self;
-        SeriesSliceIn::new(var, min_pow, coeffs, zero)
+        SeriesSliceIn::new(var, min_pow, coeffs)
+    }
+
+    /// Try to get the series coefficient of the expansion variable to
+    /// the given power.
+    ///
+    /// Returns [None] if the requested power is above the highest known
+    /// power or below the leading power.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use series::AsSlice;
+    ///
+    /// let s = series::Series::new(-1, vec!(1,2,3));
+    /// let slice = s.as_slice(..);
+    /// assert_eq!(slice.try_coeff(-5), None);
+    /// assert_eq!(slice.try_coeff(-2), None);
+    /// assert_eq!(slice.try_coeff(-1), Some(&1));
+    /// assert_eq!(slice.try_coeff(0), Some(&2));
+    /// assert_eq!(slice.try_coeff(1), Some(&3));
+    /// assert_eq!(slice.try_coeff(2), None);
+    /// assert_eq!(slice.try_coeff(5), None);
+    /// ```
+    pub fn try_coeff(&self, pow: isize) -> Option<&'a C> {
+        if pow >= self.min_pow() && pow < self.cutoff_pow() {
+            Some(self.coeff_in_range(pow))
+        } else {
+            None
+        }
+    }
+
+    fn coeff_in_range(&self, pow: isize) -> &'a C {
+        debug_assert!(pow >= self.min_pow());
+        debug_assert!(pow < self.cutoff_pow());
+        let idx = (pow - self.min_pow()) as usize;
+        &self.coeffs[idx]
+    }
+}
+
+impl<'a, C: 'static + Coeff + Send + Sync> SeriesSlice<'a, C> {
+    /// Get the series coefficient of the expansion variable to the
+    /// given power.
+    ///
+    /// Returns None if the requested power is above the highest known
+    /// power. Coefficients below the leading power are zero.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use series::AsSlice;
+    ///
+    /// let s = series::Series::new(-1, vec!(1,2,3));
+    /// let slice = s.as_slice(..);
+    /// assert_eq!(slice.coeff(-5), Some(&0));
+    /// assert_eq!(slice.coeff(-2), Some(&0));
+    /// assert_eq!(slice.coeff(-1), Some(&1));
+    /// assert_eq!(slice.coeff(0), Some(&2));
+    /// assert_eq!(slice.coeff(1), Some(&3));
+    /// assert_eq!(slice.coeff(2), None);
+    /// assert_eq!(slice.coeff(5), None);
+    /// ```
+    pub fn coeff(&self, pow: isize) -> Option<&'a C> {
+        if pow < self.min_pow() {
+            return Some(zero_ref());
+        }
+        if pow >= self.cutoff_pow() {
+            return None;
+        }
+        Some(self.coeff_in_range(pow))
     }
 }
 
@@ -422,12 +455,10 @@ impl<'a, C: Coeff, Var> From<SeriesSliceIn<'a, Var, C>> for SeriesSlice<'a, C> {
             var: _,
             min_pow,
             coeffs,
-            zero,
         } = source;
         Self {
             min_pow,
             coeffs,
-            zero,
         }
     }
 }

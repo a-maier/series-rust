@@ -20,7 +20,6 @@ pub struct PolynomialIn<Var, C: Coeff> {
     pub(crate) var: Var,
     pub(crate) min_pow: Option<isize>,
     pub(crate) coeffs: Vec<C>,
-    pub(crate) zero: C, // TODO: evil hack, learn how to do this better
 }
 
 impl<Var, C: Coeff> PolynomialIn<Var, C> {
@@ -43,7 +42,6 @@ impl<Var, C: Coeff> PolynomialIn<Var, C> {
             var,
             min_pow: Some(min_pow),
             coeffs,
-            zero: C::zero(),
         };
         res.trim();
         res
@@ -59,25 +57,6 @@ impl<Var, C: Coeff> PolynomialIn<Var, C> {
     /// ```
     pub fn var(&self) -> &Var {
         &self.var
-    }
-
-    /// Get the coefficient of the polynomial variable to the
-    /// given power.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// let p = series::PolynomialIn::new("x", -1, vec!(1,2,3));
-    /// assert_eq!(p.coeff(-5), &0);
-    /// assert_eq!(p.coeff(-2), &0);
-    /// assert_eq!(p.coeff(-1), &1);
-    /// assert_eq!(p.coeff(0), &2);
-    /// assert_eq!(p.coeff(1), &3);
-    /// assert_eq!(p.coeff(2), &0);
-    /// assert_eq!(p.coeff(5), &0);
-    /// ```
-    pub fn coeff(&self, pow: isize) -> &C {
-        self.as_slice(..).coeff(pow)
     }
 
     /// Get the leading power of the polynomial variable
@@ -184,8 +163,48 @@ impl<Var, C: Coeff> PolynomialIn<Var, C> {
             &self.var,
             0,
             &self.coeffs[self.len()..],
-            &self.zero,
         )
+    }
+
+    /// Try to get the coefficient of the polynomial variable to the
+    /// given power. Returns [None] if `pow` is less than [min_pow] or
+    /// greater than [max_pow].
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// let p = series::PolynomialIn::new("x", -1, vec![1,0,3]);
+    /// assert_eq!(p.try_coeff(-5), None);
+    /// assert_eq!(p.try_coeff(-2), None);
+    /// assert_eq!(p.try_coeff(-1), Some(&1));
+    /// assert_eq!(p.try_coeff(0), Some(&0));
+    /// assert_eq!(p.try_coeff(1), Some(&3));
+    /// assert_eq!(p.try_coeff(2), None);
+    /// assert_eq!(p.try_coeff(5), None);
+    /// ```
+    pub fn try_coeff(&self, pow: isize) -> Option<&C> {
+        self.as_slice(..).try_coeff(pow)
+    }
+}
+
+impl<Var, C: 'static + Coeff + Send + Sync> PolynomialIn<Var, C> {
+    /// Get the coefficient of the polynomial variable to the
+    /// given power.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// let p = series::PolynomialIn::new("x", -1, vec!(1,2,3));
+    /// assert_eq!(p.coeff(-5), &0);
+    /// assert_eq!(p.coeff(-2), &0);
+    /// assert_eq!(p.coeff(-1), &1);
+    /// assert_eq!(p.coeff(0), &2);
+    /// assert_eq!(p.coeff(1), &3);
+    /// assert_eq!(p.coeff(2), &0);
+    /// assert_eq!(p.coeff(5), &0);
+    /// ```
+    pub fn coeff(&self, pow: isize) -> &C {
+        self.as_slice(..).coeff(pow)
     }
 }
 
@@ -202,7 +221,6 @@ impl<'a, Var: 'a, C: 'a + Coeff> AsSlice<'a, Range<isize>>
                 &self.var,
                 r.start,
                 &self.coeffs[start..end],
-                &self.zero,
             )
         } else {
             self.as_empty_slice()
@@ -224,7 +242,6 @@ impl<'a, Var: 'a, C: 'a + Coeff> AsSlice<'a, RangeInclusive<isize>>
                 &self.var,
                 start,
                 &self.coeffs[ustart..=end],
-                &self.zero,
             )
         } else {
             self.as_empty_slice()
@@ -244,7 +261,6 @@ impl<'a, Var: 'a, C: 'a + Coeff> AsSlice<'a, RangeToInclusive<isize>>
                 &self.var,
                 min_pow,
                 &self.coeffs[..=end],
-                &self.zero,
             )
         } else {
             self.as_empty_slice()
@@ -264,7 +280,6 @@ impl<'a, Var: 'a, C: 'a + Coeff> AsSlice<'a, RangeFrom<isize>>
                 &self.var,
                 r.start,
                 &self.coeffs[(start as usize)..],
-                &self.zero,
             )
         } else {
             self.as_empty_slice()
@@ -284,7 +299,6 @@ impl<'a, Var: 'a, C: 'a + Coeff> AsSlice<'a, RangeTo<isize>>
                 &self.var,
                 min_pow,
                 &self.coeffs[..end],
-                &self.zero,
             )
         } else {
             self.as_empty_slice()
@@ -303,7 +317,6 @@ impl<'a, Var: 'a, C: 'a + Coeff> AsSlice<'a, RangeFull>
                 &self.var,
                 min_pow,
                 &self.coeffs[r],
-                &self.zero,
             )
         } else {
             self.as_empty_slice()
@@ -366,11 +379,12 @@ impl<Var, C: Coeff> std::iter::IntoIterator for PolynomialIn<Var, C> {
 
 impl<Var, C: Coeff> PolynomialIn<Var, C> {
     fn trim(&mut self) {
-        trim_end(&mut self.coeffs, &self.zero);
+        let zero = C::zero();
+        trim_end(&mut self.coeffs, &zero);
         if self.coeffs.is_empty() {
             self.min_pow = None;
         } else {
-            let min_pow_shift = trim_start(&mut self.coeffs, &self.zero);
+            let min_pow_shift = trim_start(&mut self.coeffs, &zero);
             if let Some(min_pow) = self.min_pow.as_mut() {
                 *min_pow += min_pow_shift as isize
             }

@@ -9,6 +9,8 @@ pub mod series;
 pub mod series_in;
 pub mod series_slice;
 pub mod series_slice_in;
+mod zero_ref;
+
 pub use self::ops::{Exp, Ln, Pow};
 pub use self::poly::{Polynomial, PolynomialParts};
 pub use self::poly_in::{PolynomialIn, PolynomialInParts};

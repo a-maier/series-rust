@@ -18,7 +18,6 @@ use std::ops::{
 pub struct Series<C: Coeff> {
     pub(crate) min_pow: isize,
     pub(crate) coeffs: Vec<C>,
-    pub(crate) zero: C, // TODO: evil hack, learn how to do this better
 }
 
 impl<C: Coeff> Series<C> {
@@ -36,7 +35,6 @@ impl<C: Coeff> Series<C> {
         let mut res = Series {
             min_pow,
             coeffs,
-            zero: C::zero(),
         };
         res.trim();
         res
@@ -87,31 +85,8 @@ impl<C: Coeff> Series<C> {
         let Self {
             min_pow,
             coeffs,
-            zero: _,
         } = self;
         SeriesIn::new(var, min_pow, coeffs)
-    }
-
-    /// Get the series coefficient of the expansion variable to the
-    /// given power.
-    ///
-    /// Returns None if the requested power is above the highest known
-    /// power. Coefficients below the leading power are zero.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// let s = series::Series::new(-1, vec!(1,2,3));
-    /// assert_eq!(s.coeff(-5), Some(&0));
-    /// assert_eq!(s.coeff(-2), Some(&0));
-    /// assert_eq!(s.coeff(-1), Some(&1));
-    /// assert_eq!(s.coeff(0), Some(&2));
-    /// assert_eq!(s.coeff(1), Some(&3));
-    /// assert_eq!(s.coeff(2), None);
-    /// assert_eq!(s.coeff(5), None);
-    /// ```
-    pub fn coeff(&self, pow: isize) -> Option<&C> {
-        self.as_slice(..).coeff(pow)
     }
 
     /// Get the leading power of the series expansion variable
@@ -154,6 +129,52 @@ impl<C: Coeff> Series<C> {
     pub fn iter(&self) -> Iter<C> {
         self.as_slice(..).iter()
     }
+
+    /// Try to get the series coefficient of the expansion variable to
+    /// the given power.
+    ///
+    /// Returns [None] if the requested power is above the highest known
+    /// power or below the leading power.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// let s = series::Series::new(-1, vec!(1,2,3));
+    /// assert_eq!(s.try_coeff(-5), None);
+    /// assert_eq!(s.try_coeff(-2), None);
+    /// assert_eq!(s.try_coeff(-1), Some(&1));
+    /// assert_eq!(s.try_coeff(0), Some(&2));
+    /// assert_eq!(s.try_coeff(1), Some(&3));
+    /// assert_eq!(s.try_coeff(2), None);
+    /// assert_eq!(s.try_coeff(5), None);
+    /// ```
+    pub fn try_coeff(&self, pow: isize) -> Option<&C> {
+        self.as_slice(..).try_coeff(pow)
+    }
+}
+
+impl<C: 'static + Coeff + Send + Sync> Series<C> {
+    /// Get the series coefficient of the expansion variable to the
+    /// given power.
+    ///
+    /// Returns None if the requested power is above the highest known
+    /// power. Coefficients below the leading power are zero.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// let s = series::Series::new(-1, vec!(1,2,3));
+    /// assert_eq!(s.coeff(-5), Some(&0));
+    /// assert_eq!(s.coeff(-2), Some(&0));
+    /// assert_eq!(s.coeff(-1), Some(&1));
+    /// assert_eq!(s.coeff(0), Some(&2));
+    /// assert_eq!(s.coeff(1), Some(&3));
+    /// assert_eq!(s.coeff(2), None);
+    /// assert_eq!(s.coeff(5), None);
+    /// ```
+    pub fn coeff(&self, pow: isize) -> Option<&C> {
+        self.as_slice(..).coeff(pow)
+    }
 }
 
 impl<'a, C: 'a + Coeff> AsSlice<'a, Range<isize>> for Series<C> {
@@ -181,7 +202,7 @@ impl<'a, C: 'a + Coeff> AsSlice<'a, Range<isize>> for Series<C> {
     fn as_slice(&'a self, r: Range<isize>) -> Self::Output {
         let start = (r.start - self.min_pow()) as usize;
         let end = (r.end - self.min_pow()) as usize;
-        SeriesSlice::new(r.start, &self.coeffs[start..end], &self.zero)
+        SeriesSlice::new(r.start, &self.coeffs[start..end])
     }
 }
 
@@ -211,7 +232,7 @@ impl<'a, C: 'a + Coeff> AsSlice<'a, RangeInclusive<isize>> for Series<C> {
         let (start, end) = r.into_inner();
         let ustart = (start - self.min_pow()) as usize;
         let end = (end - self.min_pow()) as usize;
-        SeriesSlice::new(start, &self.coeffs[ustart..=end], &self.zero)
+        SeriesSlice::new(start, &self.coeffs[ustart..=end])
     }
 }
 
@@ -238,7 +259,7 @@ impl<'a, C: 'a + Coeff> AsSlice<'a, RangeToInclusive<isize>> for Series<C> {
     /// ```
     fn as_slice(&'a self, r: RangeToInclusive<isize>) -> Self::Output {
         let end = (r.end - self.min_pow()) as usize;
-        SeriesSlice::new(self.min_pow, &self.coeffs[..=end], &self.zero)
+        SeriesSlice::new(self.min_pow, &self.coeffs[..=end])
     }
 }
 
@@ -266,7 +287,7 @@ impl<'a, C: 'a + Coeff> AsSlice<'a, RangeFrom<isize>> for Series<C> {
     /// ```
     fn as_slice(&'a self, r: RangeFrom<isize>) -> Self::Output {
         let start = (r.start - self.min_pow()) as usize;
-        SeriesSlice::new(r.start, &self.coeffs[start..], &self.zero)
+        SeriesSlice::new(r.start, &self.coeffs[start..])
     }
 }
 
@@ -293,7 +314,7 @@ impl<'a, C: 'a + Coeff> AsSlice<'a, RangeTo<isize>> for Series<C> {
     /// ```
     fn as_slice(&'a self, r: RangeTo<isize>) -> Self::Output {
         let end = (r.end - self.min_pow()) as usize;
-        SeriesSlice::new(self.min_pow, &self.coeffs[..end], &self.zero)
+        SeriesSlice::new(self.min_pow, &self.coeffs[..end])
     }
 }
 
@@ -316,7 +337,7 @@ impl<'a, C: 'a + Coeff> AsSlice<'a, RangeFull> for Series<C> {
     /// assert_eq!(t[2], s[2]);
     /// ```
     fn as_slice(&'a self, r: RangeFull) -> Self::Output {
-        SeriesSlice::new(self.min_pow, &self.coeffs[r], &self.zero)
+        SeriesSlice::new(self.min_pow, &self.coeffs[r])
     }
 }
 
@@ -415,7 +436,7 @@ where
 
 impl<C: Coeff> Series<C> {
     fn trim(&mut self) {
-        self.min_pow += trim_start(&mut self.coeffs, &self.zero) as isize;
+        self.min_pow += trim_start(&mut self.coeffs, &C::zero()) as isize;
     }
 }
 
@@ -980,7 +1001,7 @@ where
     C: AddAssign<C>,
 {
     fn add_assign(&mut self, rhs: C) {
-        if self.cutoff_pow() <= 0 || rhs == self.zero {
+        if self.cutoff_pow() <= 0 || rhs.is_zero() {
             return;
         }
         if self.min_pow() <= 0 {
@@ -991,7 +1012,7 @@ where
             }
         } else {
             let mut new_coeffs = vec![rhs];
-            new_coeffs.resize(self.min_pow() as usize, self.zero.clone());
+            new_coeffs.resize(self.min_pow() as usize, C::zero());
             new_coeffs.append(&mut self.coeffs);
             self.coeffs = new_coeffs;
             self.min_pow = 0;
@@ -1004,7 +1025,7 @@ where
     C: Neg<Output = C> + SubAssign<C>,
 {
     fn sub_assign(&mut self, rhs: C) {
-        if self.cutoff_pow() <= 0 || rhs == self.zero {
+        if self.cutoff_pow() <= 0 || rhs.is_zero() {
             return;
         }
         if self.min_pow() <= 0 {
@@ -1015,7 +1036,7 @@ where
             }
         } else {
             let mut new_coeffs = vec![-rhs];
-            new_coeffs.resize(self.min_pow() as usize, self.zero.clone());
+            new_coeffs.resize(self.min_pow() as usize, C::zero());
             new_coeffs.append(&mut self.coeffs);
             self.coeffs = new_coeffs;
             self.min_pow = 0;
@@ -1079,7 +1100,6 @@ impl<C: Coeff, Var> From<SeriesIn<Var, C>> for Series<C> {
         Self {
             min_pow,
             coeffs,
-            zero: C::zero(),
         }
     }
 }
@@ -1213,7 +1233,9 @@ where
         let offset = self.min_pow();
         for (i, c) in self.coeffs.iter_mut().enumerate() {
             let power = offset + i as isize;
-            *c += other.coeff(power).unwrap();
+            if let Some(coeff) = other.try_coeff(power) {
+                *c += coeff
+            }
         }
     }
 
@@ -1265,13 +1287,15 @@ where
             let mut b_n = C::zero();
             for i in 1..=n {
                 let num_factor = C::from(i as i32) / C::from(n as i32);
-                let a_i = self.coeff(i as isize).unwrap();
-                b_n += num_factor * (a_i * &b[n - i]);
+                if let Some(a_i) = self.try_coeff(i as isize) {
+                    b_n += num_factor * (a_i * &b[n - i]);
+                }
             }
             b.push(b_n);
         }
         if self.min_pow() == 0 {
-            let exp_a_0 = self.coeff(0).unwrap().clone().exp();
+            let exp_a_0 = self.try_coeff(0).cloned()
+                .unwrap_or_else(|| C::zero()).exp();
             for b_n in &mut b {
                 *b_n *= &exp_a_0;
             }
