@@ -155,7 +155,7 @@ impl<'a, Var, C: Coeff> SeriesSliceIn<'a, Var, C> {
     /// let s = series::SeriesIn::new("x", -1, vec!(1,2,3));
     /// assert_eq!(s.as_slice(..).var(), &"x");
     /// ```
-    pub fn var(&self) -> &Var {
+    pub fn var(&self) -> &'a Var {
         self.var
     }
 
