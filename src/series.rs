@@ -1098,11 +1098,60 @@ where
     }
 }
 
+impl<'a, C: Coeff + Clone> AddAssign<&'a C> for Series<C>
+where
+    C: AddAssign<&'a C>,
+{
+    fn add_assign(&mut self, rhs: &'a C) {
+        if self.cutoff_pow() <= 0 || rhs.is_zero() {
+            return;
+        }
+        if self.min_pow() <= 0 {
+            let idx = (-self.min_pow()) as usize;
+            self.coeffs[idx] += rhs;
+            if self.min_pow() == 0 {
+                self.trim()
+            }
+        } else {
+            let mut new_coeffs = vec![rhs.clone()];
+            new_coeffs.resize(self.min_pow() as usize, C::zero());
+            new_coeffs.append(&mut self.coeffs);
+            self.coeffs = new_coeffs;
+            self.min_pow = 0;
+        }
+    }
+}
+
 impl<C: Coeff + Clone> SubAssign<C> for Series<C>
 where
     C: Neg<Output = C> + SubAssign<C>,
 {
     fn sub_assign(&mut self, rhs: C) {
+        if self.cutoff_pow() <= 0 || rhs.is_zero() {
+            return;
+        }
+        if self.min_pow() <= 0 {
+            let idx = (-self.min_pow()) as usize;
+            self.coeffs[idx] -= rhs;
+            if self.min_pow() == 0 {
+                self.trim()
+            }
+        } else {
+            let mut new_coeffs = vec![-rhs];
+            new_coeffs.resize(self.min_pow() as usize, C::zero());
+            new_coeffs.append(&mut self.coeffs);
+            self.coeffs = new_coeffs;
+            self.min_pow = 0;
+        }
+    }
+}
+
+impl<'a, C: Coeff + Clone> SubAssign<&'a C> for Series<C>
+where
+    C: SubAssign<&'a C>,
+    &'a C: Neg<Output = C>,
+{
+    fn sub_assign(&mut self, rhs: &'a C) {
         if self.cutoff_pow() <= 0 || rhs.is_zero() {
             return;
         }
