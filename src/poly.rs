@@ -157,8 +157,9 @@ impl<C: Coeff> Polynomial<C> {
     }
 
     /// Try to get the coefficient of the polynomial variable to the
-    /// given power. Returns [None] if `pow` is less than [min_pow] or
-    /// greater than [max_pow].
+    /// given power. Returns [None] if `pow` is less than
+    /// [min_pow](Self::min_pow) or greater than
+    /// [max_pow](Self::max_pow).
     ///
     /// # Example
     ///
