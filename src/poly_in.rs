@@ -167,6 +167,32 @@ impl<Var, C: Coeff> PolynomialIn<Var, C> {
         self.poly.try_coeff(pow)
     }
 
+    /// Apply a function to a specific coefficient
+    ///
+    /// `f(c)` is applied to the coefficient `c` of the variable to
+    /// the power `pow`.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// let mut p = series::PolynomialIn::new("x", -1, vec![1,2,3]);
+    /// p.apply_at(0, |c| *c = 0);
+    /// assert_eq!(p.coeff(0), &0);
+    ///
+    /// // We can remove existing terms and add new ones
+    /// p.apply_at(-1, |c| *c = 0);
+    /// assert_eq!(p.min_pow(), Some(1));
+    /// p.apply_at(-3, |c| *c = 1);
+    /// assert_eq!(p.min_pow(), Some(-3));
+    /// assert_eq!(p.coeff(-3), &1);
+    /// p.apply_at(10, |c| *c = 1);
+    /// assert_eq!(p.max_pow(), Some(10));
+    /// assert_eq!(p.coeff(10), &1);
+    /// ```
+    pub fn apply_at<F: FnOnce(&mut C)>(&mut self, pow: isize, f: F) {
+        self.poly.apply_at(pow, f)
+    }
+
     /// Transform all coefficients
     ///
     /// `f(p, c)` is applied to each monomial, where `p` is the power

@@ -142,6 +142,35 @@ impl<Var, C: Coeff> SeriesIn<Var, C> {
         self.series.try_coeff(pow)
     }
 
+    /// Apply a function to a specific coefficient
+    ///
+    /// `f(c)` is applied to the coefficient `c` of the variable to
+    /// the power `pow`.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `pow` is equal to or larger than
+    /// [cutoff_pow](Self::cutoff_pow).
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// let mut s = series::SeriesIn::new("x", -1, vec![1,2,3]);
+    /// s.apply_at(0, |c| *c = 0);
+    /// assert_eq!(s.coeff(0), Some(&0));
+    ///
+    /// // We can remove existing terms and add new ones, provided the
+    /// // variable power is less than `s.cutoff_pow()`!
+    /// s.apply_at(-1, |c| *c = 0);
+    /// assert_eq!(s.min_pow(), 1);
+    /// s.apply_at(-3, |c| *c = 1);
+    /// assert_eq!(s.min_pow(), -3);
+    /// assert_eq!(s.coeff(-3), Some(&1));
+    /// ```
+    pub fn apply_at<F: FnOnce(&mut C)>(&mut self, pow: isize, f: F) {
+        self.series.apply_at(pow, f)
+    }
+
     /// Transform all coefficients
     ///
     /// `f(p, c)` is applied to each term, where `p` is the power of

@@ -176,6 +176,78 @@ impl<C: Coeff> Polynomial<C> {
         self.as_slice(..).try_coeff(pow)
     }
 
+    /// Apply a function to a specific coefficient
+    ///
+    /// `f(c)` is applied to the coefficient `c` of the variable to
+    /// the power `pow`.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// let mut p = series::Polynomial::new(-1, vec![1,2,3]);
+    /// p.apply_at(0, |c| *c = 0);
+    /// assert_eq!(p.coeff(0), &0);
+    ///
+    /// // We can remove existing terms and add new ones
+    /// p.apply_at(-1, |c| *c = 0);
+    /// assert_eq!(p.min_pow(), Some(1));
+    /// p.apply_at(-3, |c| *c = 1);
+    /// assert_eq!(p.min_pow(), Some(-3));
+    /// assert_eq!(p.coeff(-3), &1);
+    /// p.apply_at(10, |c| *c = 1);
+    /// assert_eq!(p.max_pow(), Some(10));
+    /// assert_eq!(p.coeff(10), &1);
+    /// ```
+    pub fn apply_at<F: FnOnce(&mut C)>(&mut self, pow: isize, f: F) {
+        let Some(min_pow) = self.min_pow() else {
+            return self.apply_at_new(pow, f)
+        };
+        if pow < min_pow {
+            return self.apply_at_new_front(pow, f);
+        } else if pow >= min_pow + self.len() as isize {
+            return self.apply_at_new_back(pow, f);
+        }
+        let index = (pow - min_pow) as usize;
+        f(&mut self.coeffs[index]);
+        if (index == 0 || 1 + index == self.len()) && self.coeffs[index].is_zero() {
+            self.trim()
+        }
+    }
+
+    fn apply_at_new<F: FnOnce(&mut C)>(&mut self, pow: isize, f: F) {
+        assert!(self.is_empty());
+        let c = gen_from_zero(f);
+        if c.is_zero() {
+            return
+        };
+        self.min_pow = Some(pow);
+        self.coeffs = vec![c];
+    }
+
+
+    fn apply_at_new_back<F: FnOnce(&mut C)>(&mut self, pow: isize, f: F) {
+        let c = gen_from_zero(f);
+        if c.is_zero() {
+            return
+        };
+        let new_len = (pow - self.min_pow().unwrap()) as usize;
+        self.coeffs.resize_with(new_len, || C::zero());
+        self.coeffs.push(c)
+
+    }
+
+    fn apply_at_new_front<F: FnOnce(&mut C)>(&mut self, pow: isize, f: F) {
+        let c = gen_from_zero(f);
+        if c.is_zero() {
+            return
+        };
+        let nnew = (self.min_pow().unwrap() - pow) as usize;
+        self.coeffs.push(c);
+        self.coeffs.resize_with(self.len() + (nnew - 1), || C::zero());
+        self.coeffs.rotate_right(nnew);
+        self.min_pow = Some(pow);
+    }
+
     /// Transform all coefficients
     ///
     /// `f(p, c)` is applied to each monomial, where `p` is the power
@@ -227,6 +299,12 @@ impl<C: 'static + Coeff + Send + Sync> Polynomial<C> {
     pub fn coeff(&self, pow: isize) -> &C {
         self.as_slice(..).coeff(pow)
     }
+}
+
+fn gen_from_zero<C: Zero, F: FnOnce(&mut C)>(f: F) -> C {
+    let mut c = C::zero();
+    f(&mut c);
+    c
 }
 
 impl<C: Coeff> Default for Polynomial<C> {
@@ -376,7 +454,7 @@ impl<C: Coeff> std::iter::IntoIterator for Polynomial<C> {
 
 impl<C: Coeff> Polynomial<C> {
     fn trim(&mut self) {
-        let zero =C::zero();
+        let zero = C::zero();
         trim_end(&mut self.coeffs, &zero);
         if self.coeffs.is_empty() {
             self.min_pow = None;
