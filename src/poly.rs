@@ -49,14 +49,9 @@ impl<C: Coeff> Polynomial<C> {
     /// assert_eq!(s.var(), &"x");
     /// ```
     pub fn in_var<Var>(self, var: Var) -> PolynomialIn<Var, C> {
-        let Self {
-            min_pow,
-            coeffs,
-        } = self;
         PolynomialIn {
             var,
-            min_pow,
-            coeffs,
+            poly: self,
         }
     }
 
@@ -770,7 +765,6 @@ where
 
 impl<'a, C: Coeff> AddAssign<&'a C> for Polynomial<C>
 where
-    Polynomial<C>: AddAssign,
     C: Clone + AddAssign<&'a C>,
 {
     fn add_assign(&mut self, other: &'a C) {

@@ -1,6 +1,5 @@
 use crate::traits::{AsSlice, KaratsubaMul};
-use crate::util::{trim_end, trim_start};
-use crate::{PolynomialSliceIn, SeriesInParts};
+use crate::{Polynomial, PolynomialSlice, PolynomialSliceIn, SeriesInParts};
 use crate::SeriesIn;
 use crate::{Coeff, IntoIter, Iter};
 
@@ -9,17 +8,14 @@ use std::ops::{
     RangeFrom, RangeFull, RangeInclusive, RangeTo, RangeToInclusive, Sub,
     SubAssign,
 };
-use std::{convert, fmt, iter};
-
-use log::trace;
+use std::{convert, fmt};
 
 /// Laurent polynomial in a single variable
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(PartialEq, Eq, Debug, Clone, Hash, Ord, PartialOrd)]
 pub struct PolynomialIn<Var, C: Coeff> {
     pub(crate) var: Var,
-    pub(crate) min_pow: Option<isize>,
-    pub(crate) coeffs: Vec<C>,
+    pub(crate) poly: Polynomial<C>
 }
 
 impl<Var, C: Coeff> PolynomialIn<Var, C> {
@@ -38,13 +34,11 @@ impl<Var, C: Coeff> PolynomialIn<Var, C> {
         min_pow: isize,
         coeffs: Vec<C>,
     ) -> PolynomialIn<Var, C> {
-        let mut res = PolynomialIn {
+        let poly = Polynomial::new(min_pow, coeffs);
+        Self {
             var,
-            min_pow: Some(min_pow),
-            coeffs,
-        };
-        res.trim();
-        res
+            poly,
+        }
     }
 
     /// Get the polynomial variable
@@ -72,7 +66,7 @@ impl<Var, C: Coeff> PolynomialIn<Var, C> {
     /// assert_eq!(p.min_pow(), None);
     /// ```
     pub fn min_pow(&self) -> Option<isize> {
-        self.min_pow
+        self.poly.min_pow()
     }
 
     /// Get the highest power of the polynomial variable
@@ -88,7 +82,7 @@ impl<Var, C: Coeff> PolynomialIn<Var, C> {
     /// assert_eq!(p.max_pow(), None);
     /// ```
     pub fn max_pow(&self) -> Option<isize> {
-        self.min_pow.map(|c| c - 1 + self.len() as isize)
+        self.poly.max_pow()
     }
 
     /// Get the difference between the highest and the lowest power of
@@ -101,7 +95,7 @@ impl<Var, C: Coeff> PolynomialIn<Var, C> {
     /// assert_eq!(p.len(), 3);
     /// ```
     pub fn len(&self) -> usize {
-        self.coeffs.len()
+        self.poly.len()
     }
 
     /// Check if the polynomial is zero
@@ -116,7 +110,7 @@ impl<Var, C: Coeff> PolynomialIn<Var, C> {
     /// assert!(p.is_empty());
     /// ```
     pub fn is_empty(&self) -> bool {
-        self.coeffs.is_empty()
+        self.poly.is_empty()
     }
 
     /// Iterator over the polynomial powers and coefficients.
@@ -132,7 +126,7 @@ impl<Var, C: Coeff> PolynomialIn<Var, C> {
     /// assert_eq!(iter.next(), None);
     /// ```
     pub fn iter(&self) -> Iter<C> {
-        (self.min_pow().unwrap_or(0)..).zip(self.coeffs.iter())
+        self.poly.iter()
     }
 
     /// Turn a polynomial into a series with the given cutoff
@@ -150,20 +144,7 @@ impl<Var, C: Coeff> PolynomialIn<Var, C> {
     /// Panics if the cutoff power is lower than the starting power
     ///
     pub fn cutoff_at(self, cutoff_pow: isize) -> SeriesIn<Var, C> {
-        SeriesIn::with_cutoff(
-            self.var,
-            self.min_pow.unwrap_or(cutoff_pow),
-            cutoff_pow,
-            self.coeffs,
-        )
-    }
-
-    fn as_empty_slice(&self) -> PolynomialSliceIn<'_, Var, C> {
-        PolynomialSliceIn::new(
-            &self.var,
-            0,
-            &self.coeffs[self.len()..],
-        )
+        self.poly.cutoff_at(cutoff_pow).in_var(self.var)
     }
 
     /// Try to get the coefficient of the polynomial variable to the
@@ -183,7 +164,7 @@ impl<Var, C: Coeff> PolynomialIn<Var, C> {
     /// assert_eq!(p.try_coeff(5), None);
     /// ```
     pub fn try_coeff(&self, pow: isize) -> Option<&C> {
-        self.as_slice(..).try_coeff(pow)
+        self.poly.try_coeff(pow)
     }
 
     /// Transform all coefficients
@@ -204,17 +185,11 @@ impl<Var, C: Coeff> PolynomialIn<Var, C> {
     /// assert_eq!(s.coeff(1), &9);
     /// assert_eq!(s.coeff(2), &16);
     /// ```
-    pub fn for_each<F>(&mut self, mut f: F)
+    pub fn for_each<F>(&mut self, f: F)
     where
         F: FnMut(isize, &mut C)
     {
-        let Some(min_pow) = self.min_pow else {
-            return
-        };
-        for (n, c) in &mut self.coeffs.iter_mut().enumerate() {
-            f(min_pow + n as isize, c)
-        }
-        self.trim();
+        self.poly.for_each(f)
     }
 }
 
@@ -235,7 +210,7 @@ impl<Var, C: 'static + Coeff + Send + Sync> PolynomialIn<Var, C> {
     /// assert_eq!(p.coeff(5), &0);
     /// ```
     pub fn coeff(&self, pow: isize) -> &C {
-        self.as_slice(..).coeff(pow)
+        self.poly.coeff(pow)
     }
 }
 
@@ -245,17 +220,7 @@ impl<'a, Var: 'a, C: 'a + Coeff> AsSlice<'a, Range<isize>>
     type Output = PolynomialSliceIn<'a, Var, C>;
 
     fn as_slice(&'a self, r: Range<isize>) -> Self::Output {
-        if let Some(min_pow) = self.min_pow() {
-            let start = (r.start - min_pow) as usize;
-            let end = (r.end - min_pow) as usize;
-            PolynomialSliceIn::new(
-                &self.var,
-                r.start,
-                &self.coeffs[start..end],
-            )
-        } else {
-            self.as_empty_slice()
-        }
+        self.poly.as_slice(r).in_var(self.var())
     }
 }
 
@@ -265,18 +230,7 @@ impl<'a, Var: 'a, C: 'a + Coeff> AsSlice<'a, RangeInclusive<isize>>
     type Output = PolynomialSliceIn<'a, Var, C>;
 
     fn as_slice(&'a self, r: RangeInclusive<isize>) -> Self::Output {
-        if let Some(min_pow) = self.min_pow() {
-            let (start, end) = r.into_inner();
-            let ustart = (start - min_pow) as usize;
-            let end = (end - min_pow) as usize;
-            PolynomialSliceIn::new(
-                &self.var,
-                start,
-                &self.coeffs[ustart..=end],
-            )
-        } else {
-            self.as_empty_slice()
-        }
+        self.poly.as_slice(r).in_var(self.var())
     }
 }
 
@@ -286,16 +240,7 @@ impl<'a, Var: 'a, C: 'a + Coeff> AsSlice<'a, RangeToInclusive<isize>>
     type Output = PolynomialSliceIn<'a, Var, C>;
 
     fn as_slice(&'a self, r: RangeToInclusive<isize>) -> Self::Output {
-        if let Some(min_pow) = self.min_pow() {
-            let end = (r.end - min_pow) as usize;
-            PolynomialSliceIn::new(
-                &self.var,
-                min_pow,
-                &self.coeffs[..=end],
-            )
-        } else {
-            self.as_empty_slice()
-        }
+        self.poly.as_slice(r).in_var(self.var())
     }
 }
 
@@ -305,16 +250,7 @@ impl<'a, Var: 'a, C: 'a + Coeff> AsSlice<'a, RangeFrom<isize>>
     type Output = PolynomialSliceIn<'a, Var, C>;
 
     fn as_slice(&'a self, r: RangeFrom<isize>) -> Self::Output {
-        if let Some(min_pow) = self.min_pow() {
-            let start = r.start - min_pow;
-            PolynomialSliceIn::new(
-                &self.var,
-                r.start,
-                &self.coeffs[(start as usize)..],
-            )
-        } else {
-            self.as_empty_slice()
-        }
+        self.poly.as_slice(r).in_var(self.var())
     }
 }
 
@@ -324,16 +260,7 @@ impl<'a, Var: 'a, C: 'a + Coeff> AsSlice<'a, RangeTo<isize>>
     type Output = PolynomialSliceIn<'a, Var, C>;
 
     fn as_slice(&'a self, r: RangeTo<isize>) -> Self::Output {
-        if let Some(min_pow) = self.min_pow() {
-            let end = (r.end - min_pow) as usize;
-            PolynomialSliceIn::new(
-                &self.var,
-                min_pow,
-                &self.coeffs[..end],
-            )
-        } else {
-            self.as_empty_slice()
-        }
+        self.poly.as_slice(r).in_var(self.var())
     }
 }
 
@@ -343,15 +270,7 @@ impl<'a, Var: 'a, C: 'a + Coeff> AsSlice<'a, RangeFull>
     type Output = PolynomialSliceIn<'a, Var, C>;
 
     fn as_slice(&'a self, r: RangeFull) -> Self::Output {
-        if let Some(min_pow) = self.min_pow() {
-            PolynomialSliceIn::new(
-                &self.var,
-                min_pow,
-                &self.coeffs[r],
-            )
-        } else {
-            self.as_empty_slice()
-        }
+        self.poly.as_slice(r).in_var(self.var())
     }
 }
 
@@ -384,7 +303,7 @@ impl<Var, C: Coeff> Index<isize> for PolynomialIn<Var, C> {
     /// assert!(std::panic::catch_unwind(|| p[2]).is_err());
     /// ```
     fn index(&self, index: isize) -> &Self::Output {
-        &self.coeffs[(index - self.min_pow.unwrap()) as usize]
+        &self.poly[index]
     }
 }
 
@@ -405,36 +324,7 @@ impl<Var, C: Coeff> std::iter::IntoIterator for PolynomialIn<Var, C> {
     /// assert_eq!(iter.next(), None);
     /// ```
     fn into_iter(self) -> IntoIter<C> {
-        (self.min_pow().unwrap_or(0)..).zip(self.coeffs)
-    }
-}
-
-impl<Var, C: Coeff> PolynomialIn<Var, C> {
-    fn trim(&mut self) {
-        let zero = C::zero();
-        trim_end(&mut self.coeffs, &zero);
-        if self.coeffs.is_empty() {
-            self.min_pow = None;
-        } else {
-            let min_pow_shift = trim_start(&mut self.coeffs, &zero);
-            if let Some(min_pow) = self.min_pow.as_mut() {
-                *min_pow += min_pow_shift as isize
-            }
-        }
-    }
-
-    fn extend_min(&mut self, extend: usize) {
-        debug_assert!(self.min_pow.is_some());
-        let to_insert = iter::repeat_with(C::zero).take(extend);
-        self.coeffs.splice(0..0, to_insert);
-        if let Some(min_pow) = self.min_pow.as_mut() {
-            *min_pow -= extend as isize
-        }
-    }
-
-    fn extend_max(&mut self, extend: usize) {
-        let to_insert = iter::repeat_with(C::zero).take(extend);
-        self.coeffs.extend(to_insert);
+        self.poly.into_iter()
     }
 }
 
@@ -459,8 +349,7 @@ impl<Var, C: Coeff + Neg<Output = C>> Neg for PolynomialIn<Var, C> {
     /// assert_eq!(-p, minus_p);
     /// ```
     fn neg(self) -> Self::Output {
-        let neg_coeff = self.coeffs.into_iter().map(|c| -c).collect();
-        PolynomialIn::new(self.var, self.min_pow.unwrap_or(0), neg_coeff)
+        (-self.poly).in_var(self.var)
     }
 }
 
@@ -506,7 +395,8 @@ where
     ///
     /// Panics if the polynomials have different expansion variables.
     fn add_assign(&mut self, other: &'a PolynomialIn<Var, C>) {
-        self.add_assign(other.as_slice(..))
+        assert_eq!(self.var(), other.var());
+        self.poly.add_assign(&other.poly)
     }
 }
 
@@ -516,32 +406,8 @@ where
     for<'c> C: AddAssign<&'c C>,
 {
     fn add_assign(&mut self, other: PolynomialSliceIn<'a, Var, C>) {
-        assert_eq!(self.var, *other.var);
-        if other.min_pow().is_none() {
-            return;
-        }
-        if self.min_pow().is_none() {
-            self.coeffs = other.coeffs.to_owned();
-            self.min_pow = other.min_pow();
-            return;
-        }
-        let min_pow = self.min_pow().unwrap();
-        let other_min_pow = other.min_pow().unwrap();
-        if other_min_pow < min_pow {
-            self.extend_min((min_pow - other_min_pow) as usize);
-        }
-        let max_pow = self.max_pow().unwrap();
-        let other_max_pow = other.max_pow().unwrap();
-        if other_max_pow > max_pow {
-            self.extend_max((other_max_pow - max_pow) as usize);
-        }
-        debug_assert!(self.min_pow().unwrap() <= other_min_pow);
-        debug_assert!(self.max_pow().unwrap() >= other_max_pow);
-        let min_pow = self.min_pow().unwrap();
-        for (pow, coeff) in other.iter() {
-            self.coeffs[(pow - min_pow) as usize] += coeff;
-        }
-        self.trim();
+        assert_eq!(self.var(), other.var());
+        self.poly.add_assign(other.poly)
     }
 }
 
@@ -568,33 +434,8 @@ where
     ///
     /// Panics if the polynomials have different expansion variables.
     fn add_assign(&mut self, other: PolynomialIn<Var, C>) {
-        //TODO: code duplication with AddAssign<PolynomialSlice>
-        assert_eq!(self.var, other.var);
-        if other.min_pow().is_none() {
-            return;
-        }
-        if self.min_pow().is_none() {
-            self.coeffs = other.coeffs.to_owned();
-            self.min_pow = other.min_pow();
-            return;
-        }
-        let min_pow = self.min_pow().unwrap();
-        let other_min_pow = other.min_pow().unwrap();
-        if other_min_pow < min_pow {
-            self.extend_min((min_pow - other_min_pow) as usize);
-        }
-        let max_pow = self.max_pow().unwrap();
-        let other_max_pow = other.max_pow().unwrap();
-        if other_max_pow > max_pow {
-            self.extend_max((other_max_pow - max_pow) as usize);
-        }
-        debug_assert!(self.min_pow() <= other.min_pow());
-        debug_assert!(self.max_pow() >= other.max_pow());
-        let min_pow = self.min_pow().unwrap();
-        for (pow, coeff) in other.into_iter() {
-            self.coeffs[(pow - min_pow) as usize] += coeff;
-        }
-        self.trim();
+        assert_eq!(self.var(), other.var());
+        self.poly.add_assign(other.poly)
     }
 }
 
@@ -686,7 +527,7 @@ where
 impl<'a, Var: PartialEq + fmt::Debug, C: Coeff + Clone + AddAssign>
     MulAssign<&'a PolynomialIn<Var, C>> for PolynomialIn<Var, C>
 where
-    PolynomialIn<Var, C>: MulAssign<PolynomialSliceIn<'a, Var, C>>,
+    Polynomial<C>: MulAssign<&'a Polynomial<C>>,
 {
     /// Set p = p * q for two polynomials p,q
     ///
@@ -704,7 +545,8 @@ where
     ///
     /// Panics if the polynomials have different expansion variables.
     fn mul_assign(&mut self, other: &'a PolynomialIn<Var, C>) {
-        self.mul_assign(other.as_slice(..))
+        assert_eq!(self.var, other.var);
+        self.poly.mul_assign(&other.poly)
     }
 }
 
@@ -779,10 +621,8 @@ where
     /// let res = PolynomialIn::new("x", -3, vec!(2.,0.,-6.));
     /// assert_eq!(res, p);
     /// ```
-    fn mul_assign(&mut self, other: &'a C) {
-        for c in &mut self.coeffs {
-            *c *= other
-        }
+    fn mul_assign(&mut self, rhs: &'a C) {
+        self.poly.mul_assign(rhs)
     }
 }
 
@@ -821,10 +661,8 @@ where
     /// let res = PolynomialIn::new("x", -3, vec!(0.5,0.,-1.5));
     /// assert_eq!(res, p);
     /// ```
-    fn div_assign(&mut self, other: &'a C) {
-        for c in &mut self.coeffs {
-            *c /= other
-        }
+    fn div_assign(&mut self, rhs: &'a C) {
+        self.poly.div_assign(rhs)
     }
 }
 
@@ -839,28 +677,10 @@ where
 
 impl<'a, Var, C: Coeff> AddAssign<&'a C> for PolynomialIn<Var, C>
 where
-    PolynomialIn<Var, C>: AddAssign,
     C: Clone + AddAssign<&'a C>,
 {
-    fn add_assign(&mut self, other: &'a C) {
-        match self.min_pow() {
-            None => {
-                self.min_pow = Some(0);
-                self.coeffs.push(other.clone())
-            }
-            Some(min_pow) => {
-                if min_pow > 0 {
-                    self.extend_min(min_pow as usize);
-                } else if self.max_pow().unwrap() < 0 {
-                    self.extend_max((-self.max_pow().unwrap()) as usize);
-                }
-                debug_assert!(self.min_pow().unwrap() <= 0);
-                debug_assert!(0 <= self.max_pow().unwrap());
-                let min_pow = self.min_pow().unwrap();
-                self.coeffs[-min_pow as usize] += other;
-            }
-        }
-        self.trim();
+    fn add_assign(&mut self, rhs: &'a C) {
+        self.poly.add_assign(rhs)
     }
 }
 
@@ -1017,11 +837,7 @@ impl<'a, Var: Clone, C: Coeff + Clone> From<PolynomialSliceIn<'a, Var, C>>
     for PolynomialIn<Var, C>
 {
     fn from(s: PolynomialSliceIn<'a, Var, C>) -> PolynomialIn<Var, C> {
-        PolynomialIn::new(
-            s.var.clone(),
-            s.min_pow.unwrap_or(0),
-            s.coeffs.to_vec(),
-        )
+        Polynomial::from(s.poly).in_var(s.var.clone())
     }
 }
 
@@ -1047,26 +863,20 @@ pub struct PolynomialInParts<Var, C> {
 
 impl<Var, C: Coeff> From<PolynomialIn<Var, C>> for PolynomialInParts<Var, C> {
     fn from(p: PolynomialIn<Var, C>) -> Self {
+        let PolynomialIn { var, poly } = p;
         PolynomialInParts {
-            var: p.var,
-            min_pow: p.min_pow,
-            coeffs: p.coeffs,
+            var,
+            min_pow: poly.min_pow,
+            coeffs: poly.coeffs,
         }
     }
 }
 
-impl<'a, 'b, Var: Clone, C: Coeff> KaratsubaMul<&'b PolynomialIn<Var, C>>
+impl<'a, 'b, Var, C: Coeff> KaratsubaMul<&'b PolynomialIn<Var, C>>
     for &'a PolynomialIn<Var, C>
 where
-    Var: Clone + PartialEq + fmt::Debug,
-    C: Clone,
-    for<'c> C: AddAssign,
-    for<'c> PolynomialIn<Var, C>: AddAssign<&'c PolynomialIn<Var, C>>
-        + SubAssign<&'c PolynomialIn<Var, C>>,
-    PolynomialIn<Var, C>:
-        AddAssign<PolynomialIn<Var, C>> + SubAssign<PolynomialIn<Var, C>>,
-    for<'c> PolynomialSliceIn<'c, Var, C>: Add<Output = PolynomialIn<Var, C>>,
-    for<'c> &'c C: Mul<Output = C>,
+    Var: Clone + fmt::Debug + PartialEq,
+    &'a Polynomial<C>: KaratsubaMul<&'b Polynomial<C>, Output = Polynomial<C>>,
 {
     type Output = PolynomialIn<Var, C>;
 
@@ -1075,7 +885,8 @@ where
         rhs: &'b PolynomialIn<Var, C>,
         min_size: usize,
     ) -> Self::Output {
-        self.as_slice(..).karatsuba_mul(rhs.as_slice(..), min_size)
+        assert_eq!(self.var(), rhs.var());
+        self.poly.karatsuba_mul(&rhs.poly, min_size).in_var(self.var.clone())
     }
 }
 
@@ -1083,14 +894,7 @@ impl<'a, 'b, Var: Clone, C: Coeff> KaratsubaMul<PolynomialSliceIn<'b, Var, C>>
     for &'a PolynomialIn<Var, C>
 where
     Var: Clone + PartialEq + fmt::Debug,
-    C: Clone,
-    for<'c> C: AddAssign,
-    for<'c> PolynomialIn<Var, C>: AddAssign<&'c PolynomialIn<Var, C>>
-        + SubAssign<&'c PolynomialIn<Var, C>>,
-    PolynomialIn<Var, C>:
-        AddAssign<PolynomialIn<Var, C>> + SubAssign<PolynomialIn<Var, C>>,
-    for<'c> PolynomialSliceIn<'c, Var, C>: Add<Output = PolynomialIn<Var, C>>,
-    for<'c> &'c C: Mul<Output = C>,
+    &'a Polynomial<C>: KaratsubaMul<PolynomialSlice<'b, C>, Output = Polynomial<C>>,
 {
     type Output = PolynomialIn<Var, C>;
 
@@ -1099,177 +903,7 @@ where
         rhs: PolynomialSliceIn<'b, Var, C>,
         min_size: usize,
     ) -> Self::Output {
-        self.as_slice(..).karatsuba_mul(rhs, min_size)
-    }
-}
-
-// dubious helpers trait that only serve to prevent obscure
-// compiler errors (rust 1.36.0)
-pub(crate) trait MulHelper<'a, 'b, Var, C: Coeff> {
-    fn add_prod(
-        &mut self,
-        a: PolynomialSliceIn<'a, Var, C>,
-        b: PolynomialSliceIn<'b, Var, C>,
-        min_karatsuba_size: usize,
-    );
-
-    fn add_prod_naive(
-        &mut self,
-        a: PolynomialSliceIn<'a, Var, C>,
-        b: PolynomialSliceIn<'b, Var, C>,
-    );
-
-    fn add_prod_karatsuba(
-        &mut self,
-        a: PolynomialSliceIn<'a, Var, C>,
-        b: PolynomialSliceIn<'b, Var, C>,
-        min_karatsuba_size: usize,
-    );
-
-    fn add_prod_unchecked(
-        &mut self,
-        a: PolynomialSliceIn<'a, Var, C>,
-        b: PolynomialSliceIn<'b, Var, C>,
-        min_karatsuba_size: usize,
-    );
-
-    fn resize_to_fit(
-        &mut self,
-        a: PolynomialSliceIn<'a, Var, C>,
-        b: PolynomialSliceIn<'b, Var, C>,
-    );
-}
-
-impl<'a, 'b, Var, C: Coeff> MulHelper<'a, 'b, Var, C> for PolynomialIn<Var, C>
-where
-    Var: 'a + 'b,
-    C: 'a + 'b + Clone,
-    for<'c> C: AddAssign,
-    for<'c> PolynomialIn<Var, C>: AddAssign<&'c PolynomialIn<Var, C>>
-        + SubAssign<&'c PolynomialIn<Var, C>>,
-    PolynomialIn<Var, C>:
-        AddAssign<PolynomialIn<Var, C>> + SubAssign<PolynomialIn<Var, C>>,
-    for<'c> PolynomialSliceIn<'c, Var, C>:
-        Add<Output = PolynomialIn<Var, C>> + Mul<Output = PolynomialIn<Var, C>>,
-    for<'c> &'c C: Mul<Output = C>,
-{
-    fn add_prod(
-        &mut self,
-        a: PolynomialSliceIn<'a, Var, C>,
-        b: PolynomialSliceIn<'b, Var, C>,
-        min_karatsuba_size: usize,
-    ) {
-        if a.min_pow().is_none() || b.min_pow().is_none() {
-            return;
-        }
-        self.resize_to_fit(a, b);
-        self.add_prod_unchecked(a, b, min_karatsuba_size);
-        self.trim();
-    }
-
-    fn resize_to_fit(
-        &mut self,
-        a: PolynomialSliceIn<'a, Var, C>,
-        b: PolynomialSliceIn<'b, Var, C>,
-    ) {
-        debug_assert_ne!(a.min_pow(), None);
-        debug_assert_ne!(b.min_pow(), None);
-        let prod_min_pow = a.min_pow().unwrap() + b.min_pow().unwrap();
-        match self.min_pow() {
-            Some(min_pow) => {
-                if min_pow > prod_min_pow {
-                    let num_missing = (min_pow - prod_min_pow) as usize;
-                    let to_prepend = iter::repeat(C::zero()).take(num_missing);
-                    self.coeffs.splice(0..0, to_prepend);
-                    self.min_pow = Some(prod_min_pow);
-                }
-            }
-            None => {
-                self.min_pow = Some(prod_min_pow);
-            }
-        }
-        let prod_len = a.len() + b.len() - 1;
-        if self.len() < prod_len {
-            self.coeffs.resize(prod_len, C::zero());
-        }
-    }
-
-    fn add_prod_unchecked(
-        &mut self,
-        a: PolynomialSliceIn<'a, Var, C>,
-        b: PolynomialSliceIn<'b, Var, C>,
-        min_karatsuba_size: usize,
-    ) {
-        if std::cmp::min(a.len(), b.len()) < min_karatsuba_size {
-            trace!(
-                "Cauchy product of polynomials with lengths {}, {}",
-                a.len(),
-                b.len()
-            );
-            self.add_prod_naive(a, b);
-        } else {
-            // TODO: split a or b if it's too long?
-            trace!(
-                "Karatsuba product of polynomials with lengths {}, {}",
-                a.len(),
-                b.len()
-            );
-            self.add_prod_karatsuba(a, b, min_karatsuba_size);
-        }
-    }
-
-    fn add_prod_karatsuba(
-        &mut self,
-        a: PolynomialSliceIn<'a, Var, C>,
-        b: PolynomialSliceIn<'b, Var, C>,
-        min_karatsuba_size: usize,
-    ) {
-        let mid = ((std::cmp::min(a.len(), b.len()) + 1) / 2) as isize;
-        let (a_low, mut a_high) = a.split_at(a.min_pow().unwrap() + mid);
-        let (b_low, mut b_high) = b.split_at(b.min_pow().unwrap() + mid);
-        if let Some(min_pow) = a_high.min_pow.as_mut() {
-            *min_pow -= mid
-        }
-        if let Some(min_pow) = b_high.min_pow.as_mut() {
-            *min_pow -= mid
-        }
-        let t = a_low + a_high;
-        let mut u = b_low + b_high;
-        if let Some(min_pow) = u.min_pow.as_mut() {
-            *min_pow += mid
-        }
-        self.add_prod_unchecked(
-            t.as_slice(..),
-            u.as_slice(..),
-            min_karatsuba_size,
-        );
-        let mut t = a_low * b_low;
-        *self += &t;
-        if let Some(min_pow) = t.min_pow.as_mut() {
-            *min_pow += mid
-        }
-        *self -= t;
-        let mut t = a_high * b_high;
-        if let Some(min_pow) = t.min_pow.as_mut() {
-            *min_pow += mid
-        }
-        *self -= &t;
-        if let Some(min_pow) = t.min_pow.as_mut() {
-            *min_pow += mid
-        }
-        *self += t;
-    }
-
-    fn add_prod_naive(
-        &mut self,
-        a: PolynomialSliceIn<'a, Var, C>,
-        b: PolynomialSliceIn<'b, Var, C>,
-    ) {
-        let min_pow = self.min_pow().unwrap();
-        for (i, a) in a.iter() {
-            for (j, b) in b.iter() {
-                self.coeffs[(i + j - min_pow) as usize] += a * b;
-            }
-        }
+        assert_eq!(self.var(), rhs.var());
+        self.poly.karatsuba_mul(rhs.poly, min_size).in_var(self.var.clone())
     }
 }

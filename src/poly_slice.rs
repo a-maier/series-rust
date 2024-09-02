@@ -176,14 +176,9 @@ impl<'a, C: Coeff> PolynomialSlice<'a, C> {
     /// assert_eq!(p.var(), &"x");
     /// ```
     pub fn in_var<Var>(self, var: &'a Var) -> PolynomialSliceIn<Var, C> {
-        let Self {
-            min_pow,
-            coeffs,
-        } = self;
         PolynomialSliceIn {
             var,
-            min_pow,
-            coeffs,
+            poly: self
         }
     }
 
@@ -349,15 +344,7 @@ impl<'a, C: Coeff, Var> From<PolynomialSliceIn<'a, Var, C>>
     for PolynomialSlice<'a, C>
 {
     fn from(source: PolynomialSliceIn<'a, Var, C>) -> Self {
-        let PolynomialSliceIn {
-            var: _,
-            min_pow,
-            coeffs,
-        } = source;
-        Self {
-            min_pow,
-            coeffs,
-        }
+        source.poly
     }
 }
 
