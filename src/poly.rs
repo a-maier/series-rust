@@ -180,6 +180,37 @@ impl<C: Coeff> Polynomial<C> {
     pub fn try_coeff(&self, pow: isize) -> Option<&C> {
         self.as_slice(..).try_coeff(pow)
     }
+
+    /// Transform all coefficients
+    ///
+    /// `f(p, c)` is applied to each monomial, where `p` is the power
+    /// of the variable and `c` a mutable reference to the
+    /// coefficient. `p` takes all values in the range
+    /// `min_pow()..=max_pow()`.
+    ///
+    /// # Example
+    ///
+    /// Replace each coefficient by its square
+    /// ```rust
+    /// let mut s = series::Polynomial::new(-1, vec!(1,2,3,4));
+    /// s.for_each(|_, c| *c *= *c);
+    /// assert_eq!(s.coeff(-1), &1);
+    /// assert_eq!(s.coeff(0), &4);
+    /// assert_eq!(s.coeff(1), &9);
+    /// assert_eq!(s.coeff(2), &16);
+    /// ```
+    pub fn for_each<F>(&mut self, mut f: F)
+    where
+        F: FnMut(isize, &mut C)
+    {
+        let Some(min_pow) = self.min_pow else {
+            return
+        };
+        for (n, c) in &mut self.coeffs.iter_mut().enumerate() {
+            f(min_pow + n as isize, c)
+        }
+        self.trim();
+    }
 }
 
 impl<C: 'static + Coeff + Send + Sync> Polynomial<C> {
