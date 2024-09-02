@@ -1,3 +1,11 @@
+# Version 0.13.0
+
+- Added `InnerSeries` type to support nested series.
+- Added `for_each` and `apply_at` methods for modifying coefficients.
+- Implemented `Default` for `Polynomial`.
+- Fixed lifetimes of `var` methods in `PolynomialSliceIn`, `SeriesSliceIn`.
+- Implemented `AddAssign` for references to the coefficient type.
+
 # Version 0.12.0
 
 - Added Conversions
