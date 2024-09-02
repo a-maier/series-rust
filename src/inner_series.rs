@@ -498,7 +498,7 @@ where
 
 impl<'a, C: Coeff> Sub<&'a Series<C>> for InnerSeries<C>
 where
-    Series<C>: Sub<&'a Series<C>, Output = Series<C>> + Neg<Output = Self>,
+    Series<C>: Sub<&'a Series<C>, Output = Series<C>> + Neg<Output = Series<C>>,
     &'a Series<C>: Sub<C, Output = Series<C>>
 {
     type Output = InnerSeries<C>;
@@ -1139,7 +1139,7 @@ where
 
 impl<'a, C: Coeff> Div<&'a Series<C>> for InnerSeries<C>
 where
-    Series<C>: Div<&'a Series<C>, Output = Series<C>> + MulInverse<Output = Self>,
+    Series<C>: Div<&'a Series<C>, Output = Series<C>> + MulInverse<Output = Series<C>>,
     &'a Series<C>: Div<C, Output = Series<C>>
 {
     type Output = InnerSeries<C>;
