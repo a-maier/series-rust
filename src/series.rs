@@ -32,10 +32,7 @@ impl<C: Coeff> Series<C> {
     /// let s = series::Series::new(-1, vec!(1,2,3));
     /// ```
     pub fn new(min_pow: isize, coeffs: Vec<C>) -> Self {
-        let mut res = Series {
-            min_pow,
-            coeffs,
-        };
+        let mut res = Series { min_pow, coeffs };
         res.trim();
         res
     }
@@ -82,10 +79,7 @@ impl<C: Coeff> Series<C> {
     /// assert_eq!(s.var(), &"x");
     /// ```
     pub fn in_var<Var>(self, var: Var) -> SeriesIn<Var, C> {
-        SeriesIn {
-            series: self,
-            var
-        }
+        SeriesIn { series: self, var }
     }
 
     /// Get the leading power of the series expansion variable
@@ -221,7 +215,7 @@ impl<C: Coeff> Series<C> {
     /// ```
     pub fn for_each<F>(&mut self, mut f: F)
     where
-        F: FnMut(isize, &mut C)
+        F: FnMut(isize, &mut C),
     {
         let min_pow = self.min_pow;
         for (n, c) in &mut self.coeffs.iter_mut().enumerate() {
@@ -1224,10 +1218,7 @@ impl<C: Coeff, Var> From<SeriesIn<Var, C>> for Series<C> {
             min_pow,
             coeffs,
         } = source.into();
-        Self {
-            min_pow,
-            coeffs,
-        }
+        Self { min_pow, coeffs }
     }
 }
 
@@ -1421,8 +1412,11 @@ where
             b.push(b_n);
         }
         if self.min_pow() == 0 {
-            let exp_a_0 = self.try_coeff(0).cloned()
-                .unwrap_or_else(|| C::zero()).exp();
+            let exp_a_0 = self
+                .try_coeff(0)
+                .cloned()
+                .unwrap_or_else(|| C::zero())
+                .exp();
             for b_n in &mut b {
                 *b_n *= &exp_a_0;
             }

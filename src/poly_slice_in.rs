@@ -1,6 +1,6 @@
 use crate::traits::{AsSlice, KaratsubaMul};
-use crate::{Polynomial, PolynomialSlice};
 use crate::{Coeff, Iter, PolynomialIn};
+use crate::{Polynomial, PolynomialSlice};
 
 use std::fmt;
 use std::ops::{Add, AddAssign, Div, Index, Mul, Neg, Sub, SubAssign};
@@ -230,7 +230,7 @@ impl<'a, 'b, Var, C: Coeff> Mul<PolynomialSliceIn<'b, Var, C>>
     for PolynomialSliceIn<'a, Var, C>
 where
     Var: Clone + fmt::Debug + PartialEq,
-    PolynomialSlice<'a, C>: Mul<PolynomialSlice<'b, C>, Output = Polynomial<C>>
+    PolynomialSlice<'a, C>: Mul<PolynomialSlice<'b, C>, Output = Polynomial<C>>,
 {
     type Output = PolynomialIn<Var, C>;
 
@@ -314,7 +314,8 @@ impl<'a, 'b, Var: Clone, C: Coeff> KaratsubaMul<PolynomialSliceIn<'b, Var, C>>
     for PolynomialSliceIn<'a, Var, C>
 where
     Var: Clone + PartialEq + fmt::Debug,
-    PolynomialSlice<'a, C>: KaratsubaMul<PolynomialSlice<'b, C>, Output = Polynomial<C>>,
+    PolynomialSlice<'a, C>:
+        KaratsubaMul<PolynomialSlice<'b, C>, Output = Polynomial<C>>,
 {
     type Output = PolynomialIn<Var, C>;
 
@@ -324,7 +325,9 @@ where
         min_size: usize,
     ) -> Self::Output {
         assert_eq!(self.var, rhs.var);
-        self.poly.karatsuba_mul(rhs.poly, min_size).in_var(self.var().clone())
+        self.poly
+            .karatsuba_mul(rhs.poly, min_size)
+            .in_var(self.var().clone())
     }
 }
 
@@ -332,7 +335,8 @@ impl<'a, 'b, Var: Clone, C: Coeff> KaratsubaMul<&'b PolynomialIn<Var, C>>
     for PolynomialSliceIn<'a, Var, C>
 where
     Var: Clone + PartialEq + fmt::Debug,
-    PolynomialSlice<'a, C>: KaratsubaMul<&'b Polynomial<C>, Output = Polynomial<C>>,
+    PolynomialSlice<'a, C>:
+        KaratsubaMul<&'b Polynomial<C>, Output = Polynomial<C>>,
 {
     type Output = PolynomialIn<Var, C>;
 
@@ -341,6 +345,8 @@ where
         rhs: &'b PolynomialIn<Var, C>,
         min_size: usize,
     ) -> Self::Output {
-        self.poly.karatsuba_mul(&rhs.poly, min_size).in_var(self.var.clone())
+        self.poly
+            .karatsuba_mul(&rhs.poly, min_size)
+            .in_var(self.var.clone())
     }
 }

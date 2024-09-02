@@ -13,7 +13,7 @@ use std::ops::{
 #[derive(PartialEq, Eq, Debug, Hash, Ord, PartialOrd)]
 pub struct SeriesSliceIn<'a, Var, C: Coeff> {
     pub(crate) var: &'a Var,
-    pub(crate) series: SeriesSlice<'a, C>
+    pub(crate) series: SeriesSlice<'a, C>,
 }
 
 // needs manual implementation,
@@ -91,19 +91,10 @@ impl<'a, Var, C: Coeff> SeriesSliceIn<'a, Var, C> {
     /// assert_eq!(upper.min_pow(), 0);
     /// ```
     pub fn split_at(&self, pos: isize) -> (Self, Self) {
-        let Self {
-            series,
-            var,
-        } = self;
+        let Self { series, var } = self;
         let (lower, upper) = series.split_at(pos);
-        let lower = Self {
-            series: lower,
-            var
-        };
-        let upper = Self {
-            series: upper,
-            var
-        };
+        let lower = Self { series: lower, var };
+        let upper = Self { series: upper, var };
         (lower, upper)
     }
 
@@ -163,7 +154,7 @@ impl<'a, Var, C: Coeff> SeriesSliceIn<'a, Var, C> {
     }
 }
 
-impl<'a, Var, C: 'static + Coeff + Send + Sync>  SeriesSliceIn<'a, Var, C> {
+impl<'a, Var, C: 'static + Coeff + Send + Sync> SeriesSliceIn<'a, Var, C> {
     /// Get the series coefficient of the expansion variable to the
     /// given power.
     ///

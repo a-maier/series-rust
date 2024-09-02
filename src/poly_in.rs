@@ -1,7 +1,7 @@
 use crate::traits::{AsSlice, KaratsubaMul};
-use crate::{Polynomial, PolynomialSlice, PolynomialSliceIn, SeriesInParts};
 use crate::SeriesIn;
 use crate::{Coeff, IntoIter, Iter};
+use crate::{Polynomial, PolynomialSlice, PolynomialSliceIn, SeriesInParts};
 
 use std::ops::{
     Add, AddAssign, Div, DivAssign, Index, Mul, MulAssign, Neg, Range,
@@ -15,7 +15,7 @@ use std::{convert, fmt};
 #[derive(PartialEq, Eq, Debug, Clone, Hash, Ord, PartialOrd)]
 pub struct PolynomialIn<Var, C: Coeff> {
     pub(crate) var: Var,
-    pub(crate) poly: Polynomial<C>
+    pub(crate) poly: Polynomial<C>,
 }
 
 impl<Var, C: Coeff> PolynomialIn<Var, C> {
@@ -35,10 +35,7 @@ impl<Var, C: Coeff> PolynomialIn<Var, C> {
         coeffs: Vec<C>,
     ) -> PolynomialIn<Var, C> {
         let poly = Polynomial::new(min_pow, coeffs);
-        Self {
-            var,
-            poly,
-        }
+        Self { var, poly }
     }
 
     /// Get the polynomial variable
@@ -214,7 +211,7 @@ impl<Var, C: Coeff> PolynomialIn<Var, C> {
     /// ```
     pub fn for_each<F>(&mut self, f: F)
     where
-        F: FnMut(isize, &mut C)
+        F: FnMut(isize, &mut C),
     {
         self.poly.for_each(f)
     }
@@ -303,7 +300,11 @@ impl<'a, Var: 'a, C: 'a + Coeff> AsSlice<'a, RangeFull>
 
 impl<Var, C: Coeff> convert::From<SeriesIn<Var, C>> for PolynomialIn<Var, C> {
     fn from(s: SeriesIn<Var, C>) -> Self {
-        let SeriesInParts { var, min_pow, coeffs } = s.into();
+        let SeriesInParts {
+            var,
+            min_pow,
+            coeffs,
+        } = s.into();
         PolynomialIn::new(var, min_pow, coeffs)
     }
 }
@@ -913,7 +914,9 @@ where
         min_size: usize,
     ) -> Self::Output {
         assert_eq!(self.var(), rhs.var());
-        self.poly.karatsuba_mul(&rhs.poly, min_size).in_var(self.var.clone())
+        self.poly
+            .karatsuba_mul(&rhs.poly, min_size)
+            .in_var(self.var.clone())
     }
 }
 
@@ -921,7 +924,8 @@ impl<'a, 'b, Var: Clone, C: Coeff> KaratsubaMul<PolynomialSliceIn<'b, Var, C>>
     for &'a PolynomialIn<Var, C>
 where
     Var: Clone + PartialEq + fmt::Debug,
-    &'a Polynomial<C>: KaratsubaMul<PolynomialSlice<'b, C>, Output = Polynomial<C>>,
+    &'a Polynomial<C>:
+        KaratsubaMul<PolynomialSlice<'b, C>, Output = Polynomial<C>>,
 {
     type Output = PolynomialIn<Var, C>;
 
@@ -931,6 +935,8 @@ where
         min_size: usize,
     ) -> Self::Output {
         assert_eq!(self.var(), rhs.var());
-        self.poly.karatsuba_mul(rhs.poly, min_size).in_var(self.var.clone())
+        self.poly
+            .karatsuba_mul(rhs.poly, min_size)
+            .in_var(self.var.clone())
     }
 }

@@ -27,10 +27,7 @@ impl<'a, C: Coeff> std::clone::Clone for SeriesSlice<'a, C> {
 
 impl<'a, C: Coeff> SeriesSlice<'a, C> {
     pub(super) fn new(min_pow: isize, coeffs: &'a [C]) -> Self {
-        let mut res = SeriesSlice {
-            min_pow,
-            coeffs,
-        };
+        let mut res = SeriesSlice { min_pow, coeffs };
         res.trim();
         res
     }
@@ -146,7 +143,7 @@ impl<'a, C: Coeff> SeriesSlice<'a, C> {
     /// assert_eq!(s.var(), &"x");
     /// ```
     pub fn in_var<Var>(self, var: &'a Var) -> SeriesSliceIn<Var, C> {
-        SeriesSliceIn{var, series: self}
+        SeriesSliceIn { var, series: self }
     }
 
     /// Try to get the series coefficient of the expansion variable to

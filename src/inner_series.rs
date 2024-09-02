@@ -1,4 +1,6 @@
-use std::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
+use std::ops::{
+    Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign,
+};
 
 use num_traits::{One, Zero};
 
@@ -27,13 +29,7 @@ impl<C: Coeff + Send + Sync + 'static> InnerSeries<C> {
         use InnerSeries::*;
         match self {
             Series(s) => s.coeff(pow),
-            Inner(i) => Some(
-                if pow == 0 {
-                    i
-                } else {
-                    zero_ref()
-                }
-            ),
+            Inner(i) => Some(if pow == 0 { i } else { zero_ref() }),
         }
     }
 }
@@ -122,7 +118,7 @@ where
 
 impl<C: Coeff> Add<Series<C>> for InnerSeries<C>
 where
-    Series<C>: Add<Output = Series<C>> + Add<C, Output = Series<C>>
+    Series<C>: Add<Output = Series<C>> + Add<C, Output = Series<C>>,
 {
     type Output = InnerSeries<C>;
 
@@ -137,7 +133,7 @@ where
 
 impl<C: Coeff> Add<InnerSeries<C>> for Series<C>
 where
-    Series<C>: Add<Output = Series<C>> + Add<C, Output = Series<C>>
+    Series<C>: Add<Output = Series<C>> + Add<C, Output = Series<C>>,
 {
     type Output = InnerSeries<C>;
 
@@ -149,7 +145,7 @@ where
 impl<C: Coeff> Add<C> for InnerSeries<C>
 where
     Series<C>: Add<C, Output = Series<C>>,
-    C: Add<Output = C>
+    C: Add<Output = C>,
 {
     type Output = InnerSeries<C>;
 
@@ -180,7 +176,7 @@ where
 impl<'a, C: Coeff> Add<&'a Series<C>> for InnerSeries<C>
 where
     Series<C>: Add<&'a Series<C>, Output = Series<C>>,
-    &'a Series<C>: Add<C, Output = Series<C>>
+    &'a Series<C>: Add<C, Output = Series<C>>,
 {
     type Output = InnerSeries<C>;
 
@@ -196,7 +192,7 @@ where
 impl<'a, C: Coeff> Add<InnerSeries<C>> for &'a Series<C>
 where
     Series<C>: Add<&'a Series<C>, Output = Series<C>>,
-    &'a Series<C>: Add<C, Output = Series<C>>
+    &'a Series<C>: Add<C, Output = Series<C>>,
 {
     type Output = InnerSeries<C>;
 
@@ -223,7 +219,8 @@ where
 
 impl<'a, C: Coeff> Add<&'a InnerSeries<C>> for InnerSeries<C>
 where
-    InnerSeries<C>: Add<&'a C, Output = Self> + Add<&'a Series<C>, Output = Self>,
+    InnerSeries<C>:
+        Add<&'a C, Output = Self> + Add<&'a Series<C>, Output = Self>,
 {
     type Output = InnerSeries<C>;
 
@@ -238,7 +235,8 @@ where
 
 impl<'a, C: Coeff> Add<Series<C>> for &'a InnerSeries<C>
 where
-    Series<C>: Add<&'a Series<C>, Output = Series<C>> + Add<&'a C, Output = Series<C>>
+    Series<C>:
+        Add<&'a Series<C>, Output = Series<C>> + Add<&'a C, Output = Series<C>>,
 {
     type Output = InnerSeries<C>;
 
@@ -253,7 +251,8 @@ where
 
 impl<'a, C: Coeff> Add<&'a InnerSeries<C>> for Series<C>
 where
-    Series<C>: Add<&'a Series<C>, Output = Series<C>> + Add<&'a C, Output = Series<C>>
+    Series<C>:
+        Add<&'a Series<C>, Output = Series<C>> + Add<&'a C, Output = Series<C>>,
 {
     type Output = InnerSeries<C>;
 
@@ -280,7 +279,8 @@ where
 
 impl<'a, C: Coeff> Add<InnerSeries<C>> for &'a InnerSeries<C>
 where
-    InnerSeries<C>: Add<&'a C, Output = InnerSeries<C>> + Add<&'a Series<C>, Output = InnerSeries<C>>,
+    InnerSeries<C>: Add<&'a C, Output = InnerSeries<C>>
+        + Add<&'a Series<C>, Output = InnerSeries<C>>,
 {
     type Output = InnerSeries<C>;
 
@@ -335,7 +335,8 @@ where
 
 impl<'a, 'b, C: Coeff> Add<&'b InnerSeries<C>> for &'a InnerSeries<C>
 where
-    &'a InnerSeries<C>: Add<&'b C, Output = InnerSeries<C>> + Add<&'b Series<C>, Output = InnerSeries<C>>,
+    &'a InnerSeries<C>: Add<&'b C, Output = InnerSeries<C>>
+        + Add<&'b Series<C>, Output = InnerSeries<C>>,
 {
     type Output = InnerSeries<C>;
 
@@ -350,7 +351,7 @@ where
 
 impl<C: Coeff + Default> AddAssign<Series<C>> for InnerSeries<C>
 where
-    Series<C>: AddAssign + AddAssign<C>
+    Series<C>: AddAssign + AddAssign<C>,
 {
     fn add_assign(&mut self, mut rhs: Series<C>) {
         use InnerSeries::*;
@@ -359,7 +360,7 @@ where
             Inner(c) => {
                 rhs.add_assign(std::mem::take(c));
                 *self = rhs.into();
-            },
+            }
         }
     }
 }
@@ -367,7 +368,7 @@ where
 impl<C: Coeff + Default> AddAssign<C> for InnerSeries<C>
 where
     Series<C>: AddAssign<C>,
-    C: AddAssign
+    C: AddAssign,
 {
     fn add_assign(&mut self, rhs: C) {
         use InnerSeries::*;
@@ -380,7 +381,7 @@ where
 
 impl<C: Coeff + Default> AddAssign for InnerSeries<C>
 where
-    InnerSeries<C>: AddAssign<Series<C>> + AddAssign<C>
+    InnerSeries<C>: AddAssign<Series<C>> + AddAssign<C>,
 {
     fn add_assign(&mut self, rhs: InnerSeries<C>) {
         use InnerSeries::*;
@@ -403,7 +404,7 @@ where
             Inner(c) => {
                 let res = rhs.add(std::mem::take(c));
                 *self = res.into();
-            },
+            }
         }
     }
 }
@@ -411,7 +412,7 @@ where
 impl<'a, C: Coeff + Default> AddAssign<&'a C> for InnerSeries<C>
 where
     Series<C>: AddAssign<&'a C>,
-    C: AddAssign<&'a C>
+    C: AddAssign<&'a C>,
 {
     fn add_assign(&mut self, rhs: &'a C) {
         use InnerSeries::*;
@@ -424,7 +425,7 @@ where
 
 impl<'a, C: Coeff + Default> AddAssign<&'a InnerSeries<C>> for InnerSeries<C>
 where
-    InnerSeries<C>: AddAssign<&'a Series<C>> + AddAssign<&'a C>
+    InnerSeries<C>: AddAssign<&'a Series<C>> + AddAssign<&'a C>,
 {
     fn add_assign(&mut self, rhs: &'a InnerSeries<C>) {
         use InnerSeries::*;
@@ -437,7 +438,9 @@ where
 
 impl<C: Coeff> Sub<Series<C>> for InnerSeries<C>
 where
-    Series<C>: Sub<Output = Series<C>> + Add<C, Output = Series<C>> + Neg<Output = Series<C>>,
+    Series<C>: Sub<Output = Series<C>>
+        + Add<C, Output = Series<C>>
+        + Neg<Output = Series<C>>,
 {
     type Output = InnerSeries<C>;
 
@@ -468,7 +471,7 @@ where
 impl<C: Coeff> Sub<C> for InnerSeries<C>
 where
     Series<C>: Sub<C, Output = Series<C>>,
-    C: Sub<Output = C>
+    C: Sub<Output = C>,
 {
     type Output = InnerSeries<C>;
 
@@ -499,7 +502,7 @@ where
 impl<'a, C: Coeff> Sub<&'a Series<C>> for InnerSeries<C>
 where
     Series<C>: Sub<&'a Series<C>, Output = Series<C>> + Neg<Output = Series<C>>,
-    &'a Series<C>: Sub<C, Output = Series<C>>
+    &'a Series<C>: Sub<C, Output = Series<C>>,
 {
     type Output = InnerSeries<C>;
 
@@ -514,7 +517,8 @@ where
 
 impl<'a, C: Coeff> Sub<InnerSeries<C>> for &'a Series<C>
 where
-    InnerSeries<C>: Neg<Output = InnerSeries<C>> + Add<&'a Series<C>, Output = InnerSeries<C>>,
+    InnerSeries<C>: Neg<Output = InnerSeries<C>>
+        + Add<&'a Series<C>, Output = InnerSeries<C>>,
 {
     type Output = InnerSeries<C>;
 
@@ -541,7 +545,8 @@ where
 
 impl<'a, C: Coeff> Sub<&'a InnerSeries<C>> for InnerSeries<C>
 where
-    InnerSeries<C>: Sub<&'a C, Output = Self> + Sub<&'a Series<C>, Output = Self>,
+    InnerSeries<C>:
+        Sub<&'a C, Output = Self> + Sub<&'a Series<C>, Output = Self>,
 {
     type Output = InnerSeries<C>;
 
@@ -556,8 +561,10 @@ where
 
 impl<'a, C: Coeff> Sub<Series<C>> for &'a InnerSeries<C>
 where
-    Series<C>: Add<&'a Series<C>, Output = Series<C>> + Add<&'a C, Output = Series<C>> + Neg<Output = Series<C>>,
-C: Neg<Output = C>,
+    Series<C>: Add<&'a Series<C>, Output = Series<C>>
+        + Add<&'a C, Output = Series<C>>
+        + Neg<Output = Series<C>>,
+    C: Neg<Output = C>,
 {
     type Output = InnerSeries<C>;
 
@@ -600,7 +607,9 @@ where
 
 impl<'a, C: Coeff> Sub<InnerSeries<C>> for &'a InnerSeries<C>
 where
-    InnerSeries<C>: Add<&'a C, Output = InnerSeries<C>> + Add<&'a Series<C>, Output = InnerSeries<C>> + Neg<Output = InnerSeries<C>>,
+    InnerSeries<C>: Add<&'a C, Output = InnerSeries<C>>
+        + Add<&'a Series<C>, Output = InnerSeries<C>>
+        + Neg<Output = InnerSeries<C>>,
 {
     type Output = InnerSeries<C>;
 
@@ -612,7 +621,7 @@ where
 impl<'a, 'b, C: Coeff> Sub<&'b Series<C>> for &'a InnerSeries<C>
 where
     &'a Series<C>: Sub<&'b Series<C>, Output = Series<C>>,
-    &'b Series<C>:  Neg<Output = Series<C>>,
+    &'b Series<C>: Neg<Output = Series<C>>,
     Series<C>: Add<&'a C, Output = Series<C>>,
 {
     type Output = InnerSeries<C>;
@@ -628,7 +637,8 @@ where
 
 impl<'a, 'b, C: Coeff> Sub<&'a InnerSeries<C>> for &'b Series<C>
 where
-    &'b Series<C>: Sub<&'a C, Output = Series<C>> + Sub<&'a Series<C>, Output = Series<C>>,
+    &'b Series<C>:
+        Sub<&'a C, Output = Series<C>> + Sub<&'a Series<C>, Output = Series<C>>,
 {
     type Output = InnerSeries<C>;
 
@@ -659,7 +669,8 @@ where
 
 impl<'a, 'b, C: Coeff> Sub<&'b InnerSeries<C>> for &'a InnerSeries<C>
 where
-    &'a InnerSeries<C>: Sub<&'b C, Output = InnerSeries<C>> + Sub<&'b Series<C>, Output = InnerSeries<C>>,
+    &'a InnerSeries<C>: Sub<&'b C, Output = InnerSeries<C>>
+        + Sub<&'b Series<C>, Output = InnerSeries<C>>,
 {
     type Output = InnerSeries<C>;
 
@@ -674,7 +685,7 @@ where
 
 impl<C: Coeff + Default> SubAssign<Series<C>> for InnerSeries<C>
 where
-    Series<C>: SubAssign + AddAssign<C> + Neg<Output = Series<C>>
+    Series<C>: SubAssign + AddAssign<C> + Neg<Output = Series<C>>,
 {
     fn sub_assign(&mut self, rhs: Series<C>) {
         use InnerSeries::*;
@@ -684,7 +695,7 @@ where
                 let mut res = rhs.neg();
                 res.add_assign(std::mem::take(c));
                 *self = res.into();
-            },
+            }
         }
     }
 }
@@ -692,7 +703,7 @@ where
 impl<C: Coeff + Default> SubAssign<C> for InnerSeries<C>
 where
     Series<C>: SubAssign<C>,
-    C: SubAssign
+    C: SubAssign,
 {
     fn sub_assign(&mut self, rhs: C) {
         use InnerSeries::*;
@@ -705,7 +716,7 @@ where
 
 impl<C: Coeff + Default> SubAssign for InnerSeries<C>
 where
-    InnerSeries<C>: SubAssign<Series<C>> + SubAssign<C>
+    InnerSeries<C>: SubAssign<Series<C>> + SubAssign<C>,
 {
     fn sub_assign(&mut self, rhs: InnerSeries<C>) {
         use InnerSeries::*;
@@ -729,7 +740,7 @@ where
                 let mut res = rhs.neg();
                 res.add_assign(std::mem::take(c));
                 *self = res.into();
-            },
+            }
         }
     }
 }
@@ -737,7 +748,7 @@ where
 impl<'a, C: Coeff + Default> SubAssign<&'a C> for InnerSeries<C>
 where
     Series<C>: SubAssign<&'a C>,
-    C: SubAssign<&'a C>
+    C: SubAssign<&'a C>,
 {
     fn sub_assign(&mut self, rhs: &'a C) {
         use InnerSeries::*;
@@ -750,7 +761,7 @@ where
 
 impl<'a, C: Coeff + Default> SubAssign<&'a InnerSeries<C>> for InnerSeries<C>
 where
-    InnerSeries<C>: SubAssign<&'a Series<C>> + SubAssign<&'a C>
+    InnerSeries<C>: SubAssign<&'a Series<C>> + SubAssign<&'a C>,
 {
     fn sub_assign(&mut self, rhs: &'a InnerSeries<C>) {
         use InnerSeries::*;
@@ -763,7 +774,7 @@ where
 
 impl<C: Coeff> Mul<Series<C>> for InnerSeries<C>
 where
-    Series<C>: Mul<Output = Series<C>> + Mul<C, Output = Series<C>>
+    Series<C>: Mul<Output = Series<C>> + Mul<C, Output = Series<C>>,
 {
     type Output = InnerSeries<C>;
 
@@ -778,7 +789,7 @@ where
 
 impl<C: Coeff> Mul<InnerSeries<C>> for Series<C>
 where
-    Series<C>: Mul<Output = Series<C>> + Mul<C, Output = Series<C>>
+    Series<C>: Mul<Output = Series<C>> + Mul<C, Output = Series<C>>,
 {
     type Output = InnerSeries<C>;
 
@@ -790,7 +801,7 @@ where
 impl<C: Coeff> Mul<C> for InnerSeries<C>
 where
     Series<C>: Mul<C, Output = Series<C>>,
-    C: Mul<Output = C>
+    C: Mul<Output = C>,
 {
     type Output = InnerSeries<C>;
 
@@ -821,7 +832,7 @@ where
 impl<'a, C: Coeff> Mul<&'a Series<C>> for InnerSeries<C>
 where
     Series<C>: Mul<&'a Series<C>, Output = Series<C>>,
-    &'a Series<C>: Mul<C, Output = Series<C>>
+    &'a Series<C>: Mul<C, Output = Series<C>>,
 {
     type Output = InnerSeries<C>;
 
@@ -837,7 +848,7 @@ where
 impl<'a, C: Coeff> Mul<InnerSeries<C>> for &'a Series<C>
 where
     Series<C>: Mul<&'a Series<C>, Output = Series<C>>,
-    &'a Series<C>: Mul<C, Output = Series<C>>
+    &'a Series<C>: Mul<C, Output = Series<C>>,
 {
     type Output = InnerSeries<C>;
 
@@ -864,7 +875,8 @@ where
 
 impl<'a, C: Coeff> Mul<&'a InnerSeries<C>> for InnerSeries<C>
 where
-    InnerSeries<C>: Mul<&'a C, Output = Self> + Mul<&'a Series<C>, Output = Self>,
+    InnerSeries<C>:
+        Mul<&'a C, Output = Self> + Mul<&'a Series<C>, Output = Self>,
 {
     type Output = InnerSeries<C>;
 
@@ -879,7 +891,8 @@ where
 
 impl<'a, C: Coeff> Mul<Series<C>> for &'a InnerSeries<C>
 where
-    Series<C>: Mul<&'a Series<C>, Output = Series<C>> + Mul<&'a C, Output = Series<C>>
+    Series<C>:
+        Mul<&'a Series<C>, Output = Series<C>> + Mul<&'a C, Output = Series<C>>,
 {
     type Output = InnerSeries<C>;
 
@@ -894,7 +907,8 @@ where
 
 impl<'a, C: Coeff> Mul<&'a InnerSeries<C>> for Series<C>
 where
-    Series<C>: Mul<&'a Series<C>, Output = Series<C>> + Mul<&'a C, Output = Series<C>>
+    Series<C>:
+        Mul<&'a Series<C>, Output = Series<C>> + Mul<&'a C, Output = Series<C>>,
 {
     type Output = InnerSeries<C>;
 
@@ -921,7 +935,8 @@ where
 
 impl<'a, C: Coeff> Mul<InnerSeries<C>> for &'a InnerSeries<C>
 where
-    InnerSeries<C>: Mul<&'a C, Output = InnerSeries<C>> + Mul<&'a Series<C>, Output = InnerSeries<C>>,
+    InnerSeries<C>: Mul<&'a C, Output = InnerSeries<C>>
+        + Mul<&'a Series<C>, Output = InnerSeries<C>>,
 {
     type Output = InnerSeries<C>;
 
@@ -976,7 +991,8 @@ where
 
 impl<'a, 'b, C: Coeff> Mul<&'b InnerSeries<C>> for &'a InnerSeries<C>
 where
-    &'a InnerSeries<C>: Mul<&'b C, Output = InnerSeries<C>> + Mul<&'b Series<C>, Output = InnerSeries<C>>,
+    &'a InnerSeries<C>: Mul<&'b C, Output = InnerSeries<C>>
+        + Mul<&'b Series<C>, Output = InnerSeries<C>>,
 {
     type Output = InnerSeries<C>;
 
@@ -991,7 +1007,7 @@ where
 
 impl<C: Coeff + Default> MulAssign<Series<C>> for InnerSeries<C>
 where
-    Series<C>: MulAssign + MulAssign<C>
+    Series<C>: MulAssign + MulAssign<C>,
 {
     fn mul_assign(&mut self, mut rhs: Series<C>) {
         use InnerSeries::*;
@@ -1000,7 +1016,7 @@ where
             Inner(c) => {
                 rhs.mul_assign(std::mem::take(c));
                 *self = rhs.into();
-            },
+            }
         }
     }
 }
@@ -1008,7 +1024,7 @@ where
 impl<C: Coeff + Default> MulAssign<C> for InnerSeries<C>
 where
     Series<C>: MulAssign<C>,
-    C: MulAssign
+    C: MulAssign,
 {
     fn mul_assign(&mut self, rhs: C) {
         use InnerSeries::*;
@@ -1021,7 +1037,7 @@ where
 
 impl<C: Coeff + Default> MulAssign for InnerSeries<C>
 where
-    InnerSeries<C>: MulAssign<Series<C>> + MulAssign<C>
+    InnerSeries<C>: MulAssign<Series<C>> + MulAssign<C>,
 {
     fn mul_assign(&mut self, rhs: InnerSeries<C>) {
         use InnerSeries::*;
@@ -1044,7 +1060,7 @@ where
             Inner(c) => {
                 let res = rhs.mul(std::mem::take(c));
                 *self = res.into();
-            },
+            }
         }
     }
 }
@@ -1052,7 +1068,7 @@ where
 impl<'a, C: Coeff + Default> MulAssign<&'a C> for InnerSeries<C>
 where
     Series<C>: MulAssign<&'a C>,
-    C: MulAssign<&'a C>
+    C: MulAssign<&'a C>,
 {
     fn mul_assign(&mut self, rhs: &'a C) {
         use InnerSeries::*;
@@ -1065,7 +1081,7 @@ where
 
 impl<'a, C: Coeff + Default> MulAssign<&'a InnerSeries<C>> for InnerSeries<C>
 where
-    InnerSeries<C>: MulAssign<&'a Series<C>> + MulAssign<&'a C>
+    InnerSeries<C>: MulAssign<&'a Series<C>> + MulAssign<&'a C>,
 {
     fn mul_assign(&mut self, rhs: &'a InnerSeries<C>) {
         use InnerSeries::*;
@@ -1078,7 +1094,9 @@ where
 
 impl<C: Coeff> Div<Series<C>> for InnerSeries<C>
 where
-    Series<C>: Div<Output = Series<C>> + Mul<C, Output = Series<C>> + MulInverse<Output = Series<C>>,
+    Series<C>: Div<Output = Series<C>>
+        + Mul<C, Output = Series<C>>
+        + MulInverse<Output = Series<C>>,
 {
     type Output = InnerSeries<C>;
 
@@ -1109,7 +1127,7 @@ where
 impl<C: Coeff> Div<C> for InnerSeries<C>
 where
     Series<C>: Div<C, Output = Series<C>>,
-    C: Div<Output = C>
+    C: Div<Output = C>,
 {
     type Output = InnerSeries<C>;
 
@@ -1139,8 +1157,9 @@ where
 
 impl<'a, C: Coeff> Div<&'a Series<C>> for InnerSeries<C>
 where
-    Series<C>: Div<&'a Series<C>, Output = Series<C>> + MulInverse<Output = Series<C>>,
-    &'a Series<C>: Div<C, Output = Series<C>>
+    Series<C>:
+        Div<&'a Series<C>, Output = Series<C>> + MulInverse<Output = Series<C>>,
+    &'a Series<C>: Div<C, Output = Series<C>>,
 {
     type Output = InnerSeries<C>;
 
@@ -1155,7 +1174,8 @@ where
 
 impl<'a, C: Coeff> Div<InnerSeries<C>> for &'a Series<C>
 where
-    InnerSeries<C>: MulInverse<Output = InnerSeries<C>> + Mul<&'a Series<C>, Output = InnerSeries<C>>,
+    InnerSeries<C>: MulInverse<Output = InnerSeries<C>>
+        + Mul<&'a Series<C>, Output = InnerSeries<C>>,
 {
     type Output = InnerSeries<C>;
 
@@ -1182,7 +1202,8 @@ where
 
 impl<'a, C: Coeff> Div<&'a InnerSeries<C>> for InnerSeries<C>
 where
-    InnerSeries<C>: Div<&'a C, Output = Self> + Div<&'a Series<C>, Output = Self>,
+    InnerSeries<C>:
+        Div<&'a C, Output = Self> + Div<&'a Series<C>, Output = Self>,
 {
     type Output = InnerSeries<C>;
 
@@ -1197,8 +1218,10 @@ where
 
 impl<'a, C: Coeff> Div<Series<C>> for &'a InnerSeries<C>
 where
-    Series<C>: Mul<&'a Series<C>, Output = Series<C>> + Mul<&'a C, Output = Series<C>> + MulInverse<Output = Series<C>>,
-C: MulInverse<Output = C>,
+    Series<C>: Mul<&'a Series<C>, Output = Series<C>>
+        + Mul<&'a C, Output = Series<C>>
+        + MulInverse<Output = Series<C>>,
+    C: MulInverse<Output = C>,
 {
     type Output = InnerSeries<C>;
 
@@ -1241,7 +1264,9 @@ where
 
 impl<'a, C: Coeff> Div<InnerSeries<C>> for &'a InnerSeries<C>
 where
-    InnerSeries<C>: Mul<&'a C, Output = InnerSeries<C>> + Mul<&'a Series<C>, Output = InnerSeries<C>> + MulInverse<Output = InnerSeries<C>>,
+    InnerSeries<C>: Mul<&'a C, Output = InnerSeries<C>>
+        + Mul<&'a Series<C>, Output = InnerSeries<C>>
+        + MulInverse<Output = InnerSeries<C>>,
 {
     type Output = InnerSeries<C>;
 
@@ -1253,7 +1278,7 @@ where
 impl<'a, 'b, C: Coeff> Div<&'b Series<C>> for &'a InnerSeries<C>
 where
     &'a Series<C>: Div<&'b Series<C>, Output = Series<C>>,
-    &'b Series<C>:  MulInverse<Output = Series<C>>,
+    &'b Series<C>: MulInverse<Output = Series<C>>,
     Series<C>: Mul<&'a C, Output = Series<C>>,
 {
     type Output = InnerSeries<C>;
@@ -1269,7 +1294,8 @@ where
 
 impl<'a, 'b, C: Coeff> Div<&'a InnerSeries<C>> for &'b Series<C>
 where
-    &'b Series<C>: Div<&'a C, Output = Series<C>> + Div<&'a Series<C>, Output = Series<C>>,
+    &'b Series<C>:
+        Div<&'a C, Output = Series<C>> + Div<&'a Series<C>, Output = Series<C>>,
 {
     type Output = InnerSeries<C>;
 
@@ -1300,7 +1326,8 @@ where
 
 impl<'a, 'b, C: Coeff> Div<&'b InnerSeries<C>> for &'a InnerSeries<C>
 where
-    &'a InnerSeries<C>: Div<&'b C, Output = InnerSeries<C>> + Div<&'b Series<C>, Output = InnerSeries<C>>,
+    &'a InnerSeries<C>: Div<&'b C, Output = InnerSeries<C>>
+        + Div<&'b Series<C>, Output = InnerSeries<C>>,
 {
     type Output = InnerSeries<C>;
 
@@ -1315,7 +1342,7 @@ where
 
 impl<C: Coeff + Default> DivAssign<Series<C>> for InnerSeries<C>
 where
-    Series<C>: DivAssign + MulAssign<C> + MulInverse<Output = Series<C>>
+    Series<C>: DivAssign + MulAssign<C> + MulInverse<Output = Series<C>>,
 {
     fn div_assign(&mut self, rhs: Series<C>) {
         use InnerSeries::*;
@@ -1325,7 +1352,7 @@ where
                 let mut res = rhs.mul_inverse();
                 res.mul_assign(std::mem::take(c));
                 *self = res.into();
-            },
+            }
         }
     }
 }
@@ -1333,7 +1360,7 @@ where
 impl<C: Coeff + Default> DivAssign<C> for InnerSeries<C>
 where
     Series<C>: DivAssign<C>,
-    C: DivAssign
+    C: DivAssign,
 {
     fn div_assign(&mut self, rhs: C) {
         use InnerSeries::*;
@@ -1346,7 +1373,7 @@ where
 
 impl<C: Coeff + Default> DivAssign for InnerSeries<C>
 where
-    InnerSeries<C>: DivAssign<Series<C>> + DivAssign<C>
+    InnerSeries<C>: DivAssign<Series<C>> + DivAssign<C>,
 {
     fn div_assign(&mut self, rhs: InnerSeries<C>) {
         use InnerSeries::*;
@@ -1370,7 +1397,7 @@ where
                 let mut res = rhs.mul_inverse();
                 res.mul_assign(std::mem::take(c));
                 *self = res.into();
-            },
+            }
         }
     }
 }
@@ -1378,7 +1405,7 @@ where
 impl<'a, C: Coeff + Default> DivAssign<&'a C> for InnerSeries<C>
 where
     Series<C>: DivAssign<&'a C>,
-    C: DivAssign<&'a C>
+    C: DivAssign<&'a C>,
 {
     fn div_assign(&mut self, rhs: &'a C) {
         use InnerSeries::*;
@@ -1391,7 +1418,7 @@ where
 
 impl<'a, C: Coeff + Default> DivAssign<&'a InnerSeries<C>> for InnerSeries<C>
 where
-    InnerSeries<C>: DivAssign<&'a Series<C>> + DivAssign<&'a C>
+    InnerSeries<C>: DivAssign<&'a Series<C>> + DivAssign<&'a C>,
 {
     fn div_assign(&mut self, rhs: &'a InnerSeries<C>) {
         use InnerSeries::*;
@@ -1406,7 +1433,7 @@ where
 
 impl<C: Coeff> Zero for InnerSeries<C>
 where
-    InnerSeries<C>: Add<Output = Self>
+    InnerSeries<C>: Add<Output = Self>,
 {
     fn zero() -> Self {
         C::zero().into()
@@ -1423,7 +1450,7 @@ where
 
 impl<C: Coeff> One for InnerSeries<C>
 where
-    InnerSeries<C>: Mul<Output = Self>
+    InnerSeries<C>: Mul<Output = Self>,
 {
     fn one() -> Self {
         C::one().into()

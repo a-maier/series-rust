@@ -49,10 +49,7 @@ impl<C: Coeff> Polynomial<C> {
     /// assert_eq!(s.var(), &"x");
     /// ```
     pub fn in_var<Var>(self, var: Var) -> PolynomialIn<Var, C> {
-        PolynomialIn {
-            var,
-            poly: self,
-        }
+        PolynomialIn { var, poly: self }
     }
 
     /// Get the leading power of the polynomial variable
@@ -201,7 +198,7 @@ impl<C: Coeff> Polynomial<C> {
     /// ```
     pub fn apply_at<F: FnOnce(&mut C)>(&mut self, pow: isize, f: F) {
         let Some(min_pow) = self.min_pow() else {
-            return self.apply_at_new(pow, f)
+            return self.apply_at_new(pow, f);
         };
         if pow < min_pow {
             return self.apply_at_new_front(pow, f);
@@ -210,7 +207,9 @@ impl<C: Coeff> Polynomial<C> {
         }
         let index = (pow - min_pow) as usize;
         f(&mut self.coeffs[index]);
-        if (index == 0 || 1 + index == self.len()) && self.coeffs[index].is_zero() {
+        if (index == 0 || 1 + index == self.len())
+            && self.coeffs[index].is_zero()
+        {
             self.trim()
         }
     }
@@ -219,32 +218,31 @@ impl<C: Coeff> Polynomial<C> {
         assert!(self.is_empty());
         let c = gen_from_zero(f);
         if c.is_zero() {
-            return
+            return;
         };
         self.min_pow = Some(pow);
         self.coeffs = vec![c];
     }
 
-
     fn apply_at_new_back<F: FnOnce(&mut C)>(&mut self, pow: isize, f: F) {
         let c = gen_from_zero(f);
         if c.is_zero() {
-            return
+            return;
         };
         let new_len = (pow - self.min_pow().unwrap()) as usize;
         self.coeffs.resize_with(new_len, || C::zero());
         self.coeffs.push(c)
-
     }
 
     fn apply_at_new_front<F: FnOnce(&mut C)>(&mut self, pow: isize, f: F) {
         let c = gen_from_zero(f);
         if c.is_zero() {
-            return
+            return;
         };
         let nnew = (self.min_pow().unwrap() - pow) as usize;
         self.coeffs.push(c);
-        self.coeffs.resize_with(self.len() + (nnew - 1), || C::zero());
+        self.coeffs
+            .resize_with(self.len() + (nnew - 1), || C::zero());
         self.coeffs.rotate_right(nnew);
         self.min_pow = Some(pow);
     }
@@ -269,11 +267,9 @@ impl<C: Coeff> Polynomial<C> {
     /// ```
     pub fn for_each<F>(&mut self, mut f: F)
     where
-        F: FnMut(isize, &mut C)
+        F: FnMut(isize, &mut C),
     {
-        let Some(min_pow) = self.min_pow else {
-            return
-        };
+        let Some(min_pow) = self.min_pow else { return };
         for (n, c) in &mut self.coeffs.iter_mut().enumerate() {
             f(min_pow + n as isize, c)
         }
@@ -365,10 +361,7 @@ impl<'a, C: 'a + Coeff> AsSlice<'a, RangeFrom<isize>> for Polynomial<C> {
     fn as_slice(&'a self, r: RangeFrom<isize>) -> Self::Output {
         if let Some(min_pow) = self.min_pow() {
             let start = r.start - min_pow;
-            PolynomialSlice::new(
-                r.start,
-                &self.coeffs[(start as usize)..],
-            )
+            PolynomialSlice::new(r.start, &self.coeffs[(start as usize)..])
         } else {
             self.as_empty_slice()
         }
@@ -1063,10 +1056,7 @@ impl<C: Coeff, Var> From<PolynomialIn<Var, C>> for Polynomial<C> {
             min_pow,
             coeffs,
         } = source.into();
-        Self {
-            min_pow,
-            coeffs,
-        }
+        Self { min_pow, coeffs }
     }
 }
 

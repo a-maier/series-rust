@@ -176,10 +176,7 @@ impl<'a, C: Coeff> PolynomialSlice<'a, C> {
     /// assert_eq!(p.var(), &"x");
     /// ```
     pub fn in_var<Var>(self, var: &'a Var) -> PolynomialSliceIn<Var, C> {
-        PolynomialSliceIn {
-            var,
-            poly: self
-        }
+        PolynomialSliceIn { var, poly: self }
     }
 
     pub fn try_coeff(&self, pow: isize) -> Option<&'a C> {

@@ -1,6 +1,6 @@
 use crate::ops::{Exp, Ln, Pow};
-use crate::{series_slice_in::*, Series};
 use crate::traits::*;
+use crate::{series_slice_in::*, Series};
 use crate::{Coeff, IntoIter, Iter};
 
 use std::convert::From;
@@ -32,10 +32,7 @@ impl<Var, C: Coeff> SeriesIn<Var, C> {
     /// ```
     pub fn new(var: Var, min_pow: isize, coeffs: Vec<C>) -> SeriesIn<Var, C> {
         let series = Series::new(min_pow, coeffs);
-        SeriesIn {
-            series,
-            var,
-        }
+        SeriesIn { series, var }
     }
 
     /// Create a new series with a given cutoff power
@@ -61,10 +58,7 @@ impl<Var, C: Coeff> SeriesIn<Var, C> {
         coeffs: Vec<C>,
     ) -> SeriesIn<Var, C> {
         let series = Series::with_cutoff(min_pow..cutoff_pow, coeffs);
-        SeriesIn {
-            series,
-            var,
-        }
+        SeriesIn { series, var }
     }
 
     /// Get the expansion variable
@@ -191,7 +185,7 @@ impl<Var, C: Coeff> SeriesIn<Var, C> {
     /// ```
     pub fn for_each<F>(&mut self, f: F)
     where
-        F: FnMut(isize, &mut C)
+        F: FnMut(isize, &mut C),
     {
         self.series.for_each(f)
     }
@@ -502,15 +496,9 @@ impl<Var, C: Coeff + Neg<Output = C>> Neg for SeriesIn<Var, C> {
     /// assert_eq!(-s, minus_s);
     /// ```
     fn neg(self) -> Self::Output {
-        let Self {
-            series,
-            var,
-        } = self;
+        let Self { series, var } = self;
         let series = -series;
-        Self {
-            series,
-            var,
-        }
+        Self { series, var }
     }
 }
 
@@ -1166,10 +1154,7 @@ pub struct SeriesInParts<Var, C> {
 
 impl<Var, C: Coeff> From<SeriesIn<Var, C>> for SeriesInParts<Var, C> {
     fn from(s: SeriesIn<Var, C>) -> Self {
-        let SeriesIn {
-            series,
-            var,
-        } = s;
+        let SeriesIn { series, var } = s;
         SeriesInParts {
             var,
             min_pow: series.min_pow,
@@ -1193,15 +1178,9 @@ where
     type Output = Self;
 
     fn ln_var_free(self) -> Self {
-        let Self {
-            series,
-            var,
-        } = self;
+        let Self { series, var } = self;
         let series = series.ln_var_free();
-        Self {
-            series,
-            var
-        }
+        Self { series, var }
     }
 }
 
@@ -1232,15 +1211,9 @@ impl<Var, C: Coeff + From<i32>> SeriesIn<Var, C> {
             + Exp<Output = Series<C>>
             + MulInverse<Output = Series<C>>,
     {
-        let Self {
-            series,
-            var,
-        } = self;
+        let Self { series, var } = self;
         let series = series.powi(exp);
-        Self {
-            series,
-            var
-        }
+        Self { series, var }
     }
 }
 
