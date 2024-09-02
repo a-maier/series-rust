@@ -5,7 +5,7 @@ use num_traits::Zero;
 pub(crate) fn zero_ref<C: Sync + Send + Zero>() -> &'static C
 {
     type TypeMap = elsa::sync::FrozenMap<TypeId, &'static (dyn Any + Sync + Send)>;
-    static ZERO_MAP: LazyLock<TypeMap> = LazyLock::new(|| TypeMap::new());
+    static ZERO_MAP: LazyLock<TypeMap> = LazyLock::new(TypeMap::new);
 
     let res = ZERO_MAP.get(&TypeId::of::<C>());
 
