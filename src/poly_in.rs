@@ -1,6 +1,6 @@
 use crate::traits::{AsSlice, KaratsubaMul};
 use crate::util::{trim_end, trim_start};
-use crate::PolynomialSliceIn;
+use crate::{PolynomialSliceIn, SeriesInParts};
 use crate::SeriesIn;
 use crate::{Coeff, IntoIter, Iter};
 
@@ -357,7 +357,8 @@ impl<'a, Var: 'a, C: 'a + Coeff> AsSlice<'a, RangeFull>
 
 impl<Var, C: Coeff> convert::From<SeriesIn<Var, C>> for PolynomialIn<Var, C> {
     fn from(s: SeriesIn<Var, C>) -> Self {
-        PolynomialIn::new(s.var, s.min_pow, s.coeffs)
+        let SeriesInParts { var, min_pow, coeffs } = s.into();
+        PolynomialIn::new(var, min_pow, coeffs)
     }
 }
 

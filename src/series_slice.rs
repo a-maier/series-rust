@@ -146,11 +146,7 @@ impl<'a, C: Coeff> SeriesSlice<'a, C> {
     /// assert_eq!(s.var(), &"x");
     /// ```
     pub fn in_var<Var>(self, var: &'a Var) -> SeriesSliceIn<Var, C> {
-        let Self {
-            min_pow,
-            coeffs,
-        } = self;
-        SeriesSliceIn::new(var, min_pow, coeffs)
+        SeriesSliceIn::new(var, self)
     }
 
     /// Try to get the series coefficient of the expansion variable to
@@ -451,14 +447,6 @@ where
 
 impl<'a, C: Coeff, Var> From<SeriesSliceIn<'a, Var, C>> for SeriesSlice<'a, C> {
     fn from(source: SeriesSliceIn<'a, Var, C>) -> Self {
-        let SeriesSliceIn {
-            var: _,
-            min_pow,
-            coeffs,
-        } = source;
-        Self {
-            min_pow,
-            coeffs,
-        }
+        source.series
     }
 }

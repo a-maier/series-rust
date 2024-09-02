@@ -1,8 +1,6 @@
 use crate::ops::{Exp, Ln, Pow};
 use crate::traits::{AsSlice, ExpCoeff, MulInverse};
-use crate::util::trim_slice_start;
-use crate::zero_ref::zero_ref;
-use crate::{Coeff, Iter, PolynomialSliceIn, SeriesIn};
+use crate::{Coeff, Iter, PolynomialSliceIn, SeriesIn, SeriesSlice};
 
 use std::fmt;
 use std::ops::{
@@ -15,8 +13,7 @@ use std::ops::{
 #[derive(PartialEq, Eq, Debug, Hash, Ord, PartialOrd)]
 pub struct SeriesSliceIn<'a, Var, C: Coeff> {
     pub(crate) var: &'a Var,
-    pub(crate) min_pow: isize,
-    pub(crate) coeffs: &'a [C],
+    pub(crate) series: SeriesSlice<'a, C>
 }
 
 // needs manual implementation,
@@ -32,22 +29,12 @@ impl<'a, Var, C: Coeff> std::clone::Clone for SeriesSliceIn<'a, Var, C> {
 impl<'a, Var, C: Coeff> SeriesSliceIn<'a, Var, C> {
     pub(super) fn new(
         var: &'a Var,
-        min_pow: isize,
-        coeffs: &'a [C],
+        series: SeriesSlice<'a, C>
     ) -> Self {
-        let mut res = SeriesSliceIn {
+        SeriesSliceIn {
             var,
-            min_pow,
-            coeffs,
-        };
-        res.trim();
-        res
-    }
-
-    fn trim(&mut self) {
-        let (coeffs, removed) = trim_slice_start(self.coeffs, &C::zero());
-        self.coeffs = coeffs;
-        self.min_pow += removed as isize;
+            series,
+        }
     }
 
     /// Get the leading power of the series expansion variable
@@ -62,7 +49,7 @@ impl<'a, Var, C: Coeff> SeriesSliceIn<'a, Var, C> {
     /// assert_eq!(s.as_slice(0..).min_pow(), 0);
     /// ```
     pub fn min_pow(&self) -> isize {
-        self.min_pow
+        self.series.min_pow()
     }
 
     /// Get the power of the expansion variable where the slice is
@@ -78,7 +65,7 @@ impl<'a, Var, C: Coeff> SeriesSliceIn<'a, Var, C> {
     /// assert_eq!(s.as_slice(..1).cutoff_pow(), 1);
     /// ```
     pub fn cutoff_pow(&self) -> isize {
-        self.min_pow + (self.coeffs.len() as isize)
+        self.series.cutoff_pow()
     }
 
     /// Iterator over the series powers and coefficients.
@@ -97,7 +84,7 @@ impl<'a, Var, C: Coeff> SeriesSliceIn<'a, Var, C> {
     /// assert_eq!(iter.next(), None);
     /// ```
     pub fn iter(&self) -> Iter<C> {
-        (self.min_pow..).zip(self.coeffs.iter())
+        self.series.iter()
     }
 
     /// Split a series slice into two at the given power
@@ -114,17 +101,18 @@ impl<'a, Var, C: Coeff> SeriesSliceIn<'a, Var, C> {
     /// assert_eq!(upper.min_pow(), 0);
     /// ```
     pub fn split_at(&self, pos: isize) -> (Self, Self) {
-        let upos = (pos - self.min_pow()) as usize;
-        let (lower, upper) = self.coeffs.split_at(upos);
-        let lower = SeriesSliceIn {
-            var: self.var,
-            min_pow: self.min_pow(),
-            coeffs: lower,
+        let Self {
+            series,
+            var,
+        } = self;
+        let (lower, upper) = series.split_at(pos);
+        let lower = Self {
+            series: lower,
+            var
         };
-        let upper = SeriesSliceIn {
-            var: self.var,
-            min_pow: pos,
-            coeffs: upper,
+        let upper = Self {
+            series: upper,
+            var
         };
         (lower, upper)
     }
@@ -142,7 +130,7 @@ impl<'a, Var, C: Coeff> SeriesSliceIn<'a, Var, C> {
     /// assert_eq!(slice, p.as_slice(..));
     /// ```
     pub fn as_poly(&self) -> PolynomialSliceIn<'a, Var, C> {
-        PolynomialSliceIn::new(self.var, self.min_pow, self.coeffs)
+        self.series.as_poly().in_var(self.var())
     }
 
     /// Get the expansion variable
@@ -181,18 +169,7 @@ impl<'a, Var, C: Coeff> SeriesSliceIn<'a, Var, C> {
     /// assert_eq!(slice.try_coeff(5), None);
     /// ```
     pub fn try_coeff(&self, pow: isize) -> Option<&'a C> {
-        if pow >= self.min_pow() && pow < self.cutoff_pow() {
-            Some(self.coeff_in_range(pow))
-        } else {
-            None
-        }
-    }
-
-    fn coeff_in_range(&self, pow: isize) -> &'a C {
-        debug_assert!(pow >= self.min_pow());
-        debug_assert!(pow < self.cutoff_pow());
-        let idx = (pow - self.min_pow()) as usize;
-        &self.coeffs[idx]
+        self.series.try_coeff(pow)
     }
 }
 
@@ -219,13 +196,7 @@ impl<'a, Var, C: 'static + Coeff + Send + Sync>  SeriesSliceIn<'a, Var, C> {
     /// assert_eq!(slice.coeff(5), None);
     /// ```
     pub fn coeff(&self, pow: isize) -> Option<&'a C> {
-        if pow < self.min_pow() {
-            return Some(zero_ref());
-        }
-        if pow >= self.cutoff_pow() {
-            return None;
-        }
-        Some(self.coeff_in_range(pow))
+        self.series.coeff(pow)
     }
 }
 
@@ -233,7 +204,7 @@ impl<'a, Var, C: Coeff> Index<isize> for SeriesSliceIn<'a, Var, C> {
     type Output = C;
 
     fn index(&self, index: isize) -> &Self::Output {
-        &self.coeffs[(index - self.min_pow) as usize]
+        &self.series[index]
     }
 }
 
@@ -246,24 +217,8 @@ where
     type Output = SeriesIn<Var, C>;
 
     fn mul_inverse(self) -> Self::Output {
-        let inv_min_pow = -self.min_pow;
-        if self.coeffs.is_empty() {
-            return SeriesIn::new(self.var.clone(), inv_min_pow, vec![]);
-        }
-        let a: Vec<_> =
-            self.coeffs.iter().map(|c| c / &self.coeffs[0]).collect();
-        let mut b = Vec::with_capacity(a.len());
-        b.push(C::one());
-        for n in 1..a.len() {
-            let mut b_n = C::zero();
-            for i in 0..n {
-                b_n -= &a[n - i] * &b[i];
-            }
-            b.push(b_n);
-        }
-        let inv_coeffs: Vec<_> =
-            b.iter().map(|b| b / &self.coeffs[0]).collect();
-        SeriesIn::new(self.var.clone(), inv_min_pow, inv_coeffs)
+        let inv = self.series.mul_inverse();
+        inv.in_var(self.var.clone())
     }
 }
 
@@ -271,7 +226,7 @@ impl<'a, Var: fmt::Display, C: Coeff + fmt::Display> fmt::Display
     for SeriesSliceIn<'a, Var, C>
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        if !self.coeffs.is_empty() {
+        if !self.series.coeffs.is_empty() {
             self.as_poly().fmt(f)?;
             write!(f, " + ")?;
         }
@@ -286,8 +241,7 @@ where
     type Output = SeriesIn<Var, C>;
 
     fn neg(self) -> Self::Output {
-        let neg_coeff = self.coeffs.iter().map(|c| -c).collect();
-        SeriesIn::new(self.var.clone(), self.min_pow, neg_coeff)
+        self.series.neg().in_var(self.var.clone())
     }
 }
 
@@ -369,8 +323,7 @@ where
     type Output = SeriesIn<Var, C>;
 
     fn mul(self, other: C) -> Self::Output {
-        let coeffs = self.coeffs.iter().map(|c| c * &other).collect();
-        SeriesIn::new(self.var.clone(), self.min_pow(), coeffs)
+        (self.series * other).in_var(self.var.clone())
     }
 }
 
@@ -382,8 +335,7 @@ where
     type Output = SeriesIn<Var, C>;
 
     fn mul(self, other: &'b C) -> Self::Output {
-        let coeffs = self.coeffs.iter().map(|c| c * other).collect();
-        SeriesIn::new(self.var.clone(), self.min_pow(), coeffs)
+        (self.series * other).in_var(self.var.clone())
     }
 }
 
@@ -442,14 +394,14 @@ where
     ///
     /// Panics if the series has no (non-zero) coefficients
     fn ln(self) -> Self::Output {
-        assert!(!self.coeffs.is_empty());
+        assert!(!self.series.coeffs.is_empty());
         let k0 = self.min_pow();
-        let c_k0 = &self.coeffs[0];
+        let c_k0 = &self.series.coeffs[0];
         // self.coeffs[0] = C::one();
         // for i in 1..self.coeffs.len() {
         //     self.coeffs[i] /= &c_k0;
         // }
-        let a = &self.coeffs;
+        let a = &self.series.coeffs;
         let mut b = Vec::with_capacity(a.len());
         let b_0 = if k0 != 0 {
             let var = self.var.clone();

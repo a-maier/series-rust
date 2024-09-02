@@ -1,7 +1,3 @@
-// Helper traits
-use crate::Coeff;
-use crate::SeriesSliceIn;
-
 /// Multiplicative inverse
 pub trait MulInverse {
     type Output;
@@ -31,14 +27,6 @@ pub trait KaratsubaMul<Rhs> {
 pub(crate) trait LnVarFree {
     type Output;
     fn ln_var_free(self) -> Self::Output;
-}
-
-// Spurious traits, needed for rust >= 1.28
-// direct implementation used to work in 1.24
-pub(crate) trait AddAssignHelper<Var, C: Coeff> {
-    fn truncate_cutoff_pow(&mut self, other: SeriesSliceIn<'_, Var, C>);
-    fn add_overlap(&mut self, other: SeriesSliceIn<'_, Var, C>);
-    fn num_leading(&mut self, other: SeriesSliceIn<'_, Var, C>) -> usize;
 }
 
 pub(crate) trait ExpCoeff {
