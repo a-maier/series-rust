@@ -10,7 +10,6 @@ use std::ops::{
 };
 use std::{convert, iter};
 
-use log::trace;
 use num_traits::{One, Zero};
 
 /// Laurent polynomial in a single variable
@@ -1226,19 +1225,9 @@ where
         min_karatsuba_size: usize,
     ) {
         if std::cmp::min(a.len(), b.len()) < min_karatsuba_size {
-            trace!(
-                "Cauchy product of polynomials with lengths {}, {}",
-                a.len(),
-                b.len()
-            );
             self.add_prod_naive(a, b);
         } else {
             // TODO: split a or b if it's too long?
-            trace!(
-                "Karatsuba product of polynomials with lengths {}, {}",
-                a.len(),
-                b.len()
-            );
             self.add_prod_karatsuba(a, b, min_karatsuba_size);
         }
     }
