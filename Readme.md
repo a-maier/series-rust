@@ -99,3 +99,34 @@ let t = s.clone();
 println!("s^s = {}", (&s).pow(&t));
 println!("s^4 = {}", s.powi(4));
 ```
+
+# Multivariate Series and Polynomials
+
+There is limited support for Laurent series and polynomials in more
+than one variable via nested structures. Beyond the outermost level,
+any polynomials have to be anonymous:
+```
+use num_traits::{One, Zero};
+use series::{Polynomial, PolynomialIn};
+
+// The polynomial 1 + x*y, where ? is an anonymous variable
+let inner = Polynomial::new(1, vec![1i32]); // anonymous!
+let p = PolynomialIn::new("x", 0, vec![One::one(), inner]);
+assert!((&p - &p).iter().all(|(_, c)| c.is_zero()));
+```
+For nested series, we must use [InnerSeries],
+which is a sum type of an anonymous series and its coefficient type:
+```
+use num_traits::{One, Zero};
+use series::{InnerSeries, Series, SeriesIn};
+
+// The nested series 1 + x*(1 + ? + O(?^3)) + O(x^2)
+// where ? is an anonymous variable
+let inner = InnerSeries::from(Series::with_cutoff(1..3, vec![1i32]));
+let s = SeriesIn::new("x", 0, vec![One::one(), inner]);
+// Note that s - s = x * O(?^3) + (x^2).
+// The coefficient of x^1 is non-zero!
+assert!(!(&s - &s).coeff(1).unwrap().is_zero());
+// However, the coefficient of x^0 is zero:
+assert!((&s - &s).coeff(0).unwrap().is_zero());
+```
