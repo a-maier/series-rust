@@ -27,7 +27,7 @@ Add this to your Cargo.toml:
 
 ```toml
 [dependencies]
-series = "0.9"
+series = "0.13"
 ```
 
 # Examples
