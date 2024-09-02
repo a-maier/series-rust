@@ -82,11 +82,10 @@ impl<C: Coeff> Series<C> {
     /// assert_eq!(s.var(), &"x");
     /// ```
     pub fn in_var<Var>(self, var: Var) -> SeriesIn<Var, C> {
-        let Self {
-            min_pow,
-            coeffs,
-        } = self;
-        SeriesIn::new(var, min_pow, coeffs)
+        SeriesIn {
+            series: self,
+            var
+        }
     }
 
     /// Get the leading power of the series expansion variable

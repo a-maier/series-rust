@@ -146,7 +146,7 @@ impl<'a, C: Coeff> SeriesSlice<'a, C> {
     /// assert_eq!(s.var(), &"x");
     /// ```
     pub fn in_var<Var>(self, var: &'a Var) -> SeriesSliceIn<Var, C> {
-        SeriesSliceIn::new(var, self)
+        SeriesSliceIn{var, series: self}
     }
 
     /// Try to get the series coefficient of the expansion variable to

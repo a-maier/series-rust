@@ -15,8 +15,8 @@ use std::ops::{
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(PartialEq, Eq, Debug, Clone, Hash, Ord, PartialOrd)]
 pub struct SeriesIn<Var, C: Coeff> {
-    series: Series<C>,
-    var: Var,
+    pub(crate) series: Series<C>,
+    pub(crate) var: Var,
 }
 
 impl<Var, C: Coeff> SeriesIn<Var, C> {

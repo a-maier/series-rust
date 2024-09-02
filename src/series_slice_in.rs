@@ -27,16 +27,6 @@ impl<'a, Var, C: Coeff> std::clone::Clone for SeriesSliceIn<'a, Var, C> {
 }
 
 impl<'a, Var, C: Coeff> SeriesSliceIn<'a, Var, C> {
-    pub(super) fn new(
-        var: &'a Var,
-        series: SeriesSlice<'a, C>
-    ) -> Self {
-        SeriesSliceIn {
-            var,
-            series,
-        }
-    }
-
     /// Get the leading power of the series expansion variable
     ///
     /// # Example
