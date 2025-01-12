@@ -32,7 +32,7 @@ impl std::ops::Neg for Integer {
     }
 }
 
-impl<'a> std::ops::Neg for &'a Integer {
+impl std::ops::Neg for &Integer {
     type Output = Integer;
     fn neg(self) -> Integer {
         Integer((-&self.0).into())
@@ -55,7 +55,7 @@ impl std::ops::Add<Integer> for Integer {
     type Output = Integer;
 
     fn add(self, rhs: Integer) -> Integer {
-        Integer(rug::Integer::from(self.0 + rhs.0))
+        Integer(self.0 + rhs.0)
     }
 }
 
@@ -65,7 +65,7 @@ impl<'a> std::ops::MulAssign<&'a Integer> for Integer {
     }
 }
 
-impl<'a, 'b> std::ops::Mul<&'b Integer> for &'a Integer {
+impl<'b> std::ops::Mul<&'b Integer> for &Integer {
     type Output = Integer;
 
     fn mul(self, rhs: &'b Integer) -> Integer {
@@ -77,7 +77,7 @@ impl std::ops::Mul<Integer> for Integer {
     type Output = Integer;
 
     fn mul(self, rhs: Integer) -> Integer {
-        Integer(rug::Integer::from(self.0 * rhs.0))
+        Integer(self.0 * rhs.0)
     }
 }
 

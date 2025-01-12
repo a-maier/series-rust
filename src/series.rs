@@ -461,7 +461,7 @@ impl<C: Coeff> std::iter::IntoIterator for Series<C> {
     }
 }
 
-impl<'a, C: Coeff + SubAssign> MulInverse for &'a Series<C>
+impl<C: Coeff + SubAssign> MulInverse for &Series<C>
 where
     C: Coeff + SubAssign,
     for<'c> &'c C: Div<Output = C> + Mul<Output = C>,
@@ -530,7 +530,7 @@ impl<C: Coeff + Neg<Output = C>> Neg for Series<C> {
     }
 }
 
-impl<'a, C: Coeff> Neg for &'a Series<C>
+impl<C: Coeff> Neg for &Series<C>
 where
     for<'c> &'c C: Neg<Output = C>,
 {
@@ -618,7 +618,7 @@ where
     }
 }
 
-impl<'a, C: Coeff + Clone, Rhs> Add<Rhs> for &'a Series<C>
+impl<C: Coeff + Clone, Rhs> Add<Rhs> for &Series<C>
 where
     Series<C>: AddAssign<Rhs>,
 {
@@ -695,7 +695,7 @@ where
 }
 
 // TODO: somehow make addition symmetric?
-impl<'a, C: Coeff, T> Sub<T> for &'a Series<C>
+impl<C: Coeff, T> Sub<T> for &Series<C>
 where
     Series<C>: Clone + SubAssign<T>,
 {
@@ -913,7 +913,7 @@ where
     }
 }
 
-impl<'a, C: Coeff, T> Div<T> for &'a Series<C>
+impl<C: Coeff, T> Div<T> for &Series<C>
 where
     Series<C>: Clone + DivAssign<T>,
 {
@@ -963,7 +963,7 @@ where
     }
 }
 
-impl<'a, C: Coeff> Exp for &'a Series<C>
+impl<C: Coeff> Exp for &Series<C>
 where
     for<'b> &'b C: Mul<Output = C>,
     for<'b> C: MulAssign<&'b C>,
@@ -1016,7 +1016,7 @@ where
     }
 }
 
-impl<'a, C: Coeff> Ln for &'a Series<C>
+impl<C: Coeff> Ln for &Series<C>
 where
     for<'b> C: Div<&'b C, Output = C>,
     for<'b> &'b C: Mul<Output = C> + Ln<Output = C>,
@@ -1055,7 +1055,7 @@ where
     }
 }
 
-impl<'a, C: Coeff, T> Pow<T> for &'a Series<C>
+impl<C: Coeff, T> Pow<T> for &Series<C>
 where
     for<'b> SeriesSlice<'b, C>: Ln<Output = Series<C>>,
     Series<C>: Mul<T>,
@@ -1383,7 +1383,7 @@ where
     }
 }
 
-impl<'a, C: Coeff> ExpCoeff for SeriesSlice<'a, C>
+impl<C: Coeff> ExpCoeff for SeriesSlice<'_, C>
 where
     for<'c> &'c C: Mul<Output = C>,
     for<'c> C: MulAssign<&'c C>,

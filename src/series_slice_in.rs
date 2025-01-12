@@ -18,9 +18,9 @@ pub struct SeriesSliceIn<'a, Var, C: Coeff> {
 
 // needs manual implementation,
 // #[derive(Copy)] can't deal with lifetimes in rust 1.36
-impl<'a, Var, C: Coeff> std::marker::Copy for SeriesSliceIn<'a, Var, C> {}
+impl<Var, C: Coeff> std::marker::Copy for SeriesSliceIn<'_, Var, C> {}
 
-impl<'a, Var, C: Coeff> std::clone::Clone for SeriesSliceIn<'a, Var, C> {
+impl<Var, C: Coeff> std::clone::Clone for SeriesSliceIn<'_, Var, C> {
     fn clone(&self) -> Self {
         *self
     }
@@ -181,7 +181,7 @@ impl<'a, Var, C: 'static + Coeff + Send + Sync> SeriesSliceIn<'a, Var, C> {
     }
 }
 
-impl<'a, Var, C: Coeff> Index<isize> for SeriesSliceIn<'a, Var, C> {
+impl<Var, C: Coeff> Index<isize> for SeriesSliceIn<'_, Var, C> {
     type Output = C;
 
     fn index(&self, index: isize) -> &Self::Output {
@@ -189,7 +189,7 @@ impl<'a, Var, C: Coeff> Index<isize> for SeriesSliceIn<'a, Var, C> {
     }
 }
 
-impl<'a, Var, C> MulInverse for SeriesSliceIn<'a, Var, C>
+impl<Var, C> MulInverse for SeriesSliceIn<'_, Var, C>
 where
     Var: Clone,
     C: Coeff + SubAssign,
@@ -203,8 +203,8 @@ where
     }
 }
 
-impl<'a, Var: fmt::Display, C: Coeff + fmt::Display> fmt::Display
-    for SeriesSliceIn<'a, Var, C>
+impl<Var: fmt::Display, C: Coeff + fmt::Display> fmt::Display
+    for SeriesSliceIn<'_, Var, C>
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         if !self.series.coeffs.is_empty() {
@@ -215,7 +215,7 @@ impl<'a, Var: fmt::Display, C: Coeff + fmt::Display> fmt::Display
     }
 }
 
-impl<'a, Var: Clone, C: Coeff> Neg for SeriesSliceIn<'a, Var, C>
+impl<Var: Clone, C: Coeff> Neg for SeriesSliceIn<'_, Var, C>
 where
     for<'c> &'c C: Neg<Output = C>,
 {
@@ -226,8 +226,8 @@ where
     }
 }
 
-impl<'a, Var: Clone, C: Coeff + Clone, Rhs> Add<Rhs>
-    for SeriesSliceIn<'a, Var, C>
+impl<Var: Clone, C: Coeff + Clone, Rhs> Add<Rhs>
+    for SeriesSliceIn<'_, Var, C>
 where
     SeriesIn<Var, C>: AddAssign<Rhs>,
 {
@@ -240,7 +240,7 @@ where
     }
 }
 
-impl<'a, Var, C: Coeff, T> Sub<T> for SeriesSliceIn<'a, Var, C>
+impl<Var, C: Coeff, T> Sub<T> for SeriesSliceIn<'_, Var, C>
 where
     C: Clone,
     Var: Clone,
@@ -268,7 +268,7 @@ where
     }
 }
 
-impl<'a, Var, C: Coeff> Mul<SeriesIn<Var, C>> for SeriesSliceIn<'a, Var, C>
+impl<Var, C: Coeff> Mul<SeriesIn<Var, C>> for SeriesSliceIn<'_, Var, C>
 where
     Var: Clone,
     C: Clone,
@@ -281,8 +281,8 @@ where
     }
 }
 
-impl<'a, 'b, Var, C: Coeff> Mul<&'b SeriesIn<Var, C>>
-    for SeriesSliceIn<'a, Var, C>
+impl<'b, Var, C: Coeff> Mul<&'b SeriesIn<Var, C>>
+    for SeriesSliceIn<'_, Var, C>
 where
     C: Clone,
     Var: Clone,
@@ -296,7 +296,7 @@ where
     }
 }
 
-impl<'a, Var, C: Coeff> Mul<C> for SeriesSliceIn<'a, Var, C>
+impl<Var, C: Coeff> Mul<C> for SeriesSliceIn<'_, Var, C>
 where
     Var: Clone,
     for<'c> &'c C: Mul<Output = C>,
@@ -308,7 +308,7 @@ where
     }
 }
 
-impl<'a, 'b, Var, C: Coeff> Mul<&'b C> for SeriesSliceIn<'a, Var, C>
+impl<'b, Var, C: Coeff> Mul<&'b C> for SeriesSliceIn<'_, Var, C>
 where
     Var: Clone,
     for<'c> &'c C: Mul<Output = C>,
@@ -320,7 +320,7 @@ where
     }
 }
 
-impl<'a, Var, C: Coeff, T> Div<T> for SeriesSliceIn<'a, Var, C>
+impl<Var, C: Coeff, T> Div<T> for SeriesSliceIn<'_, Var, C>
 where
     Var: Clone,
     C: Clone,
@@ -335,7 +335,7 @@ where
     }
 }
 
-impl<'a, Var, C: Coeff> Exp for SeriesSliceIn<'a, Var, C>
+impl<Var, C: Coeff> Exp for SeriesSliceIn<'_, Var, C>
 where
     for<'b> &'b C: Mul<Output = C>,
     for<'b> C: MulAssign<&'b C>,
@@ -354,7 +354,7 @@ where
     }
 }
 
-impl<'a, Var, C: Coeff> Ln for SeriesSliceIn<'a, Var, C>
+impl<Var, C: Coeff> Ln for SeriesSliceIn<'_, Var, C>
 where
     for<'b> C: Div<&'b C, Output = C>,
     for<'b> &'b C: Mul<Output = C> + Ln<Output = C>,
@@ -403,7 +403,7 @@ where
     }
 }
 
-impl<'a, Var, C: Coeff, T> Pow<T> for SeriesSliceIn<'a, Var, C>
+impl<Var, C: Coeff, T> Pow<T> for SeriesSliceIn<'_, Var, C>
 where
     for<'b> SeriesSliceIn<'b, Var, C>: Ln<Output = SeriesIn<Var, C>>,
     SeriesIn<Var, C>: Mul<T>,

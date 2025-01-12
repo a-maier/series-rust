@@ -1086,7 +1086,7 @@ impl<C: Coeff> From<Polynomial<C>> for PolynomialParts<C> {
     }
 }
 
-impl<'a, 'b, C: Coeff> KaratsubaMul<&'b Polynomial<C>> for &'a Polynomial<C>
+impl<'b, C: Coeff> KaratsubaMul<&'b Polynomial<C>> for &Polynomial<C>
 where
     C: Clone,
     for<'c> C: AddAssign,
@@ -1107,8 +1107,8 @@ where
     }
 }
 
-impl<'a, 'b, C: Coeff> KaratsubaMul<PolynomialSlice<'b, C>>
-    for &'a Polynomial<C>
+impl<'b, C: Coeff> KaratsubaMul<PolynomialSlice<'b, C>>
+    for &Polynomial<C>
 where
     C: Clone,
     for<'c> C: AddAssign,

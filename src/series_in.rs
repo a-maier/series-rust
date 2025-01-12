@@ -429,7 +429,7 @@ impl<Var, C: Coeff> std::iter::IntoIterator for SeriesIn<Var, C> {
     }
 }
 
-impl<'a, Var: Clone, C: Coeff + SubAssign> MulInverse for &'a SeriesIn<Var, C>
+impl<Var: Clone, C: Coeff + SubAssign> MulInverse for &SeriesIn<Var, C>
 where
     Var: Clone,
     C: Coeff + SubAssign,
@@ -502,7 +502,7 @@ impl<Var, C: Coeff + Neg<Output = C>> Neg for SeriesIn<Var, C> {
     }
 }
 
-impl<'a, Var: Clone, C: Coeff> Neg for &'a SeriesIn<Var, C>
+impl<Var: Clone, C: Coeff> Neg for &SeriesIn<Var, C>
 where
     for<'c> &'c C: Neg<Output = C>,
 {
@@ -587,7 +587,7 @@ where
     }
 }
 
-impl<'a, Var: Clone, C: Coeff + Clone, Rhs> Add<Rhs> for &'a SeriesIn<Var, C>
+impl<Var: Clone, C: Coeff + Clone, Rhs> Add<Rhs> for &SeriesIn<Var, C>
 where
     SeriesIn<Var, C>: AddAssign<Rhs>,
 {
@@ -673,7 +673,7 @@ where
 }
 
 // TODO: somehow make addition symmetric?
-impl<'a, Var, C: Coeff, T> Sub<T> for &'a SeriesIn<Var, C>
+impl<Var, C: Coeff, T> Sub<T> for &SeriesIn<Var, C>
 where
     SeriesIn<Var, C>: Clone + SubAssign<T>,
 {
@@ -895,7 +895,7 @@ where
     }
 }
 
-impl<'a, Var, C: Coeff, T> Div<T> for &'a SeriesIn<Var, C>
+impl<Var, C: Coeff, T> Div<T> for &SeriesIn<Var, C>
 where
     SeriesIn<Var, C>: Clone + DivAssign<T>,
 {
@@ -945,7 +945,7 @@ where
     }
 }
 
-impl<'a, Var, C: Coeff> Exp for &'a SeriesIn<Var, C>
+impl<Var, C: Coeff> Exp for &SeriesIn<Var, C>
 where
     for<'b> &'b C: Mul<Output = C>,
     for<'b> C: MulAssign<&'b C>,
@@ -1019,7 +1019,7 @@ where
     }
 }
 
-impl<'a, Var, C: Coeff> Ln for &'a SeriesIn<Var, C>
+impl<Var, C: Coeff> Ln for &SeriesIn<Var, C>
 where
     for<'b> C: Div<&'b C, Output = C>,
     for<'b> &'b C: Mul<Output = C> + Ln<Output = C>,
@@ -1057,7 +1057,7 @@ where
     }
 }
 
-impl<'a, Var, C: Coeff, T> Pow<T> for &'a SeriesIn<Var, C>
+impl<Var, C: Coeff, T> Pow<T> for &SeriesIn<Var, C>
 where
     for<'b> SeriesSliceIn<'b, Var, C>: Ln<Output = SeriesIn<Var, C>>,
     SeriesIn<Var, C>: Mul<T>,
@@ -1230,7 +1230,7 @@ where
     }
 }
 
-impl<'a, Var, C: Coeff + From<i32>> ExpCoeff for SeriesSliceIn<'a, Var, C>
+impl<Var, C: Coeff + From<i32>> ExpCoeff for SeriesSliceIn<'_, Var, C>
 where
     for<'c> &'c C: Mul<Output = C>,
     for<'c> C: MulAssign<&'c C>,

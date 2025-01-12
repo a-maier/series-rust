@@ -15,9 +15,9 @@ pub struct PolynomialSlice<'a, C: Coeff> {
 
 // needs manual implementation,
 // #[derive(Copy)] can't deal with lifetimes in rust 1.36
-impl<'a, C: Coeff> std::marker::Copy for PolynomialSlice<'a, C> {}
+impl<C: Coeff> std::marker::Copy for PolynomialSlice<'_, C> {}
 
-impl<'a, C: Coeff> std::clone::Clone for PolynomialSlice<'a, C> {
+impl<C: Coeff> std::clone::Clone for PolynomialSlice<'_, C> {
     fn clone(&self) -> Self {
         *self
     }
@@ -175,7 +175,7 @@ impl<'a, C: Coeff> PolynomialSlice<'a, C> {
     /// let p = p.as_slice(..).in_var(&"x");
     /// assert_eq!(p.var(), &"x");
     /// ```
-    pub fn in_var<Var>(self, var: &'a Var) -> PolynomialSliceIn<Var, C> {
+    pub fn in_var<Var>(self, var: &'a Var) -> PolynomialSliceIn<'a, Var, C> {
         PolynomialSliceIn { var, poly: self }
     }
 
@@ -200,7 +200,7 @@ impl<'a, C: 'static + Coeff + Send + Sync> PolynomialSlice<'a, C> {
     }
 }
 
-impl<'a, C: Coeff> Index<isize> for PolynomialSlice<'a, C> {
+impl<C: Coeff> Index<isize> for PolynomialSlice<'_, C> {
     type Output = C;
 
     fn index(&self, index: isize) -> &Self::Output {
@@ -208,7 +208,7 @@ impl<'a, C: Coeff> Index<isize> for PolynomialSlice<'a, C> {
     }
 }
 
-impl<'a, C: Coeff> Neg for PolynomialSlice<'a, C>
+impl<C: Coeff> Neg for PolynomialSlice<'_, C>
 where
     for<'c> &'c C: Neg<Output = C>,
 {
@@ -220,7 +220,7 @@ where
     }
 }
 
-impl<'a, C: Coeff + Clone, Rhs> Add<Rhs> for PolynomialSlice<'a, C>
+impl<C: Coeff + Clone, Rhs> Add<Rhs> for PolynomialSlice<'_, C>
 where
     Polynomial<C>: AddAssign<Rhs>,
 {
@@ -233,7 +233,7 @@ where
     }
 }
 
-impl<'a, C: Coeff, T> Sub<T> for PolynomialSlice<'a, C>
+impl<C: Coeff, T> Sub<T> for PolynomialSlice<'_, C>
 where
     C: Clone,
     Polynomial<C>: SubAssign<T>,
@@ -249,7 +249,7 @@ where
 
 const MIN_KARATSUBA_SIZE: usize = 8;
 
-impl<'a, 'b, C: Coeff> Mul<PolynomialSlice<'b, C>> for PolynomialSlice<'a, C>
+impl<'b, C: Coeff> Mul<PolynomialSlice<'b, C>> for PolynomialSlice<'_, C>
 where
     C: Clone,
     for<'c> C: AddAssign,
@@ -289,7 +289,7 @@ where
     }
 }
 
-impl<'a, C: Coeff> Mul<C> for PolynomialSlice<'a, C>
+impl<C: Coeff> Mul<C> for PolynomialSlice<'_, C>
 where
     for<'b> &'b C: Mul<Output = C>,
 {
@@ -301,7 +301,7 @@ where
     }
 }
 
-impl<'a, 'b, C: Coeff> Mul<&'b C> for PolynomialSlice<'a, C>
+impl<'b, C: Coeff> Mul<&'b C> for PolynomialSlice<'_, C>
 where
     for<'c> &'c C: Mul<Output = C>,
 {
@@ -313,7 +313,7 @@ where
     }
 }
 
-impl<'a, C: Coeff> Div<C> for PolynomialSlice<'a, C>
+impl<C: Coeff> Div<C> for PolynomialSlice<'_, C>
 where
     for<'c> &'c C: Div<Output = C>,
 {
@@ -325,7 +325,7 @@ where
     }
 }
 
-impl<'a, 'b, C: Coeff> Div<&'b C> for PolynomialSlice<'a, C>
+impl<'b, C: Coeff> Div<&'b C> for PolynomialSlice<'_, C>
 where
     for<'c> &'c C: Div<Output = C>,
 {
@@ -345,8 +345,8 @@ impl<'a, C: Coeff, Var> From<PolynomialSliceIn<'a, Var, C>>
     }
 }
 
-impl<'a, 'b, C: Coeff> KaratsubaMul<PolynomialSlice<'b, C>>
-    for PolynomialSlice<'a, C>
+impl<'b, C: Coeff> KaratsubaMul<PolynomialSlice<'b, C>>
+    for PolynomialSlice<'_, C>
 where
     C: Clone,
     for<'c> C: AddAssign,
@@ -372,8 +372,8 @@ where
     }
 }
 
-impl<'a, 'b, C: Coeff> KaratsubaMul<&'b Polynomial<C>>
-    for PolynomialSlice<'a, C>
+impl<'b, C: Coeff> KaratsubaMul<&'b Polynomial<C>>
+    for PolynomialSlice<'_, C>
 where
     C: Clone,
     for<'c> C: AddAssign,

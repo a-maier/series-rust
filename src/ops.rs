@@ -1,4 +1,4 @@
-/// Traits for common functions
+//! Traits for common functions
 
 /// Trait for the natural logarithm
 pub trait Ln {
@@ -15,7 +15,7 @@ impl Ln for f64 {
     }
 }
 
-impl<'a> Ln for &'a f64 {
+impl Ln for &f64 {
     type Output = f64;
 
     fn ln(self) -> Self::Output {
@@ -31,7 +31,7 @@ impl Ln for f32 {
     }
 }
 
-impl<'a> Ln for &'a f32 {
+impl Ln for &f32 {
     type Output = f32;
 
     fn ln(self) -> Self::Output {
@@ -54,7 +54,7 @@ impl Exp for f64 {
     }
 }
 
-impl<'a> Exp for &'a f64 {
+impl Exp for &f64 {
     type Output = f64;
 
     fn exp(self) -> Self::Output {
@@ -70,7 +70,7 @@ impl Exp for f32 {
     }
 }
 
-impl<'a> Exp for &'a f32 {
+impl Exp for &f32 {
     type Output = f32;
 
     fn exp(self) -> Self::Output {

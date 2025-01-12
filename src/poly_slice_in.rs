@@ -14,9 +14,9 @@ pub struct PolynomialSliceIn<'a, Var, C: Coeff> {
 
 // needs manual implementation,
 // #[derive(Copy)] can't deal with lifetimes in rust 1.36
-impl<'a, Var, C: Coeff> std::marker::Copy for PolynomialSliceIn<'a, Var, C> {}
+impl<Var, C: Coeff> std::marker::Copy for PolynomialSliceIn<'_, Var, C> {}
 
-impl<'a, Var, C: Coeff> std::clone::Clone for PolynomialSliceIn<'a, Var, C> {
+impl<Var, C: Coeff> std::clone::Clone for PolynomialSliceIn<'_, Var, C> {
     fn clone(&self) -> Self {
         *self
     }
@@ -152,7 +152,7 @@ impl<'a, Var, C: Coeff> PolynomialSliceIn<'a, Var, C> {
     }
 }
 
-impl<'a, Var, C: Coeff> Index<isize> for PolynomialSliceIn<'a, Var, C> {
+impl<Var, C: Coeff> Index<isize> for PolynomialSliceIn<'_, Var, C> {
     type Output = C;
 
     fn index(&self, index: isize) -> &Self::Output {
@@ -160,8 +160,8 @@ impl<'a, Var, C: Coeff> Index<isize> for PolynomialSliceIn<'a, Var, C> {
     }
 }
 
-impl<'a, Var: fmt::Display, C: Coeff + fmt::Display> fmt::Display
-    for PolynomialSliceIn<'a, Var, C>
+impl<Var: fmt::Display, C: Coeff + fmt::Display> fmt::Display
+    for PolynomialSliceIn<'_, Var, C>
 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         if let Some(min_pow) = self.min_pow() {
@@ -186,7 +186,7 @@ impl<'a, Var: fmt::Display, C: Coeff + fmt::Display> fmt::Display
     }
 }
 
-impl<'a, Var: Clone, C: Coeff> Neg for PolynomialSliceIn<'a, Var, C>
+impl<Var: Clone, C: Coeff> Neg for PolynomialSliceIn<'_, Var, C>
 where
     for<'c> &'c C: Neg<Output = C>,
 {
@@ -197,8 +197,8 @@ where
     }
 }
 
-impl<'a, Var: Clone, C: Coeff + Clone, Rhs> Add<Rhs>
-    for PolynomialSliceIn<'a, Var, C>
+impl<Var: Clone, C: Coeff + Clone, Rhs> Add<Rhs>
+    for PolynomialSliceIn<'_, Var, C>
 where
     PolynomialIn<Var, C>: AddAssign<Rhs>,
 {
@@ -211,7 +211,7 @@ where
     }
 }
 
-impl<'a, Var, C: Coeff, T> Sub<T> for PolynomialSliceIn<'a, Var, C>
+impl<Var, C: Coeff, T> Sub<T> for PolynomialSliceIn<'_, Var, C>
 where
     C: Clone,
     Var: Clone,
@@ -266,7 +266,7 @@ where
     }
 }
 
-impl<'a, Var: Clone, C: Coeff> Mul<C> for PolynomialSliceIn<'a, Var, C>
+impl<Var: Clone, C: Coeff> Mul<C> for PolynomialSliceIn<'_, Var, C>
 where
     for<'b> &'b C: Mul<Output = C>,
 {
@@ -277,7 +277,7 @@ where
     }
 }
 
-impl<'a, 'b, Var: Clone, C: Coeff> Mul<&'b C> for PolynomialSliceIn<'a, Var, C>
+impl<'b, Var: Clone, C: Coeff> Mul<&'b C> for PolynomialSliceIn<'_, Var, C>
 where
     for<'c> &'c C: Mul<Output = C>,
 {
@@ -288,7 +288,7 @@ where
     }
 }
 
-impl<'a, Var: Clone, C: Coeff> Div<C> for PolynomialSliceIn<'a, Var, C>
+impl<Var: Clone, C: Coeff> Div<C> for PolynomialSliceIn<'_, Var, C>
 where
     for<'c> &'c C: Div<Output = C>,
 {
@@ -299,7 +299,7 @@ where
     }
 }
 
-impl<'a, 'b, Var: Clone, C: Coeff> Div<&'b C> for PolynomialSliceIn<'a, Var, C>
+impl<'b, Var: Clone, C: Coeff> Div<&'b C> for PolynomialSliceIn<'_, Var, C>
 where
     for<'c> &'c C: Div<Output = C>,
 {
