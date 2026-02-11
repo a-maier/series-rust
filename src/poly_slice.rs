@@ -133,7 +133,7 @@ impl<'a, C: Coeff> PolynomialSlice<'a, C> {
     /// assert_eq!(iter.next(), Some((1, &3)));
     /// assert_eq!(iter.next(), None);
     /// ```
-    pub fn iter(&self) -> Iter<C> {
+    pub fn iter(&self) -> Iter<'_, C> {
         (self.min_pow().unwrap_or(0)..).zip(self.coeffs.iter())
     }
 

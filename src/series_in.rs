@@ -110,7 +110,7 @@ impl<Var, C: Coeff> SeriesIn<Var, C> {
     /// assert_eq!(iter.next(), Some((1, &3)));
     /// assert_eq!(iter.next(), None);
     /// ```
-    pub fn iter(&self) -> Iter<C> {
+    pub fn iter(&self) -> Iter<'_, C> {
         self.series.iter()
     }
 
