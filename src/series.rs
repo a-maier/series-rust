@@ -44,7 +44,7 @@ impl<Var, C: Coeff> Series<Var, C> {
     /// "x"^5 .In other words, the series
     /// x^-1 + 2 + 3*x + O(x^5).
     /// ```rust
-    /// let s = series::SeriesIn::with_cutoff("x", -1, 5, vec!(1,2,3));
+    /// let s = series::SeriesIn::with_cutoff("x", -1..5, vec![1, 2, 3]);
     /// ```
     ///
     /// # Panics
@@ -53,11 +53,10 @@ impl<Var, C: Coeff> Series<Var, C> {
     ///
     pub fn with_cutoff(
         var: Var,
-        min_pow: isize,
-        cutoff_pow: isize,
+        powers: Range<isize>,
         coeffs: Vec<C>,
     ) -> Series<Var, C> {
-        let series = AnonSeries::with_cutoff(min_pow..cutoff_pow, coeffs);
+        let series = AnonSeries::with_cutoff(powers, coeffs);
         Series { series, var }
     }
 

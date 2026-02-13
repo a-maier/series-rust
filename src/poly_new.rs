@@ -1,7 +1,7 @@
 use crate::traits::AsSlice;
 use crate::util_new::trim_zero;
 use crate::zero_ref::zero_ref;
-use crate::{Coeff, IntoIter};
+use crate::{Coeff, IntoIter, Series, SeriesParts};
 
 use core::slice;
 use std::iter::FusedIterator;
@@ -29,6 +29,42 @@ pub struct NonConstPoly<Var, C> {
     min_pow: isize,
     coeffs: Vec<C>,
     var: Var,
+}
+
+impl<Var, C: Coeff> NonConstPoly<Var, C> {
+    /// Turn a polynomial into a series with the given cutoff
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// let p = Polynomial::new("x", -1, vec![1, 2, 3]);
+    /// let Polynomial::Poly(p) = p else {
+    ///    unreachable!("Polynomial is not a constant")
+    /// };
+    /// let s = Series::with_cutoff("x", -1..5, vec![1,2,3]);
+    /// assert_eq!(p.cutoff_at(5), s);
+    /// ```
+    ///
+    /// # Panics
+    ///
+    /// Panics if the cutoff power is lower than the starting power
+    ///
+    pub fn cutoff_at(self, cutoff_pow: isize) -> Series<Var, C> {
+        let Self{ min_pow, coeffs, var } = self;
+        Series::with_cutoff(
+            var,
+            min_pow..cutoff_pow,
+            coeffs,
+        )
+    }
+
+    pub fn min_pow(&self) -> isize {
+        self.min_pow
+    }
+
+    pub fn var(&self) -> &Var {
+        &self.var
+    }
 }
 
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -375,26 +411,38 @@ impl<Var, C: Coeff> Polynomial<Var, C> {
     }
 }
 
-//     /// Turn a polynomial into a series with the given cutoff
-//     ///
-//     /// # Example
-//     ///
-//     /// ```rust
-//     /// let p = Polynomial::new(-1, vec!(1,2,3));
-//     /// let s = with_cutoff(-1..5, vec!(1,2,3));
-//     /// assert_eq!(p.cutoff_at(5), s);
-//     /// ```
-//     ///
-//     /// # Panics
-//     ///
-//     /// Panics if the cutoff power is lower than the starting power
-//     ///
-//     pub fn cutoff_at(self, cutoff_pow: isize) -> Series<C> {
-//         with_cutoff(
-//             self.min_pow.unwrap_or(cutoff_pow)..cutoff_pow,
-//             self.coeffs,
-//         )
-//     }
+impl<Var: Debug + PartialEq, C: Coeff> Polynomial<Var, C> {
+    /// Turn a polynomial into a series with the given cutoff
+    ///
+    /// Since constant polynomials do not store the expansion variable
+    /// it has to be specified. See [NonConstPoly::cutoff_at] for the
+    /// case where we know that the polynomial is not a constant.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the passed expansion variable does not agree with
+    /// the polynomial variable.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// let p = Polynomial::new("x", -1, vec![1, 2, 3]);
+    /// let Polynomial::Poly(p) = p else {
+    ///    unreachable!("Polynomial is not a constant")
+    /// };
+    /// let s = Series::with_cutoff("x", -1..5, vec![1, 2, 3]);
+    /// assert_eq!(p.cutoff_at(5), s);
+    /// ```
+    pub fn cutoff_at(self, var: Var, cutoff_pow: isize) -> Series<Var, C> {
+        match self {
+            Polynomial::Const(c) => Series::with_cutoff(var, 0..cutoff_pow, vec![c]),
+            Polynomial::Poly(poly) => {
+                assert_eq!(&var, poly.var());
+                poly.cutoff_at(cutoff_pow)
+            },
+        }
+    }
+}
 
 impl<Var, C: 'static + Coeff + Send + Sync> Polynomial<Var, C> {
     /// Get the coefficient of the polynomial variable to the
@@ -602,11 +650,12 @@ impl<'a, Var: 'a, C: 'a + Coeff> AsSlice<'a, RangeFull> for Polynomial<Var, C> {
     }
 }
 
-// impl<C: Coeff> convert::From<Series<C>> for Polynomial<C> {
-//     fn from(s: Series<C>) -> Self {
-//         Polynomial::new(s.min_pow, s.coeffs)
-//     }
-// }
+impl<Var, C: Coeff> From<Series<Var, C>> for Polynomial<Var, C> {
+    fn from(s: Series<Var, C>) -> Self {
+        let SeriesParts{ var, min_pow, coeffs } = s.into();
+        Polynomial::new(var, min_pow, coeffs)
+    }
+}
 
 impl<Var, C: Coeff> Index<isize> for Polynomial<Var, C> {
     type Output = C;
