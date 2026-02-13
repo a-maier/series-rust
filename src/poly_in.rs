@@ -1,7 +1,7 @@
 use crate::traits::{AsSlice, KaratsubaMul};
-use crate::SeriesIn;
+use crate::Series;
 use crate::{Coeff, IntoIter, Iter};
-use crate::{Polynomial, PolynomialSlice, PolynomialSliceIn, SeriesInParts};
+use crate::{Polynomial, PolynomialSlice, PolynomialSliceIn, SeriesParts};
 
 use std::ops::{
     Add, AddAssign, Div, DivAssign, Index, Mul, MulAssign, Neg, Range,
@@ -140,7 +140,7 @@ impl<Var, C: Coeff> PolynomialIn<Var, C> {
     ///
     /// Panics if the cutoff power is lower than the starting power
     ///
-    pub fn cutoff_at(self, cutoff_pow: isize) -> SeriesIn<Var, C> {
+    pub fn cutoff_at(self, cutoff_pow: isize) -> Series<Var, C> {
         self.poly.cutoff_at(cutoff_pow).in_var(self.var)
     }
 
@@ -298,9 +298,9 @@ impl<'a, Var: 'a, C: 'a + Coeff> AsSlice<'a, RangeFull>
     }
 }
 
-impl<Var, C: Coeff> convert::From<SeriesIn<Var, C>> for PolynomialIn<Var, C> {
-    fn from(s: SeriesIn<Var, C>) -> Self {
-        let SeriesInParts {
+impl<Var, C: Coeff> convert::From<Series<Var, C>> for PolynomialIn<Var, C> {
+    fn from(s: Series<Var, C>) -> Self {
+        let SeriesParts {
             var,
             min_pow,
             coeffs,

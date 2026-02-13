@@ -4,7 +4,7 @@ use std::ops::{
 
 use num_traits::{One, Zero};
 
-use crate::{zero_ref::zero_ref, Coeff, MulInverse, Series};
+use crate::{zero_ref::zero_ref, Coeff, MulInverse, anon_series::AnonSeries};
 
 /// A sum type of a Laurent series and its coefficient ("inner") type.
 ///
@@ -20,7 +20,7 @@ use crate::{zero_ref::zero_ref, Coeff, MulInverse, Series};
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(PartialEq, Eq, Debug, Clone, Hash, Ord, PartialOrd)]
 pub enum InnerSeries<C: Coeff> {
-    Series(Series<C>),
+    Series(AnonSeries<C>),
     Inner(C),
 }
 
@@ -40,8 +40,8 @@ impl<C: Coeff + Default> Default for InnerSeries<C> {
     }
 }
 
-impl<C: Coeff> From<Series<C>> for InnerSeries<C> {
-    fn from(s: Series<C>) -> Self {
+impl<C: Coeff> From<AnonSeries<C>> for InnerSeries<C> {
+    fn from(s: AnonSeries<C>) -> Self {
         Self::Series(s)
     }
 }
@@ -55,7 +55,7 @@ impl<C: Coeff> From<C> for InnerSeries<C> {
 impl<C: Coeff> Neg for InnerSeries<C>
 where
     C: Neg<Output = C>,
-    Series<C>: Neg<Output = Series<C>>,
+    AnonSeries<C>: Neg<Output = AnonSeries<C>>,
 {
     type Output = Self;
 
@@ -71,7 +71,7 @@ where
 impl<'a, C: Coeff> Neg for &'a InnerSeries<C>
 where
     &'a C: Neg<Output = C>,
-    &'a Series<C>: Neg<Output = Series<C>>,
+    &'a AnonSeries<C>: Neg<Output = AnonSeries<C>>,
 {
     type Output = InnerSeries<C>;
 
@@ -87,7 +87,7 @@ where
 impl<C: Coeff> MulInverse for InnerSeries<C>
 where
     C: MulInverse<Output = C>,
-    Series<C>: MulInverse<Output = Series<C>>,
+    AnonSeries<C>: MulInverse<Output = AnonSeries<C>>,
 {
     type Output = Self;
 
@@ -103,7 +103,7 @@ where
 impl<'a, C: Coeff> MulInverse for &'a InnerSeries<C>
 where
     &'a C: MulInverse<Output = C>,
-    &'a Series<C>: MulInverse<Output = Series<C>>,
+    &'a AnonSeries<C>: MulInverse<Output = AnonSeries<C>>,
 {
     type Output = InnerSeries<C>;
 
@@ -116,13 +116,13 @@ where
     }
 }
 
-impl<C: Coeff> Add<Series<C>> for InnerSeries<C>
+impl<C: Coeff> Add<AnonSeries<C>> for InnerSeries<C>
 where
-    Series<C>: Add<Output = Series<C>> + Add<C, Output = Series<C>>,
+    AnonSeries<C>: Add<Output = AnonSeries<C>> + Add<C, Output = AnonSeries<C>>,
 {
     type Output = InnerSeries<C>;
 
-    fn add(self, rhs: Series<C>) -> Self::Output {
+    fn add(self, rhs: AnonSeries<C>) -> Self::Output {
         use InnerSeries::*;
         match self {
             Series(s) => s.add(rhs).into(),
@@ -131,9 +131,9 @@ where
     }
 }
 
-impl<C: Coeff> Add<InnerSeries<C>> for Series<C>
+impl<C: Coeff> Add<InnerSeries<C>> for AnonSeries<C>
 where
-    Series<C>: Add<Output = Series<C>> + Add<C, Output = Series<C>>,
+    AnonSeries<C>: Add<Output = AnonSeries<C>> + Add<C, Output = AnonSeries<C>>,
 {
     type Output = InnerSeries<C>;
 
@@ -144,7 +144,7 @@ where
 
 impl<C: Coeff> Add<C> for InnerSeries<C>
 where
-    Series<C>: Add<C, Output = Series<C>>,
+    AnonSeries<C>: Add<C, Output = AnonSeries<C>>,
     C: Add<Output = C>,
 {
     type Output = InnerSeries<C>;
@@ -160,7 +160,7 @@ where
 
 impl<C: Coeff> Add for InnerSeries<C>
 where
-    InnerSeries<C>: Add<C, Output = Self> + Add<Series<C>, Output = Self>,
+    InnerSeries<C>: Add<C, Output = Self> + Add<AnonSeries<C>, Output = Self>,
 {
     type Output = InnerSeries<C>;
 
@@ -173,14 +173,14 @@ where
     }
 }
 
-impl<'a, C: Coeff> Add<&'a Series<C>> for InnerSeries<C>
+impl<'a, C: Coeff> Add<&'a AnonSeries<C>> for InnerSeries<C>
 where
-    Series<C>: Add<&'a Series<C>, Output = Series<C>>,
-    &'a Series<C>: Add<C, Output = Series<C>>,
+    AnonSeries<C>: Add<&'a AnonSeries<C>, Output = AnonSeries<C>>,
+    &'a AnonSeries<C>: Add<C, Output = AnonSeries<C>>,
 {
     type Output = InnerSeries<C>;
 
-    fn add(self, rhs: &'a Series<C>) -> Self::Output {
+    fn add(self, rhs: &'a AnonSeries<C>) -> Self::Output {
         use InnerSeries::*;
         match self {
             Series(s) => s.add(rhs).into(),
@@ -189,10 +189,10 @@ where
     }
 }
 
-impl<'a, C: Coeff> Add<InnerSeries<C>> for &'a Series<C>
+impl<'a, C: Coeff> Add<InnerSeries<C>> for &'a AnonSeries<C>
 where
-    Series<C>: Add<&'a Series<C>, Output = Series<C>>,
-    &'a Series<C>: Add<C, Output = Series<C>>,
+    AnonSeries<C>: Add<&'a AnonSeries<C>, Output = AnonSeries<C>>,
+    &'a AnonSeries<C>: Add<C, Output = AnonSeries<C>>,
 {
     type Output = InnerSeries<C>;
 
@@ -204,7 +204,7 @@ where
 impl<'a, C: Coeff> Add<&'a C> for InnerSeries<C>
 where
     C: Add<&'a C, Output = C>,
-    Series<C>: Add<&'a C, Output = Series<C>>,
+    AnonSeries<C>: Add<&'a C, Output = AnonSeries<C>>,
 {
     type Output = InnerSeries<C>;
 
@@ -220,7 +220,7 @@ where
 impl<'a, C: Coeff> Add<&'a InnerSeries<C>> for InnerSeries<C>
 where
     InnerSeries<C>:
-        Add<&'a C, Output = Self> + Add<&'a Series<C>, Output = Self>,
+        Add<&'a C, Output = Self> + Add<&'a AnonSeries<C>, Output = Self>,
 {
     type Output = InnerSeries<C>;
 
@@ -233,14 +233,14 @@ where
     }
 }
 
-impl<'a, C: Coeff> Add<Series<C>> for &'a InnerSeries<C>
+impl<'a, C: Coeff> Add<AnonSeries<C>> for &'a InnerSeries<C>
 where
-    Series<C>:
-        Add<&'a Series<C>, Output = Series<C>> + Add<&'a C, Output = Series<C>>,
+    AnonSeries<C>:
+        Add<&'a AnonSeries<C>, Output = AnonSeries<C>> + Add<&'a C, Output = AnonSeries<C>>,
 {
     type Output = InnerSeries<C>;
 
-    fn add(self, rhs: Series<C>) -> Self::Output {
+    fn add(self, rhs: AnonSeries<C>) -> Self::Output {
         use InnerSeries::*;
         match self {
             Series(s) => rhs.add(s).into(),
@@ -249,10 +249,10 @@ where
     }
 }
 
-impl<'a, C: Coeff> Add<&'a InnerSeries<C>> for Series<C>
+impl<'a, C: Coeff> Add<&'a InnerSeries<C>> for AnonSeries<C>
 where
-    Series<C>:
-        Add<&'a Series<C>, Output = Series<C>> + Add<&'a C, Output = Series<C>>,
+    AnonSeries<C>:
+        Add<&'a AnonSeries<C>, Output = AnonSeries<C>> + Add<&'a C, Output = AnonSeries<C>>,
 {
     type Output = InnerSeries<C>;
 
@@ -264,7 +264,7 @@ where
 impl<'a, C: Coeff> Add<C> for &'a InnerSeries<C>
 where
     C: Add<&'a C, Output = C>,
-    &'a Series<C>: Add<C, Output = Series<C>>,
+    &'a AnonSeries<C>: Add<C, Output = AnonSeries<C>>,
 {
     type Output = InnerSeries<C>;
 
@@ -280,7 +280,7 @@ where
 impl<'a, C: Coeff> Add<InnerSeries<C>> for &'a InnerSeries<C>
 where
     InnerSeries<C>: Add<&'a C, Output = InnerSeries<C>>
-        + Add<&'a Series<C>, Output = InnerSeries<C>>,
+        + Add<&'a AnonSeries<C>, Output = InnerSeries<C>>,
 {
     type Output = InnerSeries<C>;
 
@@ -289,14 +289,14 @@ where
     }
 }
 
-impl<'a, 'b, C: Coeff> Add<&'b Series<C>> for &'a InnerSeries<C>
+impl<'a, 'b, C: Coeff> Add<&'b AnonSeries<C>> for &'a InnerSeries<C>
 where
-    &'a Series<C>: Add<&'b Series<C>, Output = Series<C>>,
-    &'b Series<C>: Add<&'a C, Output = Series<C>>,
+    &'a AnonSeries<C>: Add<&'b AnonSeries<C>, Output = AnonSeries<C>>,
+    &'b AnonSeries<C>: Add<&'a C, Output = AnonSeries<C>>,
 {
     type Output = InnerSeries<C>;
 
-    fn add(self, rhs: &'b Series<C>) -> Self::Output {
+    fn add(self, rhs: &'b AnonSeries<C>) -> Self::Output {
         use InnerSeries::*;
         match self {
             Series(s) => s.add(rhs).into(),
@@ -305,10 +305,10 @@ where
     }
 }
 
-impl<'a, 'b, C: Coeff> Add<&'a InnerSeries<C>> for &'b Series<C>
+impl<'a, 'b, C: Coeff> Add<&'a InnerSeries<C>> for &'b AnonSeries<C>
 where
-    &'a Series<C>: Add<&'b Series<C>, Output = Series<C>>,
-    &'b Series<C>: Add<&'a C, Output = Series<C>>,
+    &'a AnonSeries<C>: Add<&'b AnonSeries<C>, Output = AnonSeries<C>>,
+    &'b AnonSeries<C>: Add<&'a C, Output = AnonSeries<C>>,
 {
     type Output = InnerSeries<C>;
 
@@ -320,7 +320,7 @@ where
 impl<'a, 'b, C: Coeff> Add<&'b C> for &'a InnerSeries<C>
 where
     &'a C: Add<&'b C, Output = C>,
-    &'a Series<C>: Add<&'b C, Output = Series<C>>,
+    &'a AnonSeries<C>: Add<&'b C, Output = AnonSeries<C>>,
 {
     type Output = InnerSeries<C>;
 
@@ -336,7 +336,7 @@ where
 impl<'a, 'b, C: Coeff> Add<&'b InnerSeries<C>> for &'a InnerSeries<C>
 where
     &'a InnerSeries<C>: Add<&'b C, Output = InnerSeries<C>>
-        + Add<&'b Series<C>, Output = InnerSeries<C>>,
+        + Add<&'b AnonSeries<C>, Output = InnerSeries<C>>,
 {
     type Output = InnerSeries<C>;
 
@@ -349,11 +349,11 @@ where
     }
 }
 
-impl<C: Coeff + Default> AddAssign<Series<C>> for InnerSeries<C>
+impl<C: Coeff + Default> AddAssign<AnonSeries<C>> for InnerSeries<C>
 where
-    Series<C>: AddAssign + AddAssign<C>,
+    AnonSeries<C>: AddAssign + AddAssign<C>,
 {
-    fn add_assign(&mut self, mut rhs: Series<C>) {
+    fn add_assign(&mut self, mut rhs: AnonSeries<C>) {
         use InnerSeries::*;
         match self {
             Series(s) => s.add_assign(rhs),
@@ -367,7 +367,7 @@ where
 
 impl<C: Coeff + Default> AddAssign<C> for InnerSeries<C>
 where
-    Series<C>: AddAssign<C>,
+    AnonSeries<C>: AddAssign<C>,
     C: AddAssign,
 {
     fn add_assign(&mut self, rhs: C) {
@@ -381,7 +381,7 @@ where
 
 impl<C: Coeff + Default> AddAssign for InnerSeries<C>
 where
-    InnerSeries<C>: AddAssign<Series<C>> + AddAssign<C>,
+    InnerSeries<C>: AddAssign<AnonSeries<C>> + AddAssign<C>,
 {
     fn add_assign(&mut self, rhs: InnerSeries<C>) {
         use InnerSeries::*;
@@ -392,12 +392,12 @@ where
     }
 }
 
-impl<'a, C: Coeff + Default> AddAssign<&'a Series<C>> for InnerSeries<C>
+impl<'a, C: Coeff + Default> AddAssign<&'a AnonSeries<C>> for InnerSeries<C>
 where
-    Series<C>: AddAssign<&'a Series<C>>,
-    &'a Series<C>: Add<C, Output = Series<C>>,
+    AnonSeries<C>: AddAssign<&'a AnonSeries<C>>,
+    &'a AnonSeries<C>: Add<C, Output = AnonSeries<C>>,
 {
-    fn add_assign(&mut self, rhs: &'a Series<C>) {
+    fn add_assign(&mut self, rhs: &'a AnonSeries<C>) {
         use InnerSeries::*;
         match self {
             Series(s) => s.add_assign(rhs),
@@ -411,7 +411,7 @@ where
 
 impl<'a, C: Coeff + Default> AddAssign<&'a C> for InnerSeries<C>
 where
-    Series<C>: AddAssign<&'a C>,
+    AnonSeries<C>: AddAssign<&'a C>,
     C: AddAssign<&'a C>,
 {
     fn add_assign(&mut self, rhs: &'a C) {
@@ -425,7 +425,7 @@ where
 
 impl<'a, C: Coeff + Default> AddAssign<&'a InnerSeries<C>> for InnerSeries<C>
 where
-    InnerSeries<C>: AddAssign<&'a Series<C>> + AddAssign<&'a C>,
+    InnerSeries<C>: AddAssign<&'a AnonSeries<C>> + AddAssign<&'a C>,
 {
     fn add_assign(&mut self, rhs: &'a InnerSeries<C>) {
         use InnerSeries::*;
@@ -436,15 +436,15 @@ where
     }
 }
 
-impl<C: Coeff> Sub<Series<C>> for InnerSeries<C>
+impl<C: Coeff> Sub<AnonSeries<C>> for InnerSeries<C>
 where
-    Series<C>: Sub<Output = Series<C>>
-        + Add<C, Output = Series<C>>
-        + Neg<Output = Series<C>>,
+    AnonSeries<C>: Sub<Output = AnonSeries<C>>
+        + Add<C, Output = AnonSeries<C>>
+        + Neg<Output = AnonSeries<C>>,
 {
     type Output = InnerSeries<C>;
 
-    fn sub(self, rhs: Series<C>) -> Self::Output {
+    fn sub(self, rhs: AnonSeries<C>) -> Self::Output {
         use InnerSeries::*;
         match self {
             Series(s) => s.sub(rhs).into(),
@@ -453,9 +453,9 @@ where
     }
 }
 
-impl<C: Coeff> Sub<InnerSeries<C>> for Series<C>
+impl<C: Coeff> Sub<InnerSeries<C>> for AnonSeries<C>
 where
-    Series<C>: Sub<Output = Series<C>> + Sub<C, Output = Series<C>>,
+    AnonSeries<C>: Sub<Output = AnonSeries<C>> + Sub<C, Output = AnonSeries<C>>,
 {
     type Output = InnerSeries<C>;
 
@@ -470,7 +470,7 @@ where
 
 impl<C: Coeff> Sub<C> for InnerSeries<C>
 where
-    Series<C>: Sub<C, Output = Series<C>>,
+    AnonSeries<C>: Sub<C, Output = AnonSeries<C>>,
     C: Sub<Output = C>,
 {
     type Output = InnerSeries<C>;
@@ -486,7 +486,7 @@ where
 
 impl<C: Coeff> Sub for InnerSeries<C>
 where
-    InnerSeries<C>: Sub<C, Output = Self> + Sub<Series<C>, Output = Self>,
+    InnerSeries<C>: Sub<C, Output = Self> + Sub<AnonSeries<C>, Output = Self>,
 {
     type Output = InnerSeries<C>;
 
@@ -499,14 +499,14 @@ where
     }
 }
 
-impl<'a, C: Coeff> Sub<&'a Series<C>> for InnerSeries<C>
+impl<'a, C: Coeff> Sub<&'a AnonSeries<C>> for InnerSeries<C>
 where
-    Series<C>: Sub<&'a Series<C>, Output = Series<C>> + Neg<Output = Series<C>>,
-    &'a Series<C>: Sub<C, Output = Series<C>>,
+    AnonSeries<C>: Sub<&'a AnonSeries<C>, Output = AnonSeries<C>> + Neg<Output = AnonSeries<C>>,
+    &'a AnonSeries<C>: Sub<C, Output = AnonSeries<C>>,
 {
     type Output = InnerSeries<C>;
 
-    fn sub(self, rhs: &'a Series<C>) -> Self::Output {
+    fn sub(self, rhs: &'a AnonSeries<C>) -> Self::Output {
         use InnerSeries::*;
         match self {
             Series(s) => s.sub(rhs).into(),
@@ -515,10 +515,10 @@ where
     }
 }
 
-impl<'a, C: Coeff> Sub<InnerSeries<C>> for &'a Series<C>
+impl<'a, C: Coeff> Sub<InnerSeries<C>> for &'a AnonSeries<C>
 where
     InnerSeries<C>: Neg<Output = InnerSeries<C>>
-        + Add<&'a Series<C>, Output = InnerSeries<C>>,
+        + Add<&'a AnonSeries<C>, Output = InnerSeries<C>>,
 {
     type Output = InnerSeries<C>;
 
@@ -530,7 +530,7 @@ where
 impl<'a, C: Coeff> Sub<&'a C> for InnerSeries<C>
 where
     C: Sub<&'a C, Output = C>,
-    Series<C>: Sub<&'a C, Output = Series<C>>,
+    AnonSeries<C>: Sub<&'a C, Output = AnonSeries<C>>,
 {
     type Output = InnerSeries<C>;
 
@@ -546,7 +546,7 @@ where
 impl<'a, C: Coeff> Sub<&'a InnerSeries<C>> for InnerSeries<C>
 where
     InnerSeries<C>:
-        Sub<&'a C, Output = Self> + Sub<&'a Series<C>, Output = Self>,
+        Sub<&'a C, Output = Self> + Sub<&'a AnonSeries<C>, Output = Self>,
 {
     type Output = InnerSeries<C>;
 
@@ -559,16 +559,16 @@ where
     }
 }
 
-impl<'a, C: Coeff> Sub<Series<C>> for &'a InnerSeries<C>
+impl<'a, C: Coeff> Sub<AnonSeries<C>> for &'a InnerSeries<C>
 where
-    Series<C>: Add<&'a Series<C>, Output = Series<C>>
-        + Add<&'a C, Output = Series<C>>
-        + Neg<Output = Series<C>>,
+    AnonSeries<C>: Add<&'a AnonSeries<C>, Output = AnonSeries<C>>
+        + Add<&'a C, Output = AnonSeries<C>>
+        + Neg<Output = AnonSeries<C>>,
     C: Neg<Output = C>,
 {
     type Output = InnerSeries<C>;
 
-    fn sub(self, rhs: Series<C>) -> Self::Output {
+    fn sub(self, rhs: AnonSeries<C>) -> Self::Output {
         use InnerSeries::*;
         match self {
             Series(s) => rhs.neg().add(s).into(),
@@ -577,9 +577,9 @@ where
     }
 }
 
-impl<'a, C: Coeff> Sub<&'a InnerSeries<C>> for Series<C>
+impl<'a, C: Coeff> Sub<&'a InnerSeries<C>> for AnonSeries<C>
 where
-    Series<C>: Add<InnerSeries<C>, Output = InnerSeries<C>>,
+    AnonSeries<C>: Add<InnerSeries<C>, Output = InnerSeries<C>>,
     &'a InnerSeries<C>: Neg<Output = InnerSeries<C>>,
 {
     type Output = InnerSeries<C>;
@@ -592,7 +592,7 @@ where
 impl<'a, C: Coeff> Sub<C> for &'a InnerSeries<C>
 where
     &'a C: Sub<C, Output = C>,
-    &'a Series<C>: Sub<C, Output = Series<C>>,
+    &'a AnonSeries<C>: Sub<C, Output = AnonSeries<C>>,
 {
     type Output = InnerSeries<C>;
 
@@ -608,7 +608,7 @@ where
 impl<'a, C: Coeff> Sub<InnerSeries<C>> for &'a InnerSeries<C>
 where
     InnerSeries<C>: Add<&'a C, Output = InnerSeries<C>>
-        + Add<&'a Series<C>, Output = InnerSeries<C>>
+        + Add<&'a AnonSeries<C>, Output = InnerSeries<C>>
         + Neg<Output = InnerSeries<C>>,
 {
     type Output = InnerSeries<C>;
@@ -618,15 +618,15 @@ where
     }
 }
 
-impl<'a, 'b, C: Coeff> Sub<&'b Series<C>> for &'a InnerSeries<C>
+impl<'a, 'b, C: Coeff> Sub<&'b AnonSeries<C>> for &'a InnerSeries<C>
 where
-    &'a Series<C>: Sub<&'b Series<C>, Output = Series<C>>,
-    &'b Series<C>: Neg<Output = Series<C>>,
-    Series<C>: Add<&'a C, Output = Series<C>>,
+    &'a AnonSeries<C>: Sub<&'b AnonSeries<C>, Output = AnonSeries<C>>,
+    &'b AnonSeries<C>: Neg<Output = AnonSeries<C>>,
+    AnonSeries<C>: Add<&'a C, Output = AnonSeries<C>>,
 {
     type Output = InnerSeries<C>;
 
-    fn sub(self, rhs: &'b Series<C>) -> Self::Output {
+    fn sub(self, rhs: &'b AnonSeries<C>) -> Self::Output {
         use InnerSeries::*;
         match self {
             Series(s) => s.sub(rhs).into(),
@@ -635,10 +635,10 @@ where
     }
 }
 
-impl<'a, 'b, C: Coeff> Sub<&'a InnerSeries<C>> for &'b Series<C>
+impl<'a, 'b, C: Coeff> Sub<&'a InnerSeries<C>> for &'b AnonSeries<C>
 where
-    &'b Series<C>:
-        Sub<&'a C, Output = Series<C>> + Sub<&'a Series<C>, Output = Series<C>>,
+    &'b AnonSeries<C>:
+        Sub<&'a C, Output = AnonSeries<C>> + Sub<&'a AnonSeries<C>, Output = AnonSeries<C>>,
 {
     type Output = InnerSeries<C>;
 
@@ -654,7 +654,7 @@ where
 impl<'a, 'b, C: Coeff> Sub<&'b C> for &'a InnerSeries<C>
 where
     &'a C: Sub<&'b C, Output = C>,
-    &'a Series<C>: Sub<&'b C, Output = Series<C>>,
+    &'a AnonSeries<C>: Sub<&'b C, Output = AnonSeries<C>>,
 {
     type Output = InnerSeries<C>;
 
@@ -670,7 +670,7 @@ where
 impl<'a, 'b, C: Coeff> Sub<&'b InnerSeries<C>> for &'a InnerSeries<C>
 where
     &'a InnerSeries<C>: Sub<&'b C, Output = InnerSeries<C>>
-        + Sub<&'b Series<C>, Output = InnerSeries<C>>,
+        + Sub<&'b AnonSeries<C>, Output = InnerSeries<C>>,
 {
     type Output = InnerSeries<C>;
 
@@ -683,11 +683,11 @@ where
     }
 }
 
-impl<C: Coeff + Default> SubAssign<Series<C>> for InnerSeries<C>
+impl<C: Coeff + Default> SubAssign<AnonSeries<C>> for InnerSeries<C>
 where
-    Series<C>: SubAssign + AddAssign<C> + Neg<Output = Series<C>>,
+    AnonSeries<C>: SubAssign + AddAssign<C> + Neg<Output = AnonSeries<C>>,
 {
-    fn sub_assign(&mut self, rhs: Series<C>) {
+    fn sub_assign(&mut self, rhs: AnonSeries<C>) {
         use InnerSeries::*;
         match self {
             Series(s) => s.sub_assign(rhs),
@@ -702,7 +702,7 @@ where
 
 impl<C: Coeff + Default> SubAssign<C> for InnerSeries<C>
 where
-    Series<C>: SubAssign<C>,
+    AnonSeries<C>: SubAssign<C>,
     C: SubAssign,
 {
     fn sub_assign(&mut self, rhs: C) {
@@ -716,7 +716,7 @@ where
 
 impl<C: Coeff + Default> SubAssign for InnerSeries<C>
 where
-    InnerSeries<C>: SubAssign<Series<C>> + SubAssign<C>,
+    InnerSeries<C>: SubAssign<AnonSeries<C>> + SubAssign<C>,
 {
     fn sub_assign(&mut self, rhs: InnerSeries<C>) {
         use InnerSeries::*;
@@ -727,12 +727,12 @@ where
     }
 }
 
-impl<'a, C: Coeff + Default> SubAssign<&'a Series<C>> for InnerSeries<C>
+impl<'a, C: Coeff + Default> SubAssign<&'a AnonSeries<C>> for InnerSeries<C>
 where
-    Series<C>: AddAssign<C> + SubAssign<&'a Series<C>>,
-    &'a Series<C>: Neg<Output = Series<C>>,
+    AnonSeries<C>: AddAssign<C> + SubAssign<&'a AnonSeries<C>>,
+    &'a AnonSeries<C>: Neg<Output = AnonSeries<C>>,
 {
-    fn sub_assign(&mut self, rhs: &'a Series<C>) {
+    fn sub_assign(&mut self, rhs: &'a AnonSeries<C>) {
         use InnerSeries::*;
         match self {
             Series(s) => s.sub_assign(rhs),
@@ -747,7 +747,7 @@ where
 
 impl<'a, C: Coeff + Default> SubAssign<&'a C> for InnerSeries<C>
 where
-    Series<C>: SubAssign<&'a C>,
+    AnonSeries<C>: SubAssign<&'a C>,
     C: SubAssign<&'a C>,
 {
     fn sub_assign(&mut self, rhs: &'a C) {
@@ -761,7 +761,7 @@ where
 
 impl<'a, C: Coeff + Default> SubAssign<&'a InnerSeries<C>> for InnerSeries<C>
 where
-    InnerSeries<C>: SubAssign<&'a Series<C>> + SubAssign<&'a C>,
+    InnerSeries<C>: SubAssign<&'a AnonSeries<C>> + SubAssign<&'a C>,
 {
     fn sub_assign(&mut self, rhs: &'a InnerSeries<C>) {
         use InnerSeries::*;
@@ -772,13 +772,13 @@ where
     }
 }
 
-impl<C: Coeff> Mul<Series<C>> for InnerSeries<C>
+impl<C: Coeff> Mul<AnonSeries<C>> for InnerSeries<C>
 where
-    Series<C>: Mul<Output = Series<C>> + Mul<C, Output = Series<C>>,
+    AnonSeries<C>: Mul<Output = AnonSeries<C>> + Mul<C, Output = AnonSeries<C>>,
 {
     type Output = InnerSeries<C>;
 
-    fn mul(self, rhs: Series<C>) -> Self::Output {
+    fn mul(self, rhs: AnonSeries<C>) -> Self::Output {
         use InnerSeries::*;
         match self {
             Series(s) => s.mul(rhs).into(),
@@ -787,9 +787,9 @@ where
     }
 }
 
-impl<C: Coeff> Mul<InnerSeries<C>> for Series<C>
+impl<C: Coeff> Mul<InnerSeries<C>> for AnonSeries<C>
 where
-    Series<C>: Mul<Output = Series<C>> + Mul<C, Output = Series<C>>,
+    AnonSeries<C>: Mul<Output = AnonSeries<C>> + Mul<C, Output = AnonSeries<C>>,
 {
     type Output = InnerSeries<C>;
 
@@ -800,7 +800,7 @@ where
 
 impl<C: Coeff> Mul<C> for InnerSeries<C>
 where
-    Series<C>: Mul<C, Output = Series<C>>,
+    AnonSeries<C>: Mul<C, Output = AnonSeries<C>>,
     C: Mul<Output = C>,
 {
     type Output = InnerSeries<C>;
@@ -816,7 +816,7 @@ where
 
 impl<C: Coeff> Mul for InnerSeries<C>
 where
-    InnerSeries<C>: Mul<C, Output = Self> + Mul<Series<C>, Output = Self>,
+    InnerSeries<C>: Mul<C, Output = Self> + Mul<AnonSeries<C>, Output = Self>,
 {
     type Output = InnerSeries<C>;
 
@@ -829,14 +829,14 @@ where
     }
 }
 
-impl<'a, C: Coeff> Mul<&'a Series<C>> for InnerSeries<C>
+impl<'a, C: Coeff> Mul<&'a AnonSeries<C>> for InnerSeries<C>
 where
-    Series<C>: Mul<&'a Series<C>, Output = Series<C>>,
-    &'a Series<C>: Mul<C, Output = Series<C>>,
+    AnonSeries<C>: Mul<&'a AnonSeries<C>, Output = AnonSeries<C>>,
+    &'a AnonSeries<C>: Mul<C, Output = AnonSeries<C>>,
 {
     type Output = InnerSeries<C>;
 
-    fn mul(self, rhs: &'a Series<C>) -> Self::Output {
+    fn mul(self, rhs: &'a AnonSeries<C>) -> Self::Output {
         use InnerSeries::*;
         match self {
             Series(s) => s.mul(rhs).into(),
@@ -845,10 +845,10 @@ where
     }
 }
 
-impl<'a, C: Coeff> Mul<InnerSeries<C>> for &'a Series<C>
+impl<'a, C: Coeff> Mul<InnerSeries<C>> for &'a AnonSeries<C>
 where
-    Series<C>: Mul<&'a Series<C>, Output = Series<C>>,
-    &'a Series<C>: Mul<C, Output = Series<C>>,
+    AnonSeries<C>: Mul<&'a AnonSeries<C>, Output = AnonSeries<C>>,
+    &'a AnonSeries<C>: Mul<C, Output = AnonSeries<C>>,
 {
     type Output = InnerSeries<C>;
 
@@ -860,7 +860,7 @@ where
 impl<'a, C: Coeff> Mul<&'a C> for InnerSeries<C>
 where
     C: Mul<&'a C, Output = C>,
-    Series<C>: Mul<&'a C, Output = Series<C>>,
+    AnonSeries<C>: Mul<&'a C, Output = AnonSeries<C>>,
 {
     type Output = InnerSeries<C>;
 
@@ -876,7 +876,7 @@ where
 impl<'a, C: Coeff> Mul<&'a InnerSeries<C>> for InnerSeries<C>
 where
     InnerSeries<C>:
-        Mul<&'a C, Output = Self> + Mul<&'a Series<C>, Output = Self>,
+        Mul<&'a C, Output = Self> + Mul<&'a AnonSeries<C>, Output = Self>,
 {
     type Output = InnerSeries<C>;
 
@@ -889,14 +889,14 @@ where
     }
 }
 
-impl<'a, C: Coeff> Mul<Series<C>> for &'a InnerSeries<C>
+impl<'a, C: Coeff> Mul<AnonSeries<C>> for &'a InnerSeries<C>
 where
-    Series<C>:
-        Mul<&'a Series<C>, Output = Series<C>> + Mul<&'a C, Output = Series<C>>,
+    AnonSeries<C>:
+        Mul<&'a AnonSeries<C>, Output = AnonSeries<C>> + Mul<&'a C, Output = AnonSeries<C>>,
 {
     type Output = InnerSeries<C>;
 
-    fn mul(self, rhs: Series<C>) -> Self::Output {
+    fn mul(self, rhs: AnonSeries<C>) -> Self::Output {
         use InnerSeries::*;
         match self {
             Series(s) => rhs.mul(s).into(),
@@ -905,10 +905,10 @@ where
     }
 }
 
-impl<'a, C: Coeff> Mul<&'a InnerSeries<C>> for Series<C>
+impl<'a, C: Coeff> Mul<&'a InnerSeries<C>> for AnonSeries<C>
 where
-    Series<C>:
-        Mul<&'a Series<C>, Output = Series<C>> + Mul<&'a C, Output = Series<C>>,
+    AnonSeries<C>:
+        Mul<&'a AnonSeries<C>, Output = AnonSeries<C>> + Mul<&'a C, Output = AnonSeries<C>>,
 {
     type Output = InnerSeries<C>;
 
@@ -920,7 +920,7 @@ where
 impl<'a, C: Coeff> Mul<C> for &'a InnerSeries<C>
 where
     C: Mul<&'a C, Output = C>,
-    &'a Series<C>: Mul<C, Output = Series<C>>,
+    &'a AnonSeries<C>: Mul<C, Output = AnonSeries<C>>,
 {
     type Output = InnerSeries<C>;
 
@@ -936,7 +936,7 @@ where
 impl<'a, C: Coeff> Mul<InnerSeries<C>> for &'a InnerSeries<C>
 where
     InnerSeries<C>: Mul<&'a C, Output = InnerSeries<C>>
-        + Mul<&'a Series<C>, Output = InnerSeries<C>>,
+        + Mul<&'a AnonSeries<C>, Output = InnerSeries<C>>,
 {
     type Output = InnerSeries<C>;
 
@@ -945,14 +945,14 @@ where
     }
 }
 
-impl<'a, 'b, C: Coeff> Mul<&'b Series<C>> for &'a InnerSeries<C>
+impl<'a, 'b, C: Coeff> Mul<&'b AnonSeries<C>> for &'a InnerSeries<C>
 where
-    &'a Series<C>: Mul<&'b Series<C>, Output = Series<C>>,
-    &'b Series<C>: Mul<&'a C, Output = Series<C>>,
+    &'a AnonSeries<C>: Mul<&'b AnonSeries<C>, Output = AnonSeries<C>>,
+    &'b AnonSeries<C>: Mul<&'a C, Output = AnonSeries<C>>,
 {
     type Output = InnerSeries<C>;
 
-    fn mul(self, rhs: &'b Series<C>) -> Self::Output {
+    fn mul(self, rhs: &'b AnonSeries<C>) -> Self::Output {
         use InnerSeries::*;
         match self {
             Series(s) => s.mul(rhs).into(),
@@ -961,10 +961,10 @@ where
     }
 }
 
-impl<'a, 'b, C: Coeff> Mul<&'a InnerSeries<C>> for &'b Series<C>
+impl<'a, 'b, C: Coeff> Mul<&'a InnerSeries<C>> for &'b AnonSeries<C>
 where
-    &'a Series<C>: Mul<&'b Series<C>, Output = Series<C>>,
-    &'b Series<C>: Mul<&'a C, Output = Series<C>>,
+    &'a AnonSeries<C>: Mul<&'b AnonSeries<C>, Output = AnonSeries<C>>,
+    &'b AnonSeries<C>: Mul<&'a C, Output = AnonSeries<C>>,
 {
     type Output = InnerSeries<C>;
 
@@ -976,7 +976,7 @@ where
 impl<'a, 'b, C: Coeff> Mul<&'b C> for &'a InnerSeries<C>
 where
     &'a C: Mul<&'b C, Output = C>,
-    &'a Series<C>: Mul<&'b C, Output = Series<C>>,
+    &'a AnonSeries<C>: Mul<&'b C, Output = AnonSeries<C>>,
 {
     type Output = InnerSeries<C>;
 
@@ -992,7 +992,7 @@ where
 impl<'a, 'b, C: Coeff> Mul<&'b InnerSeries<C>> for &'a InnerSeries<C>
 where
     &'a InnerSeries<C>: Mul<&'b C, Output = InnerSeries<C>>
-        + Mul<&'b Series<C>, Output = InnerSeries<C>>,
+        + Mul<&'b AnonSeries<C>, Output = InnerSeries<C>>,
 {
     type Output = InnerSeries<C>;
 
@@ -1005,11 +1005,11 @@ where
     }
 }
 
-impl<C: Coeff + Default> MulAssign<Series<C>> for InnerSeries<C>
+impl<C: Coeff + Default> MulAssign<AnonSeries<C>> for InnerSeries<C>
 where
-    Series<C>: MulAssign + MulAssign<C>,
+    AnonSeries<C>: MulAssign + MulAssign<C>,
 {
-    fn mul_assign(&mut self, mut rhs: Series<C>) {
+    fn mul_assign(&mut self, mut rhs: AnonSeries<C>) {
         use InnerSeries::*;
         match self {
             Series(s) => s.mul_assign(rhs),
@@ -1023,7 +1023,7 @@ where
 
 impl<C: Coeff + Default> MulAssign<C> for InnerSeries<C>
 where
-    Series<C>: MulAssign<C>,
+    AnonSeries<C>: MulAssign<C>,
     C: MulAssign,
 {
     fn mul_assign(&mut self, rhs: C) {
@@ -1037,7 +1037,7 @@ where
 
 impl<C: Coeff + Default> MulAssign for InnerSeries<C>
 where
-    InnerSeries<C>: MulAssign<Series<C>> + MulAssign<C>,
+    InnerSeries<C>: MulAssign<AnonSeries<C>> + MulAssign<C>,
 {
     fn mul_assign(&mut self, rhs: InnerSeries<C>) {
         use InnerSeries::*;
@@ -1048,12 +1048,12 @@ where
     }
 }
 
-impl<'a, C: Coeff + Default> MulAssign<&'a Series<C>> for InnerSeries<C>
+impl<'a, C: Coeff + Default> MulAssign<&'a AnonSeries<C>> for InnerSeries<C>
 where
-    Series<C>: MulAssign<&'a Series<C>>,
-    &'a Series<C>: Mul<C, Output = Series<C>>,
+    AnonSeries<C>: MulAssign<&'a AnonSeries<C>>,
+    &'a AnonSeries<C>: Mul<C, Output = AnonSeries<C>>,
 {
-    fn mul_assign(&mut self, rhs: &'a Series<C>) {
+    fn mul_assign(&mut self, rhs: &'a AnonSeries<C>) {
         use InnerSeries::*;
         match self {
             Series(s) => s.mul_assign(rhs),
@@ -1067,7 +1067,7 @@ where
 
 impl<'a, C: Coeff + Default> MulAssign<&'a C> for InnerSeries<C>
 where
-    Series<C>: MulAssign<&'a C>,
+    AnonSeries<C>: MulAssign<&'a C>,
     C: MulAssign<&'a C>,
 {
     fn mul_assign(&mut self, rhs: &'a C) {
@@ -1081,7 +1081,7 @@ where
 
 impl<'a, C: Coeff + Default> MulAssign<&'a InnerSeries<C>> for InnerSeries<C>
 where
-    InnerSeries<C>: MulAssign<&'a Series<C>> + MulAssign<&'a C>,
+    InnerSeries<C>: MulAssign<&'a AnonSeries<C>> + MulAssign<&'a C>,
 {
     fn mul_assign(&mut self, rhs: &'a InnerSeries<C>) {
         use InnerSeries::*;
@@ -1092,15 +1092,15 @@ where
     }
 }
 
-impl<C: Coeff> Div<Series<C>> for InnerSeries<C>
+impl<C: Coeff> Div<AnonSeries<C>> for InnerSeries<C>
 where
-    Series<C>: Div<Output = Series<C>>
-        + Mul<C, Output = Series<C>>
-        + MulInverse<Output = Series<C>>,
+    AnonSeries<C>: Div<Output = AnonSeries<C>>
+        + Mul<C, Output = AnonSeries<C>>
+        + MulInverse<Output = AnonSeries<C>>,
 {
     type Output = InnerSeries<C>;
 
-    fn div(self, rhs: Series<C>) -> Self::Output {
+    fn div(self, rhs: AnonSeries<C>) -> Self::Output {
         use InnerSeries::*;
         match self {
             Series(s) => s.div(rhs).into(),
@@ -1109,9 +1109,9 @@ where
     }
 }
 
-impl<C: Coeff> Div<InnerSeries<C>> for Series<C>
+impl<C: Coeff> Div<InnerSeries<C>> for AnonSeries<C>
 where
-    Series<C>: Div<Output = Series<C>> + Div<C, Output = Series<C>>,
+    AnonSeries<C>: Div<Output = AnonSeries<C>> + Div<C, Output = AnonSeries<C>>,
 {
     type Output = InnerSeries<C>;
 
@@ -1126,7 +1126,7 @@ where
 
 impl<C: Coeff> Div<C> for InnerSeries<C>
 where
-    Series<C>: Div<C, Output = Series<C>>,
+    AnonSeries<C>: Div<C, Output = AnonSeries<C>>,
     C: Div<Output = C>,
 {
     type Output = InnerSeries<C>;
@@ -1142,7 +1142,7 @@ where
 
 impl<C: Coeff> Div for InnerSeries<C>
 where
-    InnerSeries<C>: Div<C, Output = Self> + Div<Series<C>, Output = Self>,
+    InnerSeries<C>: Div<C, Output = Self> + Div<AnonSeries<C>, Output = Self>,
 {
     type Output = InnerSeries<C>;
 
@@ -1155,15 +1155,15 @@ where
     }
 }
 
-impl<'a, C: Coeff> Div<&'a Series<C>> for InnerSeries<C>
+impl<'a, C: Coeff> Div<&'a AnonSeries<C>> for InnerSeries<C>
 where
-    Series<C>:
-        Div<&'a Series<C>, Output = Series<C>> + MulInverse<Output = Series<C>>,
-    &'a Series<C>: Div<C, Output = Series<C>>,
+    AnonSeries<C>:
+        Div<&'a AnonSeries<C>, Output = AnonSeries<C>> + MulInverse<Output = AnonSeries<C>>,
+    &'a AnonSeries<C>: Div<C, Output = AnonSeries<C>>,
 {
     type Output = InnerSeries<C>;
 
-    fn div(self, rhs: &'a Series<C>) -> Self::Output {
+    fn div(self, rhs: &'a AnonSeries<C>) -> Self::Output {
         use InnerSeries::*;
         match self {
             Series(s) => s.div(rhs).into(),
@@ -1172,10 +1172,10 @@ where
     }
 }
 
-impl<'a, C: Coeff> Div<InnerSeries<C>> for &'a Series<C>
+impl<'a, C: Coeff> Div<InnerSeries<C>> for &'a AnonSeries<C>
 where
     InnerSeries<C>: MulInverse<Output = InnerSeries<C>>
-        + Mul<&'a Series<C>, Output = InnerSeries<C>>,
+        + Mul<&'a AnonSeries<C>, Output = InnerSeries<C>>,
 {
     type Output = InnerSeries<C>;
 
@@ -1187,7 +1187,7 @@ where
 impl<'a, C: Coeff> Div<&'a C> for InnerSeries<C>
 where
     C: Div<&'a C, Output = C>,
-    Series<C>: Div<&'a C, Output = Series<C>>,
+    AnonSeries<C>: Div<&'a C, Output = AnonSeries<C>>,
 {
     type Output = InnerSeries<C>;
 
@@ -1203,7 +1203,7 @@ where
 impl<'a, C: Coeff> Div<&'a InnerSeries<C>> for InnerSeries<C>
 where
     InnerSeries<C>:
-        Div<&'a C, Output = Self> + Div<&'a Series<C>, Output = Self>,
+        Div<&'a C, Output = Self> + Div<&'a AnonSeries<C>, Output = Self>,
 {
     type Output = InnerSeries<C>;
 
@@ -1216,16 +1216,16 @@ where
     }
 }
 
-impl<'a, C: Coeff> Div<Series<C>> for &'a InnerSeries<C>
+impl<'a, C: Coeff> Div<AnonSeries<C>> for &'a InnerSeries<C>
 where
-    Series<C>: Mul<&'a Series<C>, Output = Series<C>>
-        + Mul<&'a C, Output = Series<C>>
-        + MulInverse<Output = Series<C>>,
+    AnonSeries<C>: Mul<&'a AnonSeries<C>, Output = AnonSeries<C>>
+        + Mul<&'a C, Output = AnonSeries<C>>
+        + MulInverse<Output = AnonSeries<C>>,
     C: MulInverse<Output = C>,
 {
     type Output = InnerSeries<C>;
 
-    fn div(self, rhs: Series<C>) -> Self::Output {
+    fn div(self, rhs: AnonSeries<C>) -> Self::Output {
         use InnerSeries::*;
         match self {
             Series(s) => rhs.mul_inverse().mul(s).into(),
@@ -1234,9 +1234,9 @@ where
     }
 }
 
-impl<'a, C: Coeff> Div<&'a InnerSeries<C>> for Series<C>
+impl<'a, C: Coeff> Div<&'a InnerSeries<C>> for AnonSeries<C>
 where
-    Series<C>: Mul<InnerSeries<C>, Output = InnerSeries<C>>,
+    AnonSeries<C>: Mul<InnerSeries<C>, Output = InnerSeries<C>>,
     &'a InnerSeries<C>: MulInverse<Output = InnerSeries<C>>,
 {
     type Output = InnerSeries<C>;
@@ -1249,7 +1249,7 @@ where
 impl<'a, C: Coeff> Div<C> for &'a InnerSeries<C>
 where
     &'a C: Div<C, Output = C>,
-    &'a Series<C>: Div<C, Output = Series<C>>,
+    &'a AnonSeries<C>: Div<C, Output = AnonSeries<C>>,
 {
     type Output = InnerSeries<C>;
 
@@ -1265,7 +1265,7 @@ where
 impl<'a, C: Coeff> Div<InnerSeries<C>> for &'a InnerSeries<C>
 where
     InnerSeries<C>: Mul<&'a C, Output = InnerSeries<C>>
-        + Mul<&'a Series<C>, Output = InnerSeries<C>>
+        + Mul<&'a AnonSeries<C>, Output = InnerSeries<C>>
         + MulInverse<Output = InnerSeries<C>>,
 {
     type Output = InnerSeries<C>;
@@ -1275,15 +1275,15 @@ where
     }
 }
 
-impl<'a, 'b, C: Coeff> Div<&'b Series<C>> for &'a InnerSeries<C>
+impl<'a, 'b, C: Coeff> Div<&'b AnonSeries<C>> for &'a InnerSeries<C>
 where
-    &'a Series<C>: Div<&'b Series<C>, Output = Series<C>>,
-    &'b Series<C>: MulInverse<Output = Series<C>>,
-    Series<C>: Mul<&'a C, Output = Series<C>>,
+    &'a AnonSeries<C>: Div<&'b AnonSeries<C>, Output = AnonSeries<C>>,
+    &'b AnonSeries<C>: MulInverse<Output = AnonSeries<C>>,
+    AnonSeries<C>: Mul<&'a C, Output = AnonSeries<C>>,
 {
     type Output = InnerSeries<C>;
 
-    fn div(self, rhs: &'b Series<C>) -> Self::Output {
+    fn div(self, rhs: &'b AnonSeries<C>) -> Self::Output {
         use InnerSeries::*;
         match self {
             Series(s) => s.div(rhs).into(),
@@ -1292,10 +1292,10 @@ where
     }
 }
 
-impl<'a, 'b, C: Coeff> Div<&'a InnerSeries<C>> for &'b Series<C>
+impl<'a, 'b, C: Coeff> Div<&'a InnerSeries<C>> for &'b AnonSeries<C>
 where
-    &'b Series<C>:
-        Div<&'a C, Output = Series<C>> + Div<&'a Series<C>, Output = Series<C>>,
+    &'b AnonSeries<C>:
+        Div<&'a C, Output = AnonSeries<C>> + Div<&'a AnonSeries<C>, Output = AnonSeries<C>>,
 {
     type Output = InnerSeries<C>;
 
@@ -1311,7 +1311,7 @@ where
 impl<'a, 'b, C: Coeff> Div<&'b C> for &'a InnerSeries<C>
 where
     &'a C: Div<&'b C, Output = C>,
-    &'a Series<C>: Div<&'b C, Output = Series<C>>,
+    &'a AnonSeries<C>: Div<&'b C, Output = AnonSeries<C>>,
 {
     type Output = InnerSeries<C>;
 
@@ -1327,7 +1327,7 @@ where
 impl<'a, 'b, C: Coeff> Div<&'b InnerSeries<C>> for &'a InnerSeries<C>
 where
     &'a InnerSeries<C>: Div<&'b C, Output = InnerSeries<C>>
-        + Div<&'b Series<C>, Output = InnerSeries<C>>,
+        + Div<&'b AnonSeries<C>, Output = InnerSeries<C>>,
 {
     type Output = InnerSeries<C>;
 
@@ -1340,11 +1340,11 @@ where
     }
 }
 
-impl<C: Coeff + Default> DivAssign<Series<C>> for InnerSeries<C>
+impl<C: Coeff + Default> DivAssign<AnonSeries<C>> for InnerSeries<C>
 where
-    Series<C>: DivAssign + MulAssign<C> + MulInverse<Output = Series<C>>,
+    AnonSeries<C>: DivAssign + MulAssign<C> + MulInverse<Output = AnonSeries<C>>,
 {
-    fn div_assign(&mut self, rhs: Series<C>) {
+    fn div_assign(&mut self, rhs: AnonSeries<C>) {
         use InnerSeries::*;
         match self {
             Series(s) => s.div_assign(rhs),
@@ -1359,7 +1359,7 @@ where
 
 impl<C: Coeff + Default> DivAssign<C> for InnerSeries<C>
 where
-    Series<C>: DivAssign<C>,
+    AnonSeries<C>: DivAssign<C>,
     C: DivAssign,
 {
     fn div_assign(&mut self, rhs: C) {
@@ -1373,7 +1373,7 @@ where
 
 impl<C: Coeff + Default> DivAssign for InnerSeries<C>
 where
-    InnerSeries<C>: DivAssign<Series<C>> + DivAssign<C>,
+    InnerSeries<C>: DivAssign<AnonSeries<C>> + DivAssign<C>,
 {
     fn div_assign(&mut self, rhs: InnerSeries<C>) {
         use InnerSeries::*;
@@ -1384,12 +1384,12 @@ where
     }
 }
 
-impl<'a, C: Coeff + Default> DivAssign<&'a Series<C>> for InnerSeries<C>
+impl<'a, C: Coeff + Default> DivAssign<&'a AnonSeries<C>> for InnerSeries<C>
 where
-    Series<C>: MulAssign<C> + DivAssign<&'a Series<C>>,
-    &'a Series<C>: MulInverse<Output = Series<C>>,
+    AnonSeries<C>: MulAssign<C> + DivAssign<&'a AnonSeries<C>>,
+    &'a AnonSeries<C>: MulInverse<Output = AnonSeries<C>>,
 {
-    fn div_assign(&mut self, rhs: &'a Series<C>) {
+    fn div_assign(&mut self, rhs: &'a AnonSeries<C>) {
         use InnerSeries::*;
         match self {
             Series(s) => s.div_assign(rhs),
@@ -1404,7 +1404,7 @@ where
 
 impl<'a, C: Coeff + Default> DivAssign<&'a C> for InnerSeries<C>
 where
-    Series<C>: DivAssign<&'a C>,
+    AnonSeries<C>: DivAssign<&'a C>,
     C: DivAssign<&'a C>,
 {
     fn div_assign(&mut self, rhs: &'a C) {
@@ -1418,7 +1418,7 @@ where
 
 impl<'a, C: Coeff + Default> DivAssign<&'a InnerSeries<C>> for InnerSeries<C>
 where
-    InnerSeries<C>: DivAssign<&'a Series<C>> + DivAssign<&'a C>,
+    InnerSeries<C>: DivAssign<&'a AnonSeries<C>> + DivAssign<&'a C>,
 {
     fn div_assign(&mut self, rhs: &'a InnerSeries<C>) {
         use InnerSeries::*;

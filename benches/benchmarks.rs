@@ -8,7 +8,7 @@ use criterion::Criterion;
 use rand::prelude::*;
 use rand::SeedableRng;
 
-use series::{KaratsubaMul, PolynomialIn, SeriesIn};
+use series::{KaratsubaMul, PolynomialIn, Series};
 
 const MAX_ELEMENTS: usize = 2000;
 const MAX_DIGITS: usize = 20;
@@ -138,42 +138,42 @@ static RAN_INT: LazyLock<Vec<Integer>> = LazyLock::new(|| {
 });
 
 fn mul_f64_1(c: &mut Criterion) {
-    let s = SeriesIn::new("x", -2, RAN_F64[..1].to_owned());
+    let s = Series::new("x", -2, RAN_F64[..1].to_owned());
     c.bench_function("multiply series with 1 f64 coefficient", move |b| {
         b.iter(|| &s * &s)
     });
 }
 
 fn mul_f64_10(c: &mut Criterion) {
-    let s = SeriesIn::new("x", -2, RAN_F64[..10].to_owned());
+    let s = Series::new("x", -2, RAN_F64[..10].to_owned());
     c.bench_function("multiply series with 10 f64 coefficients", move |b| {
         b.iter(|| &s * &s)
     });
 }
 
 fn mul_f64_100(c: &mut Criterion) {
-    let s = SeriesIn::new("x", -2, RAN_F64[..100].to_owned());
+    let s = Series::new("x", -2, RAN_F64[..100].to_owned());
     c.bench_function("multiply series with 100 f64 coefficients", move |b| {
         b.iter(|| &s * &s)
     });
 }
 
 fn mul_f64_1000(c: &mut Criterion) {
-    let s = SeriesIn::new("x", -2, RAN_F64[..1000].to_owned());
+    let s = Series::new("x", -2, RAN_F64[..1000].to_owned());
     c.bench_function("multiply series with 1000 f64 coefficients", move |b| {
         b.iter(|| &s * &s)
     });
 }
 
 fn mul_int_1(c: &mut Criterion) {
-    let s = SeriesIn::new("x", -2, RAN_INT[..1].to_owned());
+    let s = Series::new("x", -2, RAN_INT[..1].to_owned());
     c.bench_function("multiply series with 1 integer coefficient", move |b| {
         b.iter(|| &s * &s)
     });
 }
 
 fn mul_int_10(c: &mut Criterion) {
-    let s = SeriesIn::new("x", -2, RAN_INT[..10].to_owned());
+    let s = Series::new("x", -2, RAN_INT[..10].to_owned());
     c.bench_function(
         "multiply series with 10 integer coefficients",
         move |b| b.iter(|| &s * &s),
@@ -181,7 +181,7 @@ fn mul_int_10(c: &mut Criterion) {
 }
 
 fn mul_int_100(c: &mut Criterion) {
-    let s = SeriesIn::new("x", -2, RAN_INT[..100].to_owned());
+    let s = Series::new("x", -2, RAN_INT[..100].to_owned());
     c.bench_function(
         "multiply series with 100 integer coefficients",
         move |b| b.iter(|| &s * &s),
@@ -189,7 +189,7 @@ fn mul_int_100(c: &mut Criterion) {
 }
 
 fn mul_int_1000(c: &mut Criterion) {
-    let s = SeriesIn::new("x", -2, RAN_INT[..1000].to_owned());
+    let s = Series::new("x", -2, RAN_INT[..1000].to_owned());
     let mut group = c.benchmark_group("dummy name");
     group.sample_size(20);
     group.bench_function(

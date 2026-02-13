@@ -1,7 +1,7 @@
 use crate::traits::{AsSlice, KaratsubaMul};
 use crate::util::{trim_end, trim_start};
 use crate::{Coeff, IntoIter, Iter, PolynomialIn, PolynomialInParts};
-use crate::{PolynomialSlice, Series};
+use crate::{PolynomialSlice, anon_series::AnonSeries};
 
 use std::ops::{
     Add, AddAssign, Div, DivAssign, Index, Mul, MulAssign, Neg, Range,
@@ -141,8 +141,8 @@ impl<C: Coeff> Polynomial<C> {
     ///
     /// Panics if the cutoff power is lower than the starting power
     ///
-    pub fn cutoff_at(self, cutoff_pow: isize) -> Series<C> {
-        Series::with_cutoff(
+    pub fn cutoff_at(self, cutoff_pow: isize) -> AnonSeries<C> {
+        AnonSeries::with_cutoff(
             self.min_pow.unwrap_or(cutoff_pow)..cutoff_pow,
             self.coeffs,
         )
@@ -392,8 +392,8 @@ impl<'a, C: 'a + Coeff> AsSlice<'a, RangeFull> for Polynomial<C> {
     }
 }
 
-impl<C: Coeff> convert::From<Series<C>> for Polynomial<C> {
-    fn from(s: Series<C>) -> Self {
+impl<C: Coeff> convert::From<AnonSeries<C>> for Polynomial<C> {
+    fn from(s: AnonSeries<C>) -> Self {
         Polynomial::new(s.min_pow, s.coeffs)
     }
 }
