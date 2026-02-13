@@ -1,6 +1,5 @@
 #![allow(clippy::suspicious_op_assign_impl)]
 #![doc = include_str!("../Readme.md")]
-pub mod inner_series;
 pub mod ops;
 pub mod poly;
 pub mod poly_in;
@@ -14,7 +13,6 @@ mod zero_ref;
 mod poly_new;
 mod util_new;
 
-pub use self::inner_series::InnerSeries;
 pub use self::ops::{Exp, Ln, Pow};
 pub use self::poly::{Polynomial, PolynomialParts};
 pub use self::poly_in::{PolynomialIn, PolynomialInParts};
