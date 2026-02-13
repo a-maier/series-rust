@@ -472,14 +472,6 @@ where
     }
 }
 
-impl<Var: fmt::Display, C: Coeff + fmt::Display> fmt::Display
-    for Series<Var, C>
-{
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.as_slice(..).fmt(f)
-    }
-}
-
 impl<Var, C: Coeff + Neg<Output = C>> Neg for Series<Var, C> {
     type Output = Series<Var, C>;
 

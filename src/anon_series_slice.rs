@@ -1,9 +1,9 @@
 use crate::ops::{Exp, Ln, Pow};
 use crate::traits::{AsSlice, ExpCoeff, MulInverse};
-use crate::util::trim_slice_start;
+use crate::util::trim_slice_start_zero;
 use crate::zero_ref::zero_ref;
 use crate::{
-    Coeff, Iter, PolynomialSlice, SeriesSlice, anon_series::AnonSeries,
+    Coeff, Iter, SeriesSlice, anon_series::AnonSeries,
 };
 
 use std::ops::{
@@ -35,8 +35,7 @@ impl<'a, C: Coeff> AnonSeriesSlice<'a, C> {
     }
 
     fn trim(&mut self) {
-        let (coeffs, removed) = trim_slice_start(self.coeffs, &C::zero());
-        self.coeffs = coeffs;
+        let removed = trim_slice_start_zero(&mut self.coeffs);
         self.min_pow += removed as isize;
     }
 
@@ -47,7 +46,7 @@ impl<'a, C: Coeff> AnonSeriesSlice<'a, C> {
     /// ```rust
     /// use series::AsSlice;
     ///
-    /// let s = series::Series::new(-1, vec![1,2,3]);
+    /// let s = Series::new("x", -1, vec![1, 2, 3]);
     /// assert_eq!(s.as_slice(..).min_pow(), -1);
     /// assert_eq!(s.as_slice(0..).min_pow(), 0);
     /// ```
@@ -115,22 +114,6 @@ impl<'a, C: Coeff> AnonSeriesSlice<'a, C> {
             coeffs: upper,
         };
         (lower, upper)
-    }
-
-    /// View as polynomial slice
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use series::AsSlice;
-    ///
-    /// let s = series::Series::new(-1, vec!(1,2,3));
-    /// let slice = s.as_slice(..).as_poly();
-    /// let p = series::Polynomial::from(s.clone());
-    /// assert_eq!(slice, p.as_slice(..));
-    /// ```
-    pub fn as_poly(&self) -> PolynomialSlice<'a, C> {
-        PolynomialSlice::new(self.min_pow, self.coeffs)
     }
 
     /// Turn into a slice with a named expansion variable

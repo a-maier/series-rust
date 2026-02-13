@@ -1,5 +1,5 @@
 use crate::ops::{Exp, Ln, Pow};
-use crate::util::trim_start;
+use crate::util::trim_start_zero;
 use crate::{Coeff, IntoIter, Iter};
 use crate::{Series, anon_series_slice::AnonSeriesSlice};
 use crate::{SeriesParts, traits::*};
@@ -508,7 +508,7 @@ where
 
 impl<C: Coeff> AnonSeries<C> {
     fn trim(&mut self) {
-        self.min_pow += trim_start(&mut self.coeffs, &C::zero()) as isize;
+        self.min_pow += trim_start_zero(&mut self.coeffs) as isize;
     }
 }
 

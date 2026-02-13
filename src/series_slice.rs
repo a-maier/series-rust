@@ -1,10 +1,9 @@
 use crate::ops::{Exp, Ln, Pow};
 use crate::traits::{AsSlice, ExpCoeff, MulInverse};
 use crate::{
-    Coeff, Iter, PolynomialSliceIn, Series, anon_series_slice::AnonSeriesSlice,
+    Coeff, Iter, PolynomialSlice, Series, anon_series_slice::AnonSeriesSlice,
 };
 
-use std::fmt;
 use std::ops::{
     Add, AddAssign, Div, DivAssign, Index, Mul, MulAssign, Neg, Sub, SubAssign,
 };
@@ -112,8 +111,10 @@ impl<'a, Var, C: Coeff> SeriesSlice<'a, Var, C> {
     /// let p = series::PolynomialIn::from(s.clone());
     /// assert_eq!(slice, p.as_slice(..));
     /// ```
-    pub fn as_poly(&self) -> PolynomialSliceIn<'a, Var, C> {
-        self.series.as_poly().in_var(self.var())
+    pub fn as_poly(self) -> PolynomialSlice<'a, Var, C> {
+        let Self{ var, series } = self;
+        let AnonSeriesSlice { min_pow, coeffs } = series;
+        PolynomialSlice::Poly { min_pow, coeffs, var }
     }
 
     /// Get the expansion variable
@@ -202,18 +203,6 @@ where
     fn mul_inverse(self) -> Self::Output {
         let inv = self.series.mul_inverse();
         inv.in_var(self.var.clone())
-    }
-}
-
-impl<Var: fmt::Display, C: Coeff + fmt::Display> fmt::Display
-    for SeriesSlice<'_, Var, C>
-{
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        if !self.series.coeffs.is_empty() {
-            self.as_poly().fmt(f)?;
-            write!(f, " + ")?;
-        }
-        write!(f, "O({}^{})", self.var, self.cutoff_pow())
     }
 }
 
