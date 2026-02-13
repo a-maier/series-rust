@@ -11,6 +11,8 @@ pub mod series_in;
 pub mod series_slice;
 pub mod series_slice_in;
 mod zero_ref;
+mod poly_new;
+mod util_new;
 
 pub use self::inner_series::InnerSeries;
 pub use self::ops::{Exp, Ln, Pow};
