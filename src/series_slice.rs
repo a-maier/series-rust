@@ -1,6 +1,8 @@
 use crate::ops::{Exp, Ln, Pow};
 use crate::traits::{AsSlice, ExpCoeff, MulInverse};
-use crate::{Coeff, Iter, PolynomialSliceIn, Series, anon_series_slice::AnonSeriesSlice};
+use crate::{
+    Coeff, Iter, PolynomialSliceIn, Series, anon_series_slice::AnonSeriesSlice,
+};
 
 use std::fmt;
 use std::ops::{
@@ -226,8 +228,7 @@ where
     }
 }
 
-impl<Var: Clone, C: Coeff + Clone, Rhs> Add<Rhs>
-    for SeriesSlice<'_, Var, C>
+impl<Var: Clone, C: Coeff + Clone, Rhs> Add<Rhs> for SeriesSlice<'_, Var, C>
 where
     Series<Var, C>: AddAssign<Rhs>,
 {
@@ -281,8 +282,7 @@ where
     }
 }
 
-impl<'b, Var, C: Coeff> Mul<&'b Series<Var, C>>
-    for SeriesSlice<'_, Var, C>
+impl<'b, Var, C: Coeff> Mul<&'b Series<Var, C>> for SeriesSlice<'_, Var, C>
 where
     C: Clone,
     Var: Clone,

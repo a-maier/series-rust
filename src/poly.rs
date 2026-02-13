@@ -1107,8 +1107,7 @@ where
     }
 }
 
-impl<'b, C: Coeff> KaratsubaMul<PolynomialSlice<'b, C>>
-    for &Polynomial<C>
+impl<'b, C: Coeff> KaratsubaMul<PolynomialSlice<'b, C>> for &Polynomial<C>
 where
     C: Clone,
     for<'c> C: AddAssign,

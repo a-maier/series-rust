@@ -22,9 +22,9 @@ pub enum Polynomial<Var, C> {
     Poly(NonConstPoly<Var, C>),
 }
 
+/// A non-constant polynomial
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(PartialEq, Eq, Debug, Clone, Hash, Ord, PartialOrd)]
-/// A non-constant polynomial
 pub struct NonConstPoly<Var, C> {
     min_pow: isize,
     coeffs: Vec<C>,
@@ -50,12 +50,12 @@ impl<Var, C: Coeff> NonConstPoly<Var, C> {
     /// Panics if the cutoff power is lower than the starting power
     ///
     pub fn cutoff_at(self, cutoff_pow: isize) -> Series<Var, C> {
-        let Self{ min_pow, coeffs, var } = self;
-        Series::with_cutoff(
-            var,
-            min_pow..cutoff_pow,
+        let Self {
+            min_pow,
             coeffs,
-        )
+            var,
+        } = self;
+        Series::with_cutoff(var, min_pow..cutoff_pow, coeffs)
     }
 
     pub fn min_pow(&self) -> isize {
@@ -435,11 +435,13 @@ impl<Var: Debug + PartialEq, C: Coeff> Polynomial<Var, C> {
     /// ```
     pub fn cutoff_at(self, var: Var, cutoff_pow: isize) -> Series<Var, C> {
         match self {
-            Polynomial::Const(c) => Series::with_cutoff(var, 0..cutoff_pow, vec![c]),
+            Polynomial::Const(c) => {
+                Series::with_cutoff(var, 0..cutoff_pow, vec![c])
+            }
             Polynomial::Poly(poly) => {
                 assert_eq!(&var, poly.var());
                 poly.cutoff_at(cutoff_pow)
-            },
+            }
         }
     }
 }
@@ -652,7 +654,11 @@ impl<'a, Var: 'a, C: 'a + Coeff> AsSlice<'a, RangeFull> for Polynomial<Var, C> {
 
 impl<Var, C: Coeff> From<Series<Var, C>> for Polynomial<Var, C> {
     fn from(s: Series<Var, C>) -> Self {
-        let SeriesParts{ var, min_pow, coeffs } = s.into();
+        let SeriesParts {
+            var,
+            min_pow,
+            coeffs,
+        } = s.into();
         Polynomial::new(var, min_pow, coeffs)
     }
 }
@@ -1109,7 +1115,8 @@ where
 
 // TODO: pass `var` in `Mul` so it does not have to be cloned
 
-impl<'a, Var, C: Coeff> MulAssign<PolynomialSlice<'a, Var, C>> for Polynomial<Var, C>
+impl<'a, Var, C: Coeff> MulAssign<PolynomialSlice<'a, Var, C>>
+    for Polynomial<Var, C>
 where
     for<'b> PolynomialSlice<'b, Var, C>:
         Mul<PolynomialSlice<'a, Var, C>, Output = Polynomial<Var, C>>,

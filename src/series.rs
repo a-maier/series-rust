@@ -1,7 +1,7 @@
 use crate::ops::{Exp, Ln, Pow};
 use crate::traits::*;
-use crate::{series_slice::*, anon_series::AnonSeries};
 use crate::{Coeff, IntoIter, Iter};
+use crate::{anon_series::AnonSeries, series_slice::*};
 
 use std::convert::From;
 use std::fmt;
@@ -214,9 +214,7 @@ impl<Var, C: 'static + Coeff + Send + Sync> Series<Var, C> {
     }
 }
 
-impl<'a, Var: 'a, C: 'a + Coeff> AsSlice<'a, Range<isize>>
-    for Series<Var, C>
-{
+impl<'a, Var: 'a, C: 'a + Coeff> AsSlice<'a, Range<isize>> for Series<Var, C> {
     type Output = SeriesSlice<'a, Var, C>;
 
     /// A slice of the series truncated to the given range of powers.
@@ -636,8 +634,7 @@ where
     }
 }
 
-impl<'a, Var, C: Coeff> SubAssign<SeriesSlice<'a, Var, C>>
-    for Series<Var, C>
+impl<'a, Var, C: Coeff> SubAssign<SeriesSlice<'a, Var, C>> for Series<Var, C>
 where
     for<'c> SeriesSlice<'c, Var, C>: Neg<Output = Series<Var, C>>,
     Series<Var, C>: AddAssign<Series<Var, C>>,

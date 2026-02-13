@@ -1,8 +1,8 @@
 use crate::ops::{Exp, Ln, Pow};
 use crate::util::trim_start;
-use crate::{traits::*, SeriesParts};
 use crate::{Coeff, IntoIter, Iter};
 use crate::{Series, anon_series_slice::AnonSeriesSlice};
+use crate::{SeriesParts, traits::*};
 
 use std::cmp::min;
 use std::convert::From;
@@ -720,7 +720,8 @@ where
     }
 }
 
-impl<'a, C: Coeff + Clone + AddAssign> MulAssign<&'a AnonSeries<C>> for AnonSeries<C>
+impl<'a, C: Coeff + Clone + AddAssign> MulAssign<&'a AnonSeries<C>>
+    for AnonSeries<C>
 where
     for<'b> &'b C: Mul<Output = C>,
     C: MulAssign<&'a C>,
@@ -902,7 +903,8 @@ where
     }
 }
 
-impl<'a, C: Coeff + SubAssign> DivAssign<AnonSeriesSlice<'a, C>> for AnonSeries<C>
+impl<'a, C: Coeff + SubAssign> DivAssign<AnonSeriesSlice<'a, C>>
+    for AnonSeries<C>
 where
     AnonSeries<C>: MulAssign,
     for<'b> &'b C: Div<Output = C> + Mul<Output = C>,

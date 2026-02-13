@@ -2,7 +2,9 @@ use crate::ops::{Exp, Ln, Pow};
 use crate::traits::{AsSlice, ExpCoeff, MulInverse};
 use crate::util::trim_slice_start;
 use crate::zero_ref::zero_ref;
-use crate::{Coeff, Iter, PolynomialSlice, anon_series::AnonSeries, SeriesSlice};
+use crate::{
+    Coeff, Iter, PolynomialSlice, SeriesSlice, anon_series::AnonSeries,
+};
 
 use std::ops::{
     Add, AddAssign, Div, DivAssign, Index, Mul, MulAssign, Neg, Sub, SubAssign,
@@ -442,7 +444,9 @@ where
     }
 }
 
-impl<'a, C: Coeff, Var> From<SeriesSlice<'a, Var, C>> for AnonSeriesSlice<'a, C> {
+impl<'a, C: Coeff, Var> From<SeriesSlice<'a, Var, C>>
+    for AnonSeriesSlice<'a, C>
+{
     fn from(source: SeriesSlice<'a, Var, C>) -> Self {
         source.series
     }

@@ -5,8 +5,8 @@ use std::sync::LazyLock;
 
 use criterion::Criterion;
 
-use rand::prelude::*;
 use rand::SeedableRng;
+use rand::prelude::*;
 
 use series::{KaratsubaMul, PolynomialIn, Series};
 

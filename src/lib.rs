@@ -1,17 +1,17 @@
 #![allow(clippy::suspicious_op_assign_impl)]
 #![doc = include_str!("../Readme.md")]
+pub mod anon_series;
+pub mod anon_series_slice;
 pub mod ops;
 pub mod poly;
 pub mod poly_in;
+mod poly_new;
 pub mod poly_slice;
 pub mod poly_slice_in;
 pub mod series;
-pub mod anon_series;
 pub mod series_slice;
-pub mod anon_series_slice;
-mod zero_ref;
-mod poly_new;
 mod util_new;
+mod zero_ref;
 
 pub use self::ops::{Exp, Ln, Pow};
 pub use self::poly::{Polynomial, PolynomialParts};
