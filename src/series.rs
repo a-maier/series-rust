@@ -167,7 +167,7 @@ impl<Var, C: Coeff> Series<Var, C> {
         self.series.apply_at(pow, f)
     }
 
-    /// Transform all coefficients
+    /// Transform all coefficients in-place
     ///
     /// `f(p, c)` is applied to each term, where `p` is the power of
     /// the variable and `c` a mutable reference to the
@@ -191,6 +191,33 @@ impl<Var, C: Coeff> Series<Var, C> {
         F: FnMut(isize, &mut C),
     {
         self.series.for_each(f)
+    }
+
+    /// Transform all coefficients
+    ///
+    /// `f(p, c)` is applied to each term, where `p` is the power of
+    /// the variable and `c` a coefficient. `p` takes all values in
+    /// the range `min_pow()..cutoff_pow()`.
+    ///
+    /// # Example
+    ///
+    /// Replace each coefficient by its square
+    /// ```rust
+    /// # use series::Series;
+    /// let s = Series::new("x", -1, vec!(1,2,3,4));
+    /// let s = s.map(|_, c| c * c);
+    /// assert_eq!(s.coeff(-1), Some(&1));
+    /// assert_eq!(s.coeff(0), Some(&4));
+    /// assert_eq!(s.coeff(1), Some(&9));
+    /// assert_eq!(s.coeff(2), Some(&16));
+    /// ```
+    pub fn map<F, D: Coeff>(self, f: F) -> Series<Var, D>
+    where
+        F: FnMut(isize, C) -> D,
+    {
+        let Self { series, var } = self;
+        let series = series.map(f);
+        Series { series, var }
     }
 }
 

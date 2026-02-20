@@ -53,7 +53,7 @@ impl<C: Coeff> AnonSeries<C> {
         let min_pow = powers.start;
         let cutoff_pow = powers.end;
         if cutoff_pow < min_pow {
-            return AnonSeries::new(cutoff_pow, vec![])
+            return AnonSeries::new(cutoff_pow, vec![]);
         }
         let len = (cutoff_pow - min_pow) as usize;
         // can't use resize here, because C is not Clone
@@ -228,6 +228,33 @@ impl<C: Coeff> AnonSeries<C> {
             f(min_pow + n as isize, c)
         }
         self.trim();
+    }
+
+    /// Transform all coefficients
+    ///
+    /// `f(p, c)` is applied to each term, where `p` is the power of
+    /// the variable and `c` a coefficient. `p` takes all values in
+    /// the range `min_pow()..cutoff_pow()`.
+    ///
+    /// # Example
+    ///
+    /// Replace each coefficient by its square
+    /// ```rust
+    /// # use series::anon_series::AnonSeries;
+    /// let s = AnonSeries::new(-1, vec!(1,2,3,4));
+    /// let s = s.map(|_, c| c * c);
+    /// assert_eq!(s.coeff(-1), Some(&1));
+    /// assert_eq!(s.coeff(0), Some(&4));
+    /// assert_eq!(s.coeff(1), Some(&9));
+    /// assert_eq!(s.coeff(2), Some(&16));
+    /// ```
+    pub(crate) fn map<D: Coeff, F>(self, mut f: F) -> AnonSeries<D>
+    where
+        F: FnMut(isize, C) -> D,
+    {
+        let min_pow = self.min_pow;
+        let coeffs = self.into_iter().map(|(pow, c)| f(pow, c)).collect();
+        AnonSeries::new(min_pow, coeffs)
     }
 }
 
