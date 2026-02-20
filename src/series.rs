@@ -1285,3 +1285,13 @@ where
         self.as_slice(..).fmt(f)
     }
 }
+
+#[macro_export]
+macro_rules! O {
+    ($base:ident ^ $exp:expr) => {
+        Series::new($base, $exp, vec![])
+    };
+    ($base:literal ^ $exp:expr) => {
+        Series::new($base, $exp, vec![])
+    };
+}

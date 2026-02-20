@@ -808,6 +808,13 @@ mod tests {
     }
 
     #[test]
+    fn tst_o() {
+        assert_eq!(O!("x"^3), Series::<_, i32>::new("x", 3, vec![]));
+        let x = "x";
+        assert_eq!(O!(x^3), Series::<_, i32>::new(x, 3, vec![]));
+    }
+
+    #[test]
     fn tst_poly_scalar() {
         eprintln!("starting test");
         let s = Polynomial::new("x", -3, vec![1., 0., -2.]);
