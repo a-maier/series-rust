@@ -46,11 +46,6 @@ impl<Var, C: Coeff> NonConstPoly<Var, C> {
     /// let s = Series::with_cutoff("x", -1..5, vec![1, 2, 3]);
     /// assert_eq!(p.cutoff_at(5), s);
     /// ```
-    ///
-    /// # Panics
-    ///
-    /// Panics if the cutoff power is lower than the starting power
-    ///
     pub fn cutoff_at(self, cutoff_pow: isize) -> Series<Var, C> {
         let Self {
             min_pow,
