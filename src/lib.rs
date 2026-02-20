@@ -101,15 +101,17 @@ mod tests {
         let _ = Series::with_cutoff("x", 0..-2, vec![1, 2, 3]);
     }
 
-    // #[test]
-    // fn tst_display() {
-    //     let s = Series::new("x", -10, vec!());
-    //     assert_eq!(format!("{s}"), "O(x^-10)");
-    //     let s = Series::new("x", -3, vec![1., 0., -3.]);
-    //     assert_eq!(format!("{s}"), "(1)*x^-3 + (-3)*x^-1 + O(x^0)");
-    //     let s = Series::new("x", -1, vec![1., 2., -3.]);
-    //     assert_eq!(format!("{s}"), "(1)*x^-1 + (2) + (-3)*x + O(x^2)");
-    // }
+    #[test]
+    fn tst_display() {
+        let s: Series<_, i32> = Series::new("x", -10, vec![]);
+        assert_eq!(format!("{s}"), "O(x^-10)");
+        let s = Series::new("x", 0, vec![-1]);
+        assert_eq!(format!("{s}"), "-1 + O(x)");
+        let s = Series::new("x", -3, vec![1., 0., -3.]);
+        assert_eq!(format!("{s}"), "x^-3 - 3*x^-1 + O(x^0)");
+        let s = Series::new("x", -1, vec![1., 2., -3.]);
+        assert_eq!(format!("{s}"), "x^-1 + 2 - 3*x + O(x^2)");
+    }
 
     #[test]
     fn tst_neg() {

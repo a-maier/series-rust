@@ -1927,11 +1927,13 @@ macro_rules! impl_num_display {
                                 });
                             let mut first = true;
                             for (pow, mut c) in terms {
-                                if c < <$t>::zero() {
-                                    c = -c;
-                                    write!(f, " - ")?;
-                                } else if !first {
-                                    write!(f, " + ")?;
+                                if !first {
+                                    if c < <$t>::zero() {
+                                        c = -c;
+                                        write!(f, " - ")?;
+                                    } else {
+                                        write!(f, " + ")?;
+                                    }
                                 }
                                 first = false;
                                 if pow == 0 {

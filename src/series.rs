@@ -4,7 +4,7 @@ use crate::{Coeff, IntoIter, Iter};
 use crate::{anon_series::AnonSeries, series_slice::*};
 
 use std::convert::From;
-use std::fmt;
+use std::fmt::{self, Display};
 use std::ops::{
     Add, AddAssign, Div, DivAssign, Index, Mul, MulAssign, Neg, Range,
     RangeFrom, RangeFull, RangeInclusive, RangeTo, RangeToInclusive, Sub,
@@ -1228,5 +1228,13 @@ where
 
     fn exp_coeff(&self) -> Vec<C> {
         self.series.exp_coeff()
+    }
+}
+
+impl<Var, C: Coeff> Display for Series<Var, C>
+where for<'c> SeriesSlice<'c, Var, C>: Display
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.as_slice(..).fmt(f)
     }
 }

@@ -4,9 +4,11 @@ use crate::{
     Coeff, Iter, PolynomialSlice, Series, anon_series_slice::AnonSeriesSlice,
 };
 
+use std::fmt::Display;
 use std::ops::{
     Add, AddAssign, Div, DivAssign, Index, Mul, MulAssign, Neg, Sub, SubAssign,
 };
+use num_traits::{One, Zero};
 
 // TODO: lots of code duplication with SeriesSlice
 
@@ -404,3 +406,89 @@ where
         (self.ln() * exponent).exp()
     }
 }
+
+macro_rules! impl_num_display {
+    ($($t:ty), *) => {
+        $(
+            impl<'a, Var: Display> Display for SeriesSlice<'a, Var, $t> {
+                fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                    let terms = self.iter().filter(|(_, c)| !c.is_zero());
+                    let mut first = true;
+                    for (pow, c) in terms {
+                        let mut c = *c;
+                        if !first {
+                            if c < <$t>::zero() {
+                                c = -c;
+                                write!(f, " - ")?;
+                            } else {
+                                write!(f, " + ")?;
+                            }
+                        }
+                        first = false;
+                        if pow == 0 {
+                            write!(f, "{c}")?;
+                        } else {
+                            if !c.is_one() {
+                                write!(f, "{c}*")?;
+                            }
+                            write!(f, "{}", self.var())?;
+                            if pow != 1 {
+                                write!(f, "^{pow}")?;
+                            }
+                        }
+                    }
+                    if !first {
+                        write!(f, " + ")?;
+                    }
+                    if self.cutoff_pow() == 1 {
+                        write!(f, "O({})", self.var())
+                    } else {
+                        write!(f, "O({}^{})", self.var(), self.cutoff_pow())
+                    }
+                }
+            }
+        )*
+    };
+}
+
+impl_num_display!(i8, i16, i32, i64, i128, isize, f32, f64);
+
+macro_rules! impl_unsigned_display {
+    ($($t:ty), *) => {
+        $(
+            impl<'a, Var: Display> Display for SeriesSlice<'a, Var, $t> {
+                fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                    let terms = self.iter().filter(|(_, c)| !c.is_zero());
+                    let mut first = true;
+                    for (pow, c) in terms {
+                        if !first {
+                            write!(f, " + ")?;
+                        }
+                        first = false;
+                        if pow == 0 {
+                            write!(f, "{c}")?;
+                        } else {
+                            if !c.is_one() {
+                                write!(f, "{c}*")?;
+                            }
+                            write!(f, "{}", self.var())?;
+                            if pow != 1 {
+                                write!(f, "^{pow}")?;
+                            }
+                        }
+                    }
+                    if !first {
+                        write!(f, " + ")?;
+                    }
+                    if self.cutoff_pow() == 1 {
+                        write!(f, "O({})", self.var())
+                    } else {
+                        write!(f, "O({}^{})", self.var(), self.cutoff_pow())
+                    }
+                }
+            }
+        )*
+    };
+}
+
+impl_unsigned_display!(u8, u16, u32, u64, u128, usize);
