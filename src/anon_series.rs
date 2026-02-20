@@ -248,7 +248,7 @@ impl<C: Coeff> AnonSeries<C> {
     /// assert_eq!(s.coeff(1), Some(&9));
     /// assert_eq!(s.coeff(2), Some(&16));
     /// ```
-    pub(crate) fn map<D: Coeff, F>(self, mut f: F) -> AnonSeries<D>
+    pub fn map<D: Coeff, F>(self, mut f: F) -> AnonSeries<D>
     where
         F: FnMut(isize, C) -> D,
     {
