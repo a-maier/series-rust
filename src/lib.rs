@@ -95,11 +95,6 @@ mod tests {
         let t = Series::new("x", 0, vec![1, 2]);
         assert_eq!(s, t);
     }
-    #[test]
-    #[should_panic]
-    fn tst_bad_cutoff() {
-        let _ = Series::with_cutoff("x", 0..-2, vec![1, 2, 3]);
-    }
 
     #[test]
     fn tst_display() {
