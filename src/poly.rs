@@ -4,6 +4,7 @@ use crate::zero_ref::zero_ref;
 use crate::{Coeff, IntoIter, Series, SeriesParts};
 
 use core::slice;
+use std::fmt::Display;
 use std::iter::FusedIterator;
 use std::ops::{
     Add, AddAssign, Div, DivAssign, Index, Mul, MulAssign, Neg, Range,
@@ -64,6 +65,15 @@ impl<Var, C: Coeff> NonConstPoly<Var, C> {
 
     pub fn var(&self) -> &Var {
         &self.var
+    }
+}
+
+impl<Var, C: Coeff> Display for Polynomial<Var, C>
+where
+    for<'c> PolynomialSlice<'c, Var, C>: Display
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.as_slice(..).fmt(f)
     }
 }
 
@@ -1896,6 +1906,104 @@ impl<'a, Var, C: 'static + Coeff + Send + Sync> PolynomialSlice<'a, Var, C> {
         self.get_coeff(pow).unwrap_or(zero_ref())
     }
 }
+
+macro_rules! impl_num_display {
+    ($($t:ty), *) => {
+        $(
+            impl<'a, Var: Display> Display for PolynomialSlice<'a, Var, $t> {
+                fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                    match self {
+                        PolynomialSlice::Const(c) => return write!(f, "{c}"),
+                        PolynomialSlice::Poly { min_pow, coeffs, var } => {
+                            if coeffs.is_empty() {
+                                return write!(f, "0");
+                            }
+                            let terms = coeffs.iter()
+                                .enumerate()
+                                .filter_map(|(n, c)| if c.is_zero() {
+                                    None
+                                } else {
+                                    Some((*min_pow + n as isize, *c))
+                                });
+                            let mut first = true;
+                            for (pow, mut c) in terms {
+                                if c < <$t>::zero() {
+                                    c = -c;
+                                    write!(f, " - ")?;
+                                } else if !first {
+                                    write!(f, " + ")?;
+                                }
+                                first = false;
+                                if pow == 0 {
+                                    write!(f, "{c}")?;
+                                } else {
+                                    if !c.is_one() {
+                                        write!(f, "{c}*")?;
+                                    }
+                                    write!(f, "{var}")?;
+                                    if pow != 1 {
+                                        write!(f, "^{pow}")?;
+                                    }
+                                }
+                            }
+                            Ok(())
+                        },
+                    }
+                }
+            }
+        )*
+    };
+}
+
+impl_num_display!(i8, i16, i32, i64, i128, isize, f32, f64);
+
+macro_rules! impl_unsigned_display {
+    // TODO: code duplication with `impl_num_display`
+    ($($t:ty), *) => {
+        $(
+            impl<'a, Var: Display> Display for PolynomialSlice<'a, Var, $t> {
+                fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                    match self {
+                        PolynomialSlice::Const(c) => return write!(f, "{c}"),
+                        PolynomialSlice::Poly { min_pow, coeffs, var } => {
+                            if coeffs.is_empty() {
+                                return write!(f, "0");
+                            }
+                            let terms = coeffs.iter()
+                                .enumerate()
+                                .filter_map(|(n, c)| if c.is_zero() {
+                                    None
+                                } else {
+                                    Some((*min_pow + n as isize, *c))
+                                });
+                            let mut first = true;
+                            for (pow, c) in terms {
+                                if !first {
+                                    write!(f, " + ")?;
+                                }
+                                first = false;
+                                if pow == 0 {
+                                    write!(f, "{c}")?;
+                                } else {
+                                    if !c.is_one() {
+                                        write!(f, "{c}*")?;
+                                    }
+                                    write!(f, "{var}")?;
+                                    if pow != 1 {
+                                        write!(f, "^{pow}")?;
+                                    }
+                                }
+                            }
+                            Ok(())
+                        },
+                    }
+                }
+            }
+        )*
+    };
+}
+
+impl_unsigned_display!(u8, u16, u32, u64, u128, usize);
 
 #[derive(Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct Iter<'a, C> {
