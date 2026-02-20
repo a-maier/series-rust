@@ -9,9 +9,9 @@ pub mod series_slice;
 mod zero_ref;
 
 pub use self::ops::{Exp, Ln, Pow};
+pub use self::poly::{Polynomial, PolynomialParts, PolynomialSlice};
 pub use self::series::{Series, SeriesParts};
 pub use self::series_slice::SeriesSlice;
-pub use self::poly::{Polynomial, PolynomialParts, PolynomialSlice};
 mod traits;
 pub use self::traits::{AsSlice, KaratsubaMul, MulInverse};
 mod util;
@@ -756,8 +756,7 @@ mod tests {
 
         let s = Polynomial::new("x", -3, vec![1., 0., -3.]);
         let t = Polynomial::new("x", -1, vec![3., 4., 5., 7.]);
-        let res =
-            Polynomial::new("x", -4, vec![3., 4., -4., -5., -15., -21.]);
+        let res = Polynomial::new("x", -4, vec![3., 4., -4., -5., -15., -21.]);
         assert_eq!(res, &s * &t);
         assert_eq!(res, &t * &s);
         assert_eq!(res, &s * t.clone());
@@ -789,8 +788,7 @@ mod tests {
 
         let mut s = Polynomial::new("x", -3, vec![1., 0., -3.]);
         let t = Polynomial::new("x", -1, vec![3., 4., 5., 7.]);
-        let res =
-            Polynomial::new("x", -4, vec![3., 4., -4., -5., -15., -21.]);
+        let res = Polynomial::new("x", -4, vec![3., 4., -4., -5., -15., -21.]);
         s *= &t;
         assert_eq!(res, s);
         let mut s = Polynomial::new("x", -3, vec![1., 0., -3.]);

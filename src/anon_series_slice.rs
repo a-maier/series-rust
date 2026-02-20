@@ -2,9 +2,7 @@ use crate::ops::{Exp, Ln, Pow};
 use crate::traits::{AsSlice, ExpCoeff, MulInverse};
 use crate::util::trim_slice_start_zero;
 use crate::zero_ref::zero_ref;
-use crate::{
-    Coeff, Iter, SeriesSlice, anon_series::AnonSeries,
-};
+use crate::{Coeff, Iter, SeriesSlice, anon_series::AnonSeries};
 
 use std::ops::{
     Add, AddAssign, Div, DivAssign, Index, Mul, MulAssign, Neg, Sub, SubAssign,
@@ -44,9 +42,9 @@ impl<'a, C: Coeff> AnonSeriesSlice<'a, C> {
     /// # Example
     ///
     /// ```rust
-    /// use series::AsSlice;
+    /// # use series::{anon_series::AnonSeries, AsSlice};
     ///
-    /// let s = Series::new("x", -1, vec![1, 2, 3]);
+    /// let s = AnonSeries::new(-1, vec![1, 2, 3]);
     /// assert_eq!(s.as_slice(..).min_pow(), -1);
     /// assert_eq!(s.as_slice(0..).min_pow(), 0);
     /// ```
@@ -60,9 +58,9 @@ impl<'a, C: Coeff> AnonSeriesSlice<'a, C> {
     /// # Example
     ///
     /// ```rust
-    /// use series::AsSlice;
+    /// # use series::{anon_series::AnonSeries, AsSlice};
     ///
-    /// let s = series::Series::new(-1, vec!(1,2,3));
+    /// let s = AnonSeries::new(-1, vec![1, 2, 3]);
     /// assert_eq!(s.as_slice(..).cutoff_pow(), 2);
     /// assert_eq!(s.as_slice(..1).cutoff_pow(), 1);
     /// ```
@@ -75,9 +73,9 @@ impl<'a, C: Coeff> AnonSeriesSlice<'a, C> {
     /// # Example
     ///
     /// ```rust
-    /// use series::AsSlice;
+    /// # use series::{anon_series::AnonSeries, AsSlice};
     ///
-    /// let s = series::Series::new(-1, vec!(1,2,3));
+    /// let s = AnonSeries::new(-1, vec![1, 2, 3]);
     /// let slice = s.as_slice(..);
     /// let mut iter = slice.iter();
     /// assert_eq!(iter.next(), Some((-1, &1)));
@@ -95,9 +93,9 @@ impl<'a, C: Coeff> AnonSeriesSlice<'a, C> {
     /// # Example
     ///
     /// ```rust
-    /// use series::AsSlice;
+    /// # use series::{anon_series::AnonSeries, AsSlice};
     ///
-    /// let s = series::Series::new(-1, vec!(1,2,3));
+    /// let s = AnonSeries::new(-1, vec![1, 2, 3]);
     /// let (lower, upper) = s.as_slice(..).split_at(0);
     /// assert_eq!(lower.min_pow(), -1);
     /// assert_eq!(upper.min_pow(), 0);
@@ -121,9 +119,9 @@ impl<'a, C: Coeff> AnonSeriesSlice<'a, C> {
     /// # Example
     ///
     /// ```rust
-    /// use series::AsSlice;
+    /// # use series::{anon_series::AnonSeries, AsSlice};
     ///
-    /// let s = series::Series::new(-1, vec!(1,2,3));
+    /// let s = AnonSeries::new(-1, vec![1, 2, 3]);
     /// let s = s.as_slice(..).in_var(&"x");
     /// assert_eq!(s.var(), &"x");
     /// ```
@@ -140,9 +138,9 @@ impl<'a, C: Coeff> AnonSeriesSlice<'a, C> {
     /// # Example
     ///
     /// ```rust
-    /// use series::AsSlice;
+    /// # use series::{anon_series::AnonSeries, AsSlice};
     ///
-    /// let s = series::Series::new(-1, vec!(1,2,3));
+    /// let s = AnonSeries::new(-1, vec![1, 2, 3]);
     /// let slice = s.as_slice(..);
     /// assert_eq!(slice.try_coeff(-5), None);
     /// assert_eq!(slice.try_coeff(-2), None);
@@ -178,9 +176,9 @@ impl<'a, C: 'static + Coeff + Send + Sync> AnonSeriesSlice<'a, C> {
     /// # Example
     ///
     /// ```rust
-    /// use series::AsSlice;
+    /// # use series::{anon_series::AnonSeries, AsSlice};
     ///
-    /// let s = series::Series::new(-1, vec!(1,2,3));
+    /// let s = AnonSeries::new(-1, vec![1, 2, 3]);
     /// let slice = s.as_slice(..);
     /// assert_eq!(slice.coeff(-5), Some(&0));
     /// assert_eq!(slice.coeff(-2), Some(&0));

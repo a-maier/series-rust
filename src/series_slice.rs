@@ -4,11 +4,11 @@ use crate::{
     Coeff, Iter, PolynomialSlice, Series, anon_series_slice::AnonSeriesSlice,
 };
 
+use num_traits::{One, Zero};
 use std::fmt::Display;
 use std::ops::{
     Add, AddAssign, Div, DivAssign, Index, Mul, MulAssign, Neg, Sub, SubAssign,
 };
-use num_traits::{One, Zero};
 
 // TODO: lots of code duplication with SeriesSlice
 
@@ -37,7 +37,7 @@ impl<'a, Var, C: Coeff> SeriesSlice<'a, Var, C> {
     /// ```rust
     /// use series::AsSlice;
     ///
-    /// let s = series::SeriesIn::new("x", -1, vec![1,2,3]);
+    /// let s = series::Series::new("x", -1, vec![1,2,3]);
     /// assert_eq!(s.as_slice(..).min_pow(), -1);
     /// assert_eq!(s.as_slice(0..).min_pow(), 0);
     /// ```
@@ -53,7 +53,7 @@ impl<'a, Var, C: Coeff> SeriesSlice<'a, Var, C> {
     /// ```rust
     /// use series::AsSlice;
     ///
-    /// let s = series::SeriesIn::new("x", -1, vec!(1,2,3));
+    /// let s = series::Series::new("x", -1, vec!(1,2,3));
     /// assert_eq!(s.as_slice(..).cutoff_pow(), 2);
     /// assert_eq!(s.as_slice(..1).cutoff_pow(), 1);
     /// ```
@@ -68,7 +68,7 @@ impl<'a, Var, C: Coeff> SeriesSlice<'a, Var, C> {
     /// ```rust
     /// use series::AsSlice;
     ///
-    /// let s = series::SeriesIn::new("x", -1, vec!(1,2,3));
+    /// let s = series::Series::new("x", -1, vec!(1,2,3));
     /// let slice = s.as_slice(..);
     /// let mut iter = slice.iter();
     /// assert_eq!(iter.next(), Some((-1, &1)));
@@ -88,7 +88,7 @@ impl<'a, Var, C: Coeff> SeriesSlice<'a, Var, C> {
     /// ```rust
     /// use series::AsSlice;
     ///
-    /// let s = series::SeriesIn::new("x", -1, vec!(1,2,3));
+    /// let s = series::Series::new("x", -1, vec!(1,2,3));
     /// let (lower, upper) = s.as_slice(..).split_at(0);
     /// assert_eq!(lower.min_pow(), -1);
     /// assert_eq!(upper.min_pow(), 0);
@@ -108,15 +108,19 @@ impl<'a, Var, C: Coeff> SeriesSlice<'a, Var, C> {
     /// ```rust
     /// use series::AsSlice;
     ///
-    /// let s = series::SeriesIn::new("x", -1, vec!(1,2,3));
+    /// let s = series::Series::new("x", -1, vec!(1,2,3));
     /// let slice = s.as_slice(..).as_poly();
-    /// let p = series::PolynomialIn::from(s.clone());
+    /// let p = series::Polynomial::from(s.clone());
     /// assert_eq!(slice, p.as_slice(..));
     /// ```
     pub fn as_poly(self) -> PolynomialSlice<'a, Var, C> {
-        let Self{ var, series } = self;
+        let Self { var, series } = self;
         let AnonSeriesSlice { min_pow, coeffs } = series;
-        PolynomialSlice::Poly { min_pow, coeffs, var }
+        PolynomialSlice::Poly {
+            min_pow,
+            coeffs,
+            var,
+        }
     }
 
     /// Get the expansion variable
@@ -126,7 +130,7 @@ impl<'a, Var, C: Coeff> SeriesSlice<'a, Var, C> {
     /// ```rust
     /// use series::AsSlice;
     ///
-    /// let s = series::SeriesIn::new("x", -1, vec!(1,2,3));
+    /// let s = series::Series::new("x", -1, vec!(1,2,3));
     /// assert_eq!(s.as_slice(..).var(), &"x");
     /// ```
     pub fn var(&self) -> &'a Var {
@@ -144,7 +148,7 @@ impl<'a, Var, C: Coeff> SeriesSlice<'a, Var, C> {
     /// ```rust
     /// use series::AsSlice;
     ///
-    /// let s = series::SeriesIn::new("x", -1, vec!(1,2,3));
+    /// let s = series::Series::new("x", -1, vec!(1,2,3));
     /// let slice = s.as_slice(..);
     /// assert_eq!(slice.try_coeff(-5), None);
     /// assert_eq!(slice.try_coeff(-2), None);
@@ -171,7 +175,7 @@ impl<'a, Var, C: 'static + Coeff + Send + Sync> SeriesSlice<'a, Var, C> {
     /// ```rust
     /// use series::AsSlice;
     ///
-    /// let s = series::SeriesIn::new("x", -1, vec!(1,2,3));
+    /// let s = series::Series::new("x", -1, vec!(1,2,3));
     /// let slice = s.as_slice(..);
     /// assert_eq!(slice.coeff(-5), Some(&0));
     /// assert_eq!(slice.coeff(-2), Some(&0));
