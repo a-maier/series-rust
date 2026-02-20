@@ -817,7 +817,7 @@ where
     }
 }
 
-impl<'a, Var, C: AddAssign + Coeff> AddAssign<C> for Polynomial<Var, C> {
+impl<Var, C: AddAssign + Coeff> AddAssign<C> for Polynomial<Var, C> {
     /// Add a constant to the polynomial
     ///
     /// # Example
@@ -885,7 +885,7 @@ where
     }
 }
 
-impl<'a, Var, C: SubAssign + Coeff> SubAssign<C> for Polynomial<Var, C> {
+impl<Var, C: SubAssign + Coeff> SubAssign<C> for Polynomial<Var, C> {
     /// Subtract a constant from the polynomial
     ///
     /// # Example
@@ -1491,7 +1491,7 @@ where
     }
 
     fn is_zero(&self) -> bool {
-        Polynomial::is_zero(&self)
+        Polynomial::is_zero(self)
     }
 }
 
@@ -1505,7 +1505,7 @@ where
     }
 
     fn is_one(&self) -> bool {
-        Polynomial::is_one(&self)
+        Polynomial::is_one(self)
     }
 }
 
@@ -1581,6 +1581,16 @@ impl<'a, Var: 'a, C: Coeff + 'a> PolynomialSlice<'a, Var, C> {
                 }
             }
             PolynomialSlice::Poly { coeffs, .. } => coeffs.len(),
+        }
+    }
+
+    /// Check if the polynomial is zero
+    ///
+    /// See [Polynomial::is_zero].
+    pub fn is_empty(self) -> bool {
+        match self {
+            PolynomialSlice::Const(c) => c.is_zero(),
+            PolynomialSlice::Poly { coeffs, .. } => coeffs.is_empty(),
         }
     }
 
