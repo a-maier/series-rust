@@ -48,11 +48,6 @@ impl<Var, C: Coeff> Series<Var, C> {
     /// # use series::Series;
     /// let s = Series::with_cutoff("x", -1..5, vec![1, 2, 3]);
     /// ```
-    ///
-    /// # Panics
-    ///
-    /// Panics if the cutoff power is lower than the starting power
-    ///
     pub fn with_cutoff(
         var: Var,
         powers: Range<isize>,

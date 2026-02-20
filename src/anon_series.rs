@@ -49,15 +49,12 @@ impl<C: Coeff> AnonSeries<C> {
     /// # use series::anon_series::AnonSeries;
     /// let s = AnonSeries::with_cutoff(-1..5, vec![1, 2, 3]);
     /// ```
-    ///
-    /// # Panics
-    ///
-    /// Panics if the cutoff power is lower than the starting power
-    ///
     pub fn with_cutoff(powers: Range<isize>, mut coeffs: Vec<C>) -> Self {
         let min_pow = powers.start;
         let cutoff_pow = powers.end;
-        assert!(cutoff_pow >= min_pow);
+        if cutoff_pow < min_pow {
+            return AnonSeries::new(cutoff_pow, vec![])
+        }
         let len = (cutoff_pow - min_pow) as usize;
         // can't use resize here, because C is not Clone
         if len < coeffs.len() {
