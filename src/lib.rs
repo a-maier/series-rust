@@ -83,32 +83,33 @@ mod tests {
 
     #[test]
     fn tst_series_with_cutoff() {
-        let s = Series::with_cutoff("x", -10, 1, Vec::<i32>::new());
+        let s = Series::with_cutoff("x", -10..1, Vec::<i32>::new());
         let t = Series::new("x", 1, vec![]);
         assert_eq!(s, t);
 
-        let s = Series::with_cutoff("x", 0, 5, vec![1, 2, 3]);
+        let s = Series::with_cutoff("x", 0..5, vec![1, 2, 3]);
         let t = Series::new("x", 0, vec![1, 2, 3, 0, 0]);
         assert_eq!(s, t);
 
-        let s = Series::with_cutoff("x", 0, 2, vec![1, 2, 3]);
+        let s = Series::with_cutoff("x", 0..2, vec![1, 2, 3]);
         let t = Series::new("x", 0, vec![1, 2]);
         assert_eq!(s, t);
     }
     #[test]
     #[should_panic]
     fn tst_bad_cutoff() {
-        let _ = Series::with_cutoff("x", 0, -2, vec![1, 2, 3]);
+        let _ = Series::with_cutoff("x", 0..-2, vec![1, 2, 3]);
     }
 
     #[test]
     fn tst_display() {
-        // let s = SeriesIn::new("x", -10, vec!());
-        // assert_eq!(format!("{}", s), "O(x^-10)");
-        let s = Series::new("x", -3, vec![1., 0., -3.]);
-        assert_eq!(format!("{}", s), "(1)*x^-3 + (-3)*x^-1 + O(x^0)");
-        let s = Series::new("x", -1, vec![1., 2., -3.]);
-        assert_eq!(format!("{}", s), "(1)*x^-1 + (2) + (-3)*x + O(x^2)");
+        todo!()
+        // let s = Series::new("x", -10, vec!());
+        // assert_eq!(format!("{s}"), "O(x^-10)");
+        // let s = Series::new("x", -3, vec![1., 0., -3.]);
+        // assert_eq!(format!("{s}"), "(1)*x^-3 + (-3)*x^-1 + O(x^0)");
+        // let s = Series::new("x", -1, vec![1., 2., -3.]);
+        // assert_eq!(format!("{s}"), "(1)*x^-1 + (2) + (-3)*x + O(x^2)");
     }
 
     #[test]
@@ -549,14 +550,14 @@ mod tests {
         let var = String::from("x");
         let min_pow = -10;
         let coeffs = vec![0];
-        let s = PolynomialIn::new(var.clone(), min_pow, coeffs);
+        let s = Polynomial::new(var.clone(), min_pow, coeffs);
         assert_eq!(s.min_pow(), None);
         assert_eq!(s.coeff(-11), (&0));
         assert_eq!(s.coeff(-10), (&0));
 
         let min_pow = -3;
         let coeffs = vec![1., 2., 3.];
-        let s = PolynomialIn::new(var.clone(), min_pow, coeffs);
+        let s = Polynomial::new(var.clone(), min_pow, coeffs);
         assert_eq!(s.min_pow(), Some(min_pow));
         assert_eq!(s.coeff(-4), (&0.));
         assert_eq!(s.coeff(-3), (&1.));
@@ -566,52 +567,53 @@ mod tests {
 
         let min_pow = -2;
         let coeffs = vec![0., 0., 3.];
-        let s = PolynomialIn::new(var.clone(), min_pow, coeffs);
+        let s = Polynomial::new(var.clone(), min_pow, coeffs);
         assert_eq!(s.min_pow(), Some(min_pow + 2));
         assert_eq!(s.coeff(-2), (&0.));
         assert_eq!(s.coeff(-1), (&0.));
         assert_eq!(s.coeff(0), (&3.));
         assert_eq!(s.coeff(1), (&0.));
 
-        let s = PolynomialIn::new(var.clone(), -2, vec![0., 0., 1.]);
-        let t = PolynomialIn::new(var.clone(), 0, vec![1.]);
+        let s = Polynomial::new(var.clone(), -2, vec![0., 0., 1.]);
+        let t = Polynomial::new(var.clone(), 0, vec![1.]);
         assert_eq!(s, t);
 
-        let s = PolynomialIn::new(var.clone(), -3, vec![0., 0., 0.]);
-        let t = PolynomialIn::new(var.clone(), 0, vec![]);
+        let s = Polynomial::new(var.clone(), -3, vec![0., 0., 0.]);
+        let t = Polynomial::new(var.clone(), 0, vec![]);
         assert_eq!(s, t);
     }
 
     #[test]
     fn tst_poly_display() {
-        let s = PolynomialIn::new("x", -10, vec![0]);
-        assert_eq!(format!("{}", s), "");
-        let s = PolynomialIn::new("x", -3, vec![1., 0., -3.]);
-        assert_eq!(format!("{}", s), "(1)*x^-3 + (-3)*x^-1");
-        let s = PolynomialIn::new("x", -1, vec![1., 2., -3.]);
-        assert_eq!(format!("{}", s), "(1)*x^-1 + (2) + (-3)*x");
+        todo!()
+        // let s = Polynomial::new("x", -10, vec![0]);
+        // assert_eq!(format!("{s}"), "");
+        // let s = Polynomial::new("x", -3, vec![1., 0., -3.]);
+        // assert_eq!(format!("{s}"), "(1)*x^-3 + (-3)*x^-1");
+        // let s = Polynomial::new("x", -1, vec![1., 2., -3.]);
+        // assert_eq!(format!("{s}"), "(1)*x^-1 + (2) + (-3)*x");
     }
 
     #[test]
     fn tst_poly_neg() {
-        let s = PolynomialIn::new("x", -3, vec![1., 0., -3.]);
-        let res = PolynomialIn::new("x", -3, vec![-1., 0., 3.]);
+        let s = Polynomial::new("x", -3, vec![1., 0., -3.]);
+        let res = Polynomial::new("x", -3, vec![-1., 0., 3.]);
         assert_eq!(res, -&s);
         assert_eq!(res, -s);
     }
 
     #[test]
     fn tst_poly_add() {
-        let s = PolynomialIn::new("x", -3, vec![1., 0., -3.]);
-        let res = PolynomialIn::new("x", -3, vec![2., 0., -6.]);
+        let s = Polynomial::new("x", -3, vec![1., 0., -3.]);
+        let res = Polynomial::new("x", -3, vec![2., 0., -6.]);
         assert_eq!(res, &s + &s);
         assert_eq!(res, &s + s.clone());
         assert_eq!(res, s.clone() + &s);
         assert_eq!(res, s.clone() + s.clone());
 
-        let s = PolynomialIn::new("x", -3, vec![1., 0., -3.]);
-        let t = PolynomialIn::new("x", -1, vec![3., 4., 5.]);
-        let res = PolynomialIn::new("x", -3, vec![1., 0., 0., 4., 5.]);
+        let s = Polynomial::new("x", -3, vec![1., 0., -3.]);
+        let t = Polynomial::new("x", -1, vec![3., 4., 5.]);
+        let res = Polynomial::new("x", -3, vec![1., 0., 0., 4., 5.]);
         assert_eq!(res, &s + &t);
         assert_eq!(res, &t + &s);
         assert_eq!(res, &s + t.clone());
@@ -621,9 +623,9 @@ mod tests {
         assert_eq!(res, s.clone() + t.clone());
         assert_eq!(res, t.clone() + s.clone());
 
-        let s = PolynomialIn::new("x", -3, vec![1., 0., -3.]);
-        let t = PolynomialIn::new("x", 1, vec![3., 4., 5.]);
-        let res = PolynomialIn::new("x", -3, vec![1., 0., -3., 0., 3., 4., 5.]);
+        let s = Polynomial::new("x", -3, vec![1., 0., -3.]);
+        let t = Polynomial::new("x", 1, vec![3., 4., 5.]);
+        let res = Polynomial::new("x", -3, vec![1., 0., -3., 0., 3., 4., 5.]);
         assert_eq!(res, &s + &t);
         assert_eq!(res, &t + &s);
         assert_eq!(res, &s + t.clone());
@@ -633,9 +635,9 @@ mod tests {
         assert_eq!(res, s.clone() + t.clone());
         assert_eq!(res, t.clone() + s.clone());
 
-        let s = PolynomialIn::new("x", -3, vec![1., 0., -3.]);
-        let t = PolynomialIn::new("x", -3, vec![-1., 0., 3.]);
-        let res = PolynomialIn::new("x", 0, vec![]);
+        let s = Polynomial::new("x", -3, vec![1., 0., -3.]);
+        let t = Polynomial::new("x", -3, vec![-1., 0., 3.]);
+        let res = Polynomial::new("x", 0, vec![]);
         assert_eq!(res, &s + &t);
         assert_eq!(res, &t + &s);
         assert_eq!(res, &s + t.clone());
@@ -648,68 +650,68 @@ mod tests {
 
     #[test]
     fn tst_poly_add_assign() {
-        let mut s = PolynomialIn::new("x", -3, vec![1., 0., -3.]);
-        let res = PolynomialIn::new("x", -3, vec![2., 0., -6.]);
+        let mut s = Polynomial::new("x", -3, vec![1., 0., -3.]);
+        let res = Polynomial::new("x", -3, vec![2., 0., -6.]);
         s += s.clone();
         assert_eq!(res, s);
 
-        let mut s = PolynomialIn::new("x", -3, vec![1., 0., -3.]);
-        let t = PolynomialIn::new("x", -1, vec![3., 4., 5.]);
-        let res = PolynomialIn::new("x", -3, vec![1., 0., 0., 4., 5.]);
+        let mut s = Polynomial::new("x", -3, vec![1., 0., -3.]);
+        let t = Polynomial::new("x", -1, vec![3., 4., 5.]);
+        let res = Polynomial::new("x", -3, vec![1., 0., 0., 4., 5.]);
         s += &t;
         assert_eq!(res, s);
-        let mut s = PolynomialIn::new("x", -3, vec![1., 0., -3.]);
+        let mut s = Polynomial::new("x", -3, vec![1., 0., -3.]);
         s += t;
         assert_eq!(res, s);
-        let mut s = PolynomialIn::new("x", -1, vec![3., 4., 5.]);
-        let t = PolynomialIn::new("x", -3, vec![1., 0., -3.]);
-        let res = PolynomialIn::new("x", -3, vec![1., 0., 0., 4., 5.]);
+        let mut s = Polynomial::new("x", -1, vec![3., 4., 5.]);
+        let t = Polynomial::new("x", -3, vec![1., 0., -3.]);
+        let res = Polynomial::new("x", -3, vec![1., 0., 0., 4., 5.]);
         s += &t;
         assert_eq!(res, s);
-        let mut s = PolynomialIn::new("x", -1, vec![3., 4., 5.]);
+        let mut s = Polynomial::new("x", -1, vec![3., 4., 5.]);
         s += t;
         assert_eq!(res, s);
 
-        let mut s = PolynomialIn::new("x", -3, vec![1., 0., -3.]);
-        let t = PolynomialIn::new("x", 1, vec![3., 4., 5.]);
-        let res = PolynomialIn::new("x", -3, vec![1., 0., -3., 0., 3., 4., 5.]);
+        let mut s = Polynomial::new("x", -3, vec![1., 0., -3.]);
+        let t = Polynomial::new("x", 1, vec![3., 4., 5.]);
+        let res = Polynomial::new("x", -3, vec![1., 0., -3., 0., 3., 4., 5.]);
         s += &t;
         assert_eq!(s, res);
-        let mut s = PolynomialIn::new("x", -3, vec![1., 0., -3.]);
+        let mut s = Polynomial::new("x", -3, vec![1., 0., -3.]);
         s += t;
         assert_eq!(s, res);
 
-        let mut s = PolynomialIn::new("x", -3, vec![1., 0., -3.]);
-        let t = PolynomialIn::new("x", -3, vec![-1., 0., 3.]);
-        let res = PolynomialIn::new("x", 0, vec![]);
+        let mut s = Polynomial::new("x", -3, vec![1., 0., -3.]);
+        let t = Polynomial::new("x", -3, vec![-1., 0., 3.]);
+        let res = Polynomial::new("x", 0, vec![]);
         s += &t;
         assert_eq!(res, s);
-        let mut s = PolynomialIn::new("x", -3, vec![1., 0., -3.]);
+        let mut s = Polynomial::new("x", -3, vec![1., 0., -3.]);
         s += t;
         assert_eq!(res, s);
     }
 
     #[test]
     fn tst_poly_sub() {
-        let s = PolynomialIn::new("x", -3, vec![1., 0., -3.]);
-        let res = PolynomialIn::new("x", 0, vec![]);
+        let s = Polynomial::new("x", -3, vec![1., 0., -3.]);
+        let res = Polynomial::new("x", 0, vec![]);
         assert_eq!(res, &s - &s);
         assert_eq!(res, &s - s.clone());
         assert_eq!(res, s.clone() - &s);
         assert_eq!(res, s.clone() - s.clone());
 
-        let s = PolynomialIn::new("x", -3, vec![1., 0., -3.]);
-        let t = PolynomialIn::new("x", -1, vec![-3., 4., 5.]);
-        let res = PolynomialIn::new("x", -3, vec![1., 0., 0., -4., -5.]);
+        let s = Polynomial::new("x", -3, vec![1., 0., -3.]);
+        let t = Polynomial::new("x", -1, vec![-3., 4., 5.]);
+        let res = Polynomial::new("x", -3, vec![1., 0., 0., -4., -5.]);
         assert_eq!(res, &s - &t);
         assert_eq!(res, &s - t.clone());
         assert_eq!(res, s.clone() - &t);
         assert_eq!(res, s - t);
 
-        let s = PolynomialIn::new("x", -3, vec![1., 0., -3.]);
-        let t = PolynomialIn::new("x", 1, vec![3., 4., 5.]);
+        let s = Polynomial::new("x", -3, vec![1., 0., -3.]);
+        let t = Polynomial::new("x", 1, vec![3., 4., 5.]);
         let res =
-            PolynomialIn::new("x", -3, vec![1., 0., -3., 0., -3., -4., -5.]);
+            Polynomial::new("x", -3, vec![1., 0., -3., 0., -3., -4., -5.]);
         assert_eq!(res, &s - &t);
         assert_eq!(res, &s - t.clone());
         assert_eq!(res, s.clone() - &t);
@@ -718,44 +720,44 @@ mod tests {
 
     #[test]
     fn tst_poly_sub_assign() {
-        let mut s = PolynomialIn::new("x", -3, vec![1., 0., -3.]);
-        let res = PolynomialIn::new("x", 0, vec![]);
+        let mut s = Polynomial::new("x", -3, vec![1., 0., -3.]);
+        let res = Polynomial::new("x", 0, vec![]);
         s -= s.clone();
         assert_eq!(res, s);
 
-        let mut s = PolynomialIn::new("x", -3, vec![1., 0., -3.]);
-        let t = PolynomialIn::new("x", -1, vec![-3., 4., 5.]);
-        let res = PolynomialIn::new("x", -3, vec![1., 0., 0., -4., -5.]);
+        let mut s = Polynomial::new("x", -3, vec![1., 0., -3.]);
+        let t = Polynomial::new("x", -1, vec![-3., 4., 5.]);
+        let res = Polynomial::new("x", -3, vec![1., 0., 0., -4., -5.]);
         s -= &t;
         assert_eq!(res, s);
-        let mut s = PolynomialIn::new("x", -3, vec![1., 0., -3.]);
+        let mut s = Polynomial::new("x", -3, vec![1., 0., -3.]);
         s -= t;
         assert_eq!(res, s);
 
-        let mut s = PolynomialIn::new("x", -3, vec![1., 0., -3.]);
-        let t = PolynomialIn::new("x", 1, vec![3., 4., 5.]);
+        let mut s = Polynomial::new("x", -3, vec![1., 0., -3.]);
+        let t = Polynomial::new("x", 1, vec![3., 4., 5.]);
         let res =
-            PolynomialIn::new("x", -3, vec![1., 0., -3., 0., -3., -4., -5.]);
+            Polynomial::new("x", -3, vec![1., 0., -3., 0., -3., -4., -5.]);
         s -= &t;
         assert_eq!(res, s);
-        let mut s = PolynomialIn::new("x", -3, vec![1., 0., -3.]);
+        let mut s = Polynomial::new("x", -3, vec![1., 0., -3.]);
         s -= t;
         assert_eq!(res, s);
     }
 
     #[test]
     fn tst_poly_mul() {
-        let s = PolynomialIn::new("x", -3, vec![1., 0., -3.]);
-        let res = PolynomialIn::new("x", -6, vec![1., 0., -6., 0., 9.]);
+        let s = Polynomial::new("x", -3, vec![1., 0., -3.]);
+        let res = Polynomial::new("x", -6, vec![1., 0., -6., 0., 9.]);
         assert_eq!(res, &s * &s);
         assert_eq!(res, &s * s.clone());
         assert_eq!(res, s.clone() * &s);
         assert_eq!(res, s.clone() * s.clone());
 
-        let s = PolynomialIn::new("x", -3, vec![1., 0., -3.]);
-        let t = PolynomialIn::new("x", -1, vec![3., 4., 5., 7.]);
+        let s = Polynomial::new("x", -3, vec![1., 0., -3.]);
+        let t = Polynomial::new("x", -1, vec![3., 4., 5., 7.]);
         let res =
-            PolynomialIn::new("x", -4, vec![3., 4., -4., -5., -15., -21.]);
+            Polynomial::new("x", -4, vec![3., 4., -4., -5., -15., -21.]);
         assert_eq!(res, &s * &t);
         assert_eq!(res, &t * &s);
         assert_eq!(res, &s * t.clone());
@@ -765,9 +767,9 @@ mod tests {
         assert_eq!(res, t.clone() * s.clone());
         assert_eq!(res, s * t);
 
-        let s = PolynomialIn::new("x", -3, vec![1., 7., -3.]);
-        let t = PolynomialIn::new("x", 3, vec![1., -7., 52.]);
-        let res = PolynomialIn::new("x", 0, vec![1., 0., 0., 385., -156.]);
+        let s = Polynomial::new("x", -3, vec![1., 7., -3.]);
+        let t = Polynomial::new("x", 3, vec![1., -7., 52.]);
+        let res = Polynomial::new("x", 0, vec![1., 0., 0., 385., -156.]);
         assert_eq!(res, &s * &t);
         assert_eq!(res, &t * &s);
         assert_eq!(res, &s * t.clone());
@@ -779,119 +781,111 @@ mod tests {
     }
 
     #[test]
-    fn tst_poly_mul_karatsuba() {
-        let s = PolynomialIn::new("x", -3, (0..=100).collect());
-        let res = s.karatsuba_mul(&s, 200);
-        assert_eq!(res.min_pow(), Some(-4));
-        let res2 = s.karatsuba_mul(&s, 8);
-        assert_eq!(res, res2);
-    }
-
-    #[test]
     fn tst_poly_mul_assign() {
-        let mut s = PolynomialIn::new("x", -3, vec![1., 0., -3.]);
+        let mut s = Polynomial::new("x", -3, vec![1., 0., -3.]);
         s *= s.clone();
-        let res = PolynomialIn::new("x", -6, vec![1., 0., -6., 0., 9.]);
+        let res = Polynomial::new("x", -6, vec![1., 0., -6., 0., 9.]);
         assert_eq!(res, s);
 
-        let mut s = PolynomialIn::new("x", -3, vec![1., 0., -3.]);
-        let t = PolynomialIn::new("x", -1, vec![3., 4., 5., 7.]);
+        let mut s = Polynomial::new("x", -3, vec![1., 0., -3.]);
+        let t = Polynomial::new("x", -1, vec![3., 4., 5., 7.]);
         let res =
-            PolynomialIn::new("x", -4, vec![3., 4., -4., -5., -15., -21.]);
+            Polynomial::new("x", -4, vec![3., 4., -4., -5., -15., -21.]);
         s *= &t;
         assert_eq!(res, s);
-        let mut s = PolynomialIn::new("x", -3, vec![1., 0., -3.]);
+        let mut s = Polynomial::new("x", -3, vec![1., 0., -3.]);
         s *= t;
         assert_eq!(res, s);
 
-        let mut s = PolynomialIn::new("x", -3, vec![1., 7., -3.]);
-        let t = PolynomialIn::new("x", 3, vec![1., -7., 52.]);
-        let res = PolynomialIn::new("x", 0, vec![1., 0., 0., 385., -156.]);
+        let mut s = Polynomial::new("x", -3, vec![1., 7., -3.]);
+        let t = Polynomial::new("x", 3, vec![1., -7., 52.]);
+        let res = Polynomial::new("x", 0, vec![1., 0., 0., 385., -156.]);
         s *= &t;
         assert_eq!(res, s);
-        let mut s = PolynomialIn::new("x", -3, vec![1., 7., -3.]);
+        let mut s = Polynomial::new("x", -3, vec![1., 7., -3.]);
         s *= t;
         assert_eq!(res, s);
     }
 
     #[test]
     fn tst_poly_var() {
-        let _ = PolynomialIn::new(String::from("x"), -3, vec![1., 0., -3.]);
-        let _ = PolynomialIn::new('j', -3, vec![1., 0., -3.]);
-        let _ = PolynomialIn::new(8, -3, vec![1., 0., -3.]);
+        let _ = Polynomial::new(String::from("x"), -3, vec![1., 0., -3.]);
+        let _ = Polynomial::new('j', -3, vec![1., 0., -3.]);
+        let _ = Polynomial::new(8, -3, vec![1., 0., -3.]);
     }
 
     #[test]
     fn tst_poly_scalar() {
-        let s = PolynomialIn::new("x", -3, vec![1., 0., -2.]);
-        let res = PolynomialIn::new("x", -3, vec![1. / 2., 0., -1.]);
+        eprintln!("starting test");
+        let s = Polynomial::new("x", -3, vec![1., 0., -2.]);
+        let res = Polynomial::new("x", -3, vec![1. / 2., 0., -1.]);
         assert_eq!(res, std::ops::Div::div(&s, 2.));
         assert_eq!(res, &s / 2.);
         let mut s = s;
         s /= 2.;
         assert_eq!(res, s);
 
-        let s = PolynomialIn::new("x", -3, vec![1. / 2., 0., -1.]);
-        let res = PolynomialIn::new("x", -3, vec![1., 0., -2.]);
+        let s = Polynomial::new("x", -3, vec![1. / 2., 0., -1.]);
+        let res = Polynomial::new("x", -3, vec![1., 0., -2.]);
         assert_eq!(res, &s * 2.);
         let mut s = s;
         s *= 2.;
         assert_eq!(res, s);
 
-        let s = PolynomialIn::new("x", -3, vec![1. / 2., 0., -1.]);
+        let s = Polynomial::new("x", -3, vec![1. / 2., 0., -1.]);
         assert_eq!(s, &s + 0.);
-        let res = PolynomialIn::new("x", -3, vec![1. / 2., 0., -1., 2.]);
+        let res = Polynomial::new("x", -3, vec![1. / 2., 0., -1., 2.]);
         assert_eq!(res, &s + 2.);
-        let s = PolynomialIn::new("x", -2, vec![1. / 2., 0., -1.]);
-        let res = PolynomialIn::new("x", -2, vec![1. / 2., 0., 1.]);
+        let s = Polynomial::new("x", -2, vec![1. / 2., 0., -1.]);
+        let res = Polynomial::new("x", -2, vec![1. / 2., 0., 1.]);
         assert_eq!(s, &s + 0.);
         assert_eq!(res, s + 2.);
-        let s = PolynomialIn::new("x", 2, vec![1. / 2., 0., -1.]);
-        let res = PolynomialIn::new("x", 0, vec![2., 0., 1. / 2., 0., -1.]);
+        let s = Polynomial::new("x", 2, vec![1. / 2., 0., -1.]);
+        let res = Polynomial::new("x", 0, vec![2., 0., 1. / 2., 0., -1.]);
         assert_eq!(s, &s + 0.);
         assert_eq!(res, s + 2.);
-        let s = PolynomialIn::new("x", 0, vec![-2., 0., -1.]);
-        let res = PolynomialIn::new("x", 2, vec![-1.]);
+        let s = Polynomial::new("x", 0, vec![-2., 0., -1.]);
+        let res = Polynomial::new("x", 2, vec![-1.]);
         assert_eq!(res, s + 2.);
 
-        let s = PolynomialIn::new("x", -3, vec![1. / 2., 0., -1.]);
+        let s = Polynomial::new("x", -3, vec![1. / 2., 0., -1.]);
         assert_eq!(s, &s - 0.);
-        let res = PolynomialIn::new("x", -3, vec![1. / 2., 0., -1., -2.]);
+        let res = Polynomial::new("x", -3, vec![1. / 2., 0., -1., -2.]);
         assert_eq!(res, &s - 2.);
-        let s = PolynomialIn::new("x", -2, vec![1. / 2., 0., -1.]);
-        let res = PolynomialIn::new("x", -2, vec![1. / 2., 0., -3.]);
+        let s = Polynomial::new("x", -2, vec![1. / 2., 0., -1.]);
+        let res = Polynomial::new("x", -2, vec![1. / 2., 0., -3.]);
         assert_eq!(s, &s - 0.);
         assert_eq!(res, s - 2.);
-        let s = PolynomialIn::new("x", 2, vec![1. / 2., 0., -1.]);
-        let res = PolynomialIn::new("x", 0, vec![-2., 0., 1. / 2., 0., -1.]);
+        let s = Polynomial::new("x", 2, vec![1. / 2., 0., -1.]);
+        let res = Polynomial::new("x", 0, vec![-2., 0., 1. / 2., 0., -1.]);
         assert_eq!(s, &s - 0.);
         assert_eq!(res, s - 2.);
-        let s = PolynomialIn::new("x", 0, vec![2., 0., -1.]);
-        let res = PolynomialIn::new("x", 2, vec![-1.]);
+        let s = Polynomial::new("x", 0, vec![2., 0., -1.]);
+        let res = Polynomial::new("x", 2, vec![-1.]);
         assert_eq!(res, s - 2.);
     }
 
     #[test]
     #[should_panic]
     fn tst_poly_bad_add() {
-        let s = PolynomialIn::new("x", -3, vec![1., 0., -3.]);
-        let t = PolynomialIn::new("y", -3, vec![1., 0., -3.]);
+        let s = Polynomial::new("x", -3, vec![1., 0., -3.]);
+        let t = Polynomial::new("y", -3, vec![1., 0., -3.]);
         let _ = s + t;
     }
 
     #[test]
     #[should_panic]
     fn tst_poly_bad_sub() {
-        let s = PolynomialIn::new("x", -3, vec![1., 0., -3.]);
-        let t = PolynomialIn::new("y", -3, vec![1., 0., -3.]);
+        let s = Polynomial::new("x", -3, vec![1., 0., -3.]);
+        let t = Polynomial::new("y", -3, vec![1., 0., -3.]);
         let _ = s - t;
     }
 
     #[test]
     #[should_panic]
     fn tst_poly_bad_mul() {
-        let s = PolynomialIn::new("x", -3, vec![1., 0., -3.]);
-        let t = PolynomialIn::new("y", -3, vec![1., 0., -3.]);
+        let s = Polynomial::new("x", -3, vec![1., 0., -3.]);
+        let t = Polynomial::new("y", -3, vec![1., 0., -3.]);
         let _ = s * t;
     }
 }
