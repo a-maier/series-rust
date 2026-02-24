@@ -809,9 +809,9 @@ mod tests {
 
     #[test]
     fn tst_o() {
-        assert_eq!(O!("x"^3), Series::<_, i32>::new("x", 3, vec![]));
+        assert_eq!(O!("x" ^ 3), Series::<_, i32>::new("x", 3, vec![]));
         let x = "x";
-        assert_eq!(O!(x^3), Series::<_, i32>::new(x, 3, vec![]));
+        assert_eq!(O!(x ^ 3), Series::<_, i32>::new(x, 3, vec![]));
     }
 
     #[test]

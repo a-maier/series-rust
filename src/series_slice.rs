@@ -2,6 +2,7 @@ use crate::ops::{Exp, Ln, Pow};
 use crate::traits::{AsSlice, ExpCoeff, MulInverse};
 use crate::{
     Coeff, Iter, PolynomialSlice, Series, anon_series_slice::AnonSeriesSlice,
+    util::NumDisplay,
 };
 
 use num_traits::{One, Zero};
@@ -421,8 +422,8 @@ macro_rules! impl_num_display {
                     for (pow, c) in terms {
                         let mut c = *c;
                         if !first {
-                            if c < <$t>::zero() {
-                                c = -c;
+                            if c.starts_with_minus() {
+                                c = c.abs();
                                 write!(f, " - ")?;
                             } else {
                                 write!(f, " + ")?;
@@ -455,44 +456,6 @@ macro_rules! impl_num_display {
     };
 }
 
-impl_num_display!(i8, i16, i32, i64, i128, isize, f32, f64);
-
-macro_rules! impl_unsigned_display {
-    ($($t:ty), *) => {
-        $(
-            impl<'a, Var: Display> Display for SeriesSlice<'a, Var, $t> {
-                fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-                    let terms = self.iter().filter(|(_, c)| !c.is_zero());
-                    let mut first = true;
-                    for (pow, c) in terms {
-                        if !first {
-                            write!(f, " + ")?;
-                        }
-                        first = false;
-                        if pow == 0 {
-                            write!(f, "{c}")?;
-                        } else {
-                            if !c.is_one() {
-                                write!(f, "{c}*")?;
-                            }
-                            write!(f, "{}", self.var())?;
-                            if pow != 1 {
-                                write!(f, "^{pow}")?;
-                            }
-                        }
-                    }
-                    if !first {
-                        write!(f, " + ")?;
-                    }
-                    if self.cutoff_pow() == 1 {
-                        write!(f, "O({})", self.var())
-                    } else {
-                        write!(f, "O({}^{})", self.var(), self.cutoff_pow())
-                    }
-                }
-            }
-        )*
-    };
-}
-
-impl_unsigned_display!(u8, u16, u32, u64, u128, usize);
+impl_num_display!(
+    i8, i16, i32, i64, i128, isize, f32, f64, u8, u16, u32, u64, u128, usize
+);
