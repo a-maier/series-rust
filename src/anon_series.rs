@@ -4,7 +4,7 @@ use crate::{Coeff, IntoIter, Iter};
 use crate::{Series, anon_series_slice::AnonSeriesSlice};
 use crate::{SeriesParts, traits::*};
 
-use std::cmp::min;
+use std::cmp::{Ordering, min};
 use std::convert::From;
 use std::ops::{
     Add, AddAssign, Div, DivAssign, Index, Mul, MulAssign, Neg, Range,
@@ -622,7 +622,9 @@ where
     for<'c> C: AddAssign<&'c C>,
 {
     fn add_assign(&mut self, other: AnonSeriesSlice<'a, C>) {
-        self.truncate_cutoff_pow(other);
+        if self.cutoff_pow() > other.cutoff_pow() {
+            self.truncate_cutoff_pow(other);
+        }
         self.add_overlap(other);
         if other.min_pow() < self.min_pow() {
             let num_leading = self.num_leading(other);
@@ -635,10 +637,7 @@ where
     }
 }
 
-impl<C: Coeff> AddAssign<AnonSeries<C>> for AnonSeries<C>
-where
-    for<'c> C: AddAssign<&'c C>,
-{
+impl<C: AddAssign + Coeff> AddAssign for AnonSeries<C> {
     /// Set s = s + t for two series s and t
     ///
     /// # Example
@@ -652,13 +651,20 @@ where
     /// assert_eq!(res, s);
     /// ```
     fn add_assign(&mut self, mut other: AnonSeries<C>) {
-        self.truncate_cutoff_pow(other.as_slice(..));
-        self.add_overlap(other.as_slice(..));
-        if other.min_pow() < self.min_pow() {
-            let num_leading = self.num_leading(other.as_slice(..));
-            let leading_coeff = other.coeffs.drain(0..num_leading);
-            self.coeffs.splice(0..0, leading_coeff);
-            self.min_pow = other.min_pow;
+        match self.cutoff_pow().cmp(&other.cutoff_pow()) {
+            Ordering::Less => other.truncate_cutoff_pow(self.as_slice(..)),
+            Ordering::Equal => {}
+            Ordering::Greater => self.truncate_cutoff_pow(other.as_slice(..)),
+        }
+        if self.min_pow() > other.min_pow() {
+            std::mem::swap(self, &mut other);
+        }
+        let offset = other.min_pow() - self.min_pow();
+        let lhs = self.coeffs.iter_mut().skip(offset as usize);
+        let rhs = other.coeffs.into_iter();
+        debug_assert_eq!(lhs.size_hint(), rhs.size_hint());
+        for (lhs, rhs) in lhs.zip(rhs) {
+            lhs.add_assign(rhs);
         }
         self.trim();
     }
@@ -1378,25 +1384,24 @@ impl<C: Coeff> AnonSeries<C> {
     }
 }
 
+impl<C: Coeff> AnonSeries<C> {
+    fn truncate_cutoff_pow(&mut self, other: AnonSeriesSlice<'_, C>) {
+        debug_assert!(other.cutoff_pow() < self.cutoff_pow());
+        let to_remove = (self.cutoff_pow() - other.cutoff_pow()) as usize;
+        if to_remove <= self.coeffs.len() {
+            self.coeffs.truncate(self.coeffs.len() - to_remove);
+        } else {
+            self.coeffs.clear();
+            self.min_pow = other.cutoff_pow()
+        }
+        debug_assert!(other.cutoff_pow() == self.cutoff_pow());
+    }
+}
+
 impl<C: Coeff> AnonSeries<C>
 where
     for<'c> C: AddAssign<&'c C>,
 {
-    fn truncate_cutoff_pow(&mut self, other: AnonSeriesSlice<'_, C>) {
-        if other.cutoff_pow() < self.cutoff_pow() {
-            let to_remove = min(
-                (self.cutoff_pow() - other.cutoff_pow()) as usize,
-                self.coeffs.len(),
-            );
-            let new_size = self.coeffs.len() - to_remove;
-            self.coeffs.truncate(new_size);
-            debug_assert!(
-                self.coeffs.is_empty()
-                    || other.cutoff_pow() == self.cutoff_pow()
-            );
-        }
-    }
-
     fn add_overlap(&mut self, other: AnonSeriesSlice<'_, C>) {
         let offset = self.min_pow();
         for (i, c) in self.coeffs.iter_mut().enumerate() {
