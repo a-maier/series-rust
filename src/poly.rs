@@ -829,7 +829,7 @@ impl<Var, C: AddAssign + Coeff> AddAssign<C> for Polynomial<Var, C> {
             return;
         }
         match self {
-            Polynomial::Const(c) => *c += other,
+            Polynomial::Const(c) => c.add_assign(other),
             Polynomial::Poly(NonConstPoly {
                 min_pow,
                 coeffs,
@@ -837,7 +837,7 @@ impl<Var, C: AddAssign + Coeff> AddAssign<C> for Polynomial<Var, C> {
             }) => {
                 extend_to_range(coeffs, min_pow, 0..1);
                 let pos = (-*min_pow) as usize;
-                coeffs[pos] += other;
+                coeffs[pos].add_assign(other);
                 self.trim();
             }
         }
@@ -865,7 +865,7 @@ where
             return;
         }
         match self {
-            Polynomial::Const(c) => *c += other,
+            Polynomial::Const(c) => c.add_assign(other),
             Polynomial::Poly(NonConstPoly {
                 min_pow,
                 coeffs,
@@ -873,7 +873,7 @@ where
             }) => {
                 extend_to_range(coeffs, min_pow, 0..1);
                 let pos = (-*min_pow) as usize;
-                coeffs[pos] += other;
+                coeffs[pos].add_assign(other);
                 self.trim();
             }
         }
@@ -897,7 +897,7 @@ impl<Var, C: SubAssign + Coeff> SubAssign<C> for Polynomial<Var, C> {
             return;
         }
         match self {
-            Polynomial::Const(c) => *c -= other,
+            Polynomial::Const(c) => c.sub_assign(other),
             Polynomial::Poly(NonConstPoly {
                 min_pow,
                 coeffs,
@@ -905,7 +905,7 @@ impl<Var, C: SubAssign + Coeff> SubAssign<C> for Polynomial<Var, C> {
             }) => {
                 extend_to_range(coeffs, min_pow, 0..1);
                 let pos = (-*min_pow) as usize;
-                coeffs[pos] -= other;
+                coeffs[pos].sub_assign(other);
                 self.trim();
             }
         }
@@ -933,7 +933,7 @@ where
             return;
         }
         match self {
-            Polynomial::Const(c) => *c -= other,
+            Polynomial::Const(c) => c.sub_assign(other),
             Polynomial::Poly(NonConstPoly {
                 min_pow,
                 coeffs,
@@ -941,7 +941,7 @@ where
             }) => {
                 extend_to_range(coeffs, min_pow, 0..1);
                 let pos = (-*min_pow) as usize;
-                coeffs[pos] -= other;
+                coeffs[pos].sub_assign(other);
                 self.trim();
             }
         }
@@ -987,7 +987,7 @@ where
 {
     fn add_assign(&mut self, other: PolynomialSlice<'a, Var, C>) {
         match other {
-            PolynomialSlice::Const(c) => *self += c,
+            PolynomialSlice::Const(c) => self.add_assign(c),
             PolynomialSlice::Poly {
                 min_pow: other_min_pow,
                 coeffs: other_coeffs,
@@ -995,7 +995,7 @@ where
             } => match self {
                 Polynomial::Const(c) => {
                     let mut res = Polynomial::from(other);
-                    res += &*c;
+                    res.add_assign(&*c);
                     *self = res;
                 }
                 Polynomial::Poly(NonConstPoly {
@@ -1009,7 +1009,7 @@ where
                     let pow_range = other_min_pow..other_max_pow;
                     extend_to_range(coeffs, min_pow, pow_range);
                     for (pow, coeff) in other.iter() {
-                        coeffs[(pow - *min_pow) as usize] += coeff;
+                        coeffs[(pow - *min_pow) as usize].add_assign(coeff);
                     }
                     self.trim();
                 }
@@ -1084,24 +1084,25 @@ where
     }
 }
 
-impl<Var, C: Coeff + Clone, Rhs> Add<Rhs> for Polynomial<Var, C>
-where
-    Polynomial<Var, C>: AddAssign<Rhs>,
-{
-    type Output = Polynomial<Var, C>;
+macro_rules! impl_add_via_add_assign {
+    ($($t:ty), *) => {
+        $(
+            impl<'a, Var, C: Coeff> Add<$t> for Polynomial<Var, C>
+            where
+                Polynomial<Var, C>: AddAssign<$t>,
+            {
+                type Output = Polynomial<Var, C>;
 
-    /// Add two Laurent polynomials
-    ///
-    /// # Panics
-    ///
-    /// Panics if the polynomial variables differ and neither of the
-    /// polynomials is a constant.
-    ///
-    fn add(mut self, other: Rhs) -> Self::Output {
-        self += other;
-        self
-    }
+                fn add(mut self, other: $t) -> Self::Output {
+                    self.add_assign(other);
+                    self
+                }
+            }
+        )*
+    };
 }
+
+impl_add_via_add_assign!(Self, &'a Polynomial<Var, C>, PolynomialSlice<'a, Var, C>, C, &'a C);
 
 // TODO: avoid potentially costly clone
 impl<'a, Var: Clone, C: Coeff + Clone> SubAssign<PolynomialSlice<'a, Var, C>>
@@ -1116,7 +1117,7 @@ where
     /// Panics if the polynomial variables differ and neither of the
     /// polynomials is a constant.
     fn sub_assign(&mut self, other: PolynomialSlice<'a, Var, C>) {
-        *self -= Polynomial::from(other);
+        self.sub_assign(Polynomial::from(other));
     }
 }
 
@@ -1132,7 +1133,7 @@ where
     /// Panics if the polynomial variables differ and neither of the
     /// polynomials is a constant.
     fn sub_assign(&mut self, other: &'a Polynomial<Var, C>) {
-        *self -= other.as_slice(..);
+        self.sub_assign(other.as_slice(..));
     }
 }
 
@@ -1161,24 +1162,25 @@ where
     }
 }
 
-impl<Var, C: Coeff, T> Sub<T> for Polynomial<Var, C>
-where
-    Polynomial<Var, C>: SubAssign<T>,
-{
-    type Output = Polynomial<Var, C>;
+macro_rules! impl_sub_via_sub_assign {
+    ($($t:ty), *) => {
+        $(
+            impl<'a, Var, C: Coeff> Sub<$t> for Polynomial<Var, C>
+            where
+                Polynomial<Var, C>: SubAssign<$t>,
+            {
+                type Output = Polynomial<Var, C>;
 
-    /// Subtract two Laurent polynomials
-    ///
-    /// # Panics
-    ///
-    /// Panics if the polynomial variables differ and neither of the
-    /// polynomials is a constant.
-    ///
-    fn sub(mut self, other: T) -> Self::Output {
-        self -= other;
-        self
-    }
+                fn sub(mut self, other: $t) -> Self::Output {
+                    self.sub_assign(other);
+                    self
+                }
+            }
+        )*
+    };
 }
+
+impl_sub_via_sub_assign!(Self, &'a Polynomial<Var, C>, PolynomialSlice<'a, Var, C>, C, &'a C);
 
 impl<'a, Var, C: Coeff + Clone + AddAssign> MulAssign<&'a Polynomial<Var, C>>
     for Polynomial<Var, C>
