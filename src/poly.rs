@@ -1021,7 +1021,7 @@ where
 impl<Var, C: Coeff> AddAssign for Polynomial<Var, C>
 where
     for<'c> C: AddAssign<&'c C>,
-    C: Clone + AddAssign,
+    C: AddAssign,
     Var: Debug + PartialEq,
 {
     /// Set p = p + q for two Laurent polynomials p and q
