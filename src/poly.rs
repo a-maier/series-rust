@@ -812,141 +812,90 @@ where
     }
 }
 
-impl<Var, C: AddAssign + Coeff> AddAssign<C> for Polynomial<Var, C> {
-    /// Add a constant to the polynomial
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// # use series::Polynomial;
-    /// let mut p = Polynomial::new("x", -3, vec![1, 0, -3]);
-    /// p += 1;
-    /// let res = Polynomial::new("x", -3, vec![1, 0, -3, 1]);
-    /// assert_eq!(res, p);
-    /// ```
-    fn add_assign(&mut self, other: C) {
-        if other.is_zero() {
-            return;
-        }
-        match self {
-            Polynomial::Const(c) => c.add_assign(other),
-            Polynomial::Poly(NonConstPoly {
-                min_pow,
-                coeffs,
-                var: _,
-            }) => {
-                extend_to_range(coeffs, min_pow, 0..1);
-                let pos = (-*min_pow) as usize;
-                coeffs[pos].add_assign(other);
-                self.trim();
+macro_rules! impl_add_assign_const {
+    ($t:ty) => {
+        impl<'a, Var, C: Coeff> AddAssign<$t> for Polynomial<Var, C>
+        where C: AddAssign<$t>
+        {
+            /// Add a constant to the polynomial
+            ///
+            /// # Example
+            ///
+            /// ```rust
+            /// # use series::Polynomial;
+            /// let mut p = Polynomial::new("x", -3, vec![1, 0, -3]);
+            /// p += 1;
+            /// p += &1;
+            /// let res = Polynomial::new("x", -3, vec![1, 0, -3, 2]);
+            /// assert_eq!(res, p);
+            /// ```
+            fn add_assign(&mut self, other: $t) {
+                if other.is_zero() {
+                    return;
+                }
+                match self {
+                    Polynomial::Const(c) => c.add_assign(other),
+                    Polynomial::Poly(NonConstPoly {
+                        min_pow,
+                        coeffs,
+                        var: _,
+                    }) => {
+                        extend_to_range(coeffs, min_pow, 0..1);
+                        let pos = (-*min_pow) as usize;
+                        coeffs[pos].add_assign(other);
+                        self.trim();
+                    }
+                }
             }
         }
-    }
+    };
 }
 
-// TODO: code duplication with AddAssign<C>
-impl<'a, Var, C: Coeff> AddAssign<&'a C> for Polynomial<Var, C>
-where
-    C: AddAssign<&'a C>,
-{
-    /// Add a constant to the polynomial
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// # use series::Polynomial;
-    /// let mut p = Polynomial::new("x", -3, vec![1, 0, -3]);
-    /// p += &1;
-    /// let res = Polynomial::new("x", -3, vec![1, 0, -3, 1]);
-    /// assert_eq!(res, p);
-    /// ```
-    fn add_assign(&mut self, other: &'a C) {
-        if other.is_zero() {
-            return;
-        }
-        match self {
-            Polynomial::Const(c) => c.add_assign(other),
-            Polynomial::Poly(NonConstPoly {
-                min_pow,
-                coeffs,
-                var: _,
-            }) => {
-                extend_to_range(coeffs, min_pow, 0..1);
-                let pos = (-*min_pow) as usize;
-                coeffs[pos].add_assign(other);
-                self.trim();
+impl_add_assign_const!(C);
+impl_add_assign_const!(&'a C);
+
+macro_rules! impl_sub_assign_const {
+    ($t:ty) => {
+        impl<'a, Var, C: Coeff> SubAssign<$t> for Polynomial<Var, C>
+        where C: SubAssign<$t>
+        {
+            /// Subtrac a constant from the polynomial
+            ///
+            /// # Example
+            ///
+            /// ```rust
+            /// # use series::Polynomial;
+            /// let mut p = Polynomial::new("x", -3, vec![1, 0, -3]);
+            /// p -= 1;
+            /// p -= &1;
+            /// let res = Polynomial::new("x", -3, vec![1, 0, -3, -2]);
+            /// assert_eq!(res, p);
+            /// ```
+            fn sub_assign(&mut self, other: $t) {
+                if other.is_zero() {
+                    return;
+                }
+                match self {
+                    Polynomial::Const(c) => c.sub_assign(other),
+                    Polynomial::Poly(NonConstPoly {
+                        min_pow,
+                        coeffs,
+                        var: _,
+                    }) => {
+                        extend_to_range(coeffs, min_pow, 0..1);
+                        let pos = (-*min_pow) as usize;
+                        coeffs[pos].sub_assign(other);
+                        self.trim();
+                    }
+                }
             }
         }
-    }
+    };
 }
 
-impl<Var, C: SubAssign + Coeff> SubAssign<C> for Polynomial<Var, C> {
-    /// Subtract a constant from the polynomial
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// # use series::Polynomial;
-    /// let mut p = Polynomial::new("x", -3, vec![1, 0, -3]);
-    /// p -= 1;
-    /// let res = Polynomial::new("x", -3, vec![1, 0, -3, -1]);
-    /// assert_eq!(res, p);
-    /// ```
-    fn sub_assign(&mut self, other: C) {
-        if other.is_zero() {
-            return;
-        }
-        match self {
-            Polynomial::Const(c) => c.sub_assign(other),
-            Polynomial::Poly(NonConstPoly {
-                min_pow,
-                coeffs,
-                var: _,
-            }) => {
-                extend_to_range(coeffs, min_pow, 0..1);
-                let pos = (-*min_pow) as usize;
-                coeffs[pos].sub_assign(other);
-                self.trim();
-            }
-        }
-    }
-}
+impl_sub_assign_const!(C);
+impl_sub_assign_const!(&'a C);
 
-// TODO: code duplication with SubAssign<C>
-impl<'a, Var, C: Coeff> SubAssign<&'a C> for Polynomial<Var, C>
-where
-    C: SubAssign<&'a C>,
-{
-    /// Subtract a constant from the polynomial
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// # use series::Polynomial;
-    /// let mut p = Polynomial::new("x", -3, vec![1, 0, -3]);
-    /// p -= &1;
-    /// let res = Polynomial::new("x", -3, vec![1, 0, -3, -1]);
-    /// assert_eq!(res, p);
-    /// ```
-    fn sub_assign(&mut self, other: &'a C) {
-        if other.is_zero() {
-            return;
-        }
-        match self {
-            Polynomial::Const(c) => c.sub_assign(other),
-            Polynomial::Poly(NonConstPoly {
-                min_pow,
-                coeffs,
-                var: _,
-            }) => {
-                extend_to_range(coeffs, min_pow, 0..1);
-                let pos = (-*min_pow) as usize;
-                coeffs[pos].sub_assign(other);
-                self.trim();
-            }
-        }
-    }
-}
 
 impl<'a, Var, C> AddAssign<&'a Polynomial<Var, C>> for Polynomial<Var, C>
 where
