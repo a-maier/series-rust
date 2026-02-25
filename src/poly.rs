@@ -432,7 +432,7 @@ impl<Var, C: Coeff> Polynomial<Var, C> {
     }
 }
 
-impl<Var: Debug + PartialEq, C: Coeff> Polynomial<Var, C> {
+impl<Var: Clone + Debug + PartialEq, C: Coeff> Polynomial<Var, C> {
     /// Turn a polynomial into a series with the given cutoff
     ///
     /// Since constant polynomials do not store the expansion variable
@@ -455,13 +455,13 @@ impl<Var: Debug + PartialEq, C: Coeff> Polynomial<Var, C> {
     /// let s = Series::with_cutoff("x", -1..5, vec![1, 2, 3]);
     /// assert_eq!(p.cutoff_at(5), s);
     /// ```
-    pub fn cutoff_at(self, var: Var, cutoff_pow: isize) -> Series<Var, C> {
+    pub fn cutoff_at(self, var: &Var, cutoff_pow: isize) -> Series<Var, C> {
         match self {
             Polynomial::Const(c) => {
-                Series::with_cutoff(var, 0..cutoff_pow, vec![c])
+                Series::with_cutoff(var.to_owned(), 0..cutoff_pow, vec![c])
             }
             Polynomial::Poly(poly) => {
-                assert_eq!(&var, poly.var());
+                assert_eq!(var, poly.var());
                 poly.cutoff_at(cutoff_pow)
             }
         }
