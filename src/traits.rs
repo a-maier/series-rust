@@ -6,10 +6,10 @@ pub trait MulInverse {
 }
 
 /// View a slice of the original object
-pub trait AsSlice<'a, T> {
+pub trait AsSlice<T> {
     type Output;
 
-    fn as_slice(&'a self, t: T) -> Self::Output;
+    fn as_slice(self, t: T) -> Self::Output;
 }
 
 /// Karatsuba multiplication

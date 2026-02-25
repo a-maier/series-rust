@@ -500,146 +500,60 @@ impl<Var, C: Coeff> Default for Polynomial<Var, C> {
     }
 }
 
-impl<'a, Var: 'a, C: 'static + Coeff + Send + Sync> AsSlice<'a, Range<isize>>
-    for Polynomial<Var, C>
+impl<'a, Var, C: 'static + Coeff + Send + Sync> AsSlice<Range<isize>>
+    for &'a Polynomial<Var, C>
 {
     type Output = PolynomialSlice<'a, Var, C>;
 
-    fn as_slice(&'a self, r: Range<isize>) -> Self::Output {
-        match self {
-            Polynomial::Const(c) => {
-                if r.is_empty() {
-                    PolynomialSlice::zero()
-                } else if r.start != 0 || r.end != 0 || c.is_zero() {
-                    panic!("index out of bounds");
-                } else {
-                    PolynomialSlice::Const(c)
-                }
-            }
-            Polynomial::Poly(NonConstPoly {
-                min_pow,
-                coeffs,
-                var,
-            }) => {
-                let [start, end] =
-                    [r.start, r.end].map(|c| (c - *min_pow) as usize);
-                PolynomialSlice::new(*min_pow, &coeffs[start..end], var)
-            }
-        }
+    fn as_slice(self, r: Range<isize>) -> Self::Output {
+        self.as_slice(..).as_slice(r)
     }
 }
 
 impl<'a, Var: 'a, C: 'static + Coeff + Send + Sync>
-    AsSlice<'a, RangeInclusive<isize>> for Polynomial<Var, C>
+    AsSlice<RangeInclusive<isize>> for &'a Polynomial<Var, C>
 {
     type Output = PolynomialSlice<'a, Var, C>;
 
-    fn as_slice(&'a self, r: RangeInclusive<isize>) -> Self::Output {
-        match self {
-            Polynomial::Const(c) => {
-                if r.is_empty() {
-                    PolynomialSlice::zero()
-                } else if *r.start() != 0 || *r.end() != 0 || c.is_zero() {
-                    panic!("index out of bounds");
-                } else {
-                    PolynomialSlice::Const(c)
-                }
-            }
-            Polynomial::Poly(NonConstPoly {
-                min_pow,
-                coeffs,
-                var,
-            }) => {
-                let [start, end] =
-                    [r.start(), r.end()].map(|c| (c - *min_pow) as usize);
-                PolynomialSlice::new(*min_pow, &coeffs[start..=end], var)
-            }
-        }
+    fn as_slice(self, r: RangeInclusive<isize>) -> Self::Output {
+        self.as_slice(..).as_slice(r)
     }
 }
 
-impl<'a, Var: 'a, C: 'a + Coeff> AsSlice<'a, RangeToInclusive<isize>>
-    for Polynomial<Var, C>
+impl<'a, Var: 'a, C: 'a + Coeff> AsSlice<RangeToInclusive<isize>>
+    for &'a Polynomial<Var, C>
 {
     type Output = PolynomialSlice<'a, Var, C>;
 
-    fn as_slice(&'a self, r: RangeToInclusive<isize>) -> Self::Output {
-        match self {
-            Polynomial::Const(c) => {
-                if r.end != 0 || c.is_zero() {
-                    panic!("index out of bounds");
-                } else {
-                    PolynomialSlice::Const(c)
-                }
-            }
-            Polynomial::Poly(NonConstPoly {
-                min_pow,
-                coeffs,
-                var,
-            }) => {
-                let r = ..=(r.end - *min_pow) as usize;
-                PolynomialSlice::new(*min_pow, &coeffs[r], var)
-            }
-        }
+    fn as_slice(self, r: RangeToInclusive<isize>) -> Self::Output {
+        self.as_slice(..).as_slice(r)
     }
 }
 
-impl<'a, Var: 'a, C: 'a + Coeff> AsSlice<'a, RangeFrom<isize>>
-    for Polynomial<Var, C>
+impl<'a, Var: 'a, C: 'a + Coeff> AsSlice<RangeFrom<isize>>
+    for &'a Polynomial<Var, C>
 {
     type Output = PolynomialSlice<'a, Var, C>;
 
-    fn as_slice(&'a self, r: RangeFrom<isize>) -> Self::Output {
-        match self {
-            Polynomial::Const(c) => {
-                if r.start != 0 || c.is_zero() {
-                    panic!("index out of bounds");
-                } else {
-                    PolynomialSlice::Const(c)
-                }
-            }
-            Polynomial::Poly(NonConstPoly {
-                min_pow,
-                coeffs,
-                var,
-            }) => {
-                let r = (r.start - *min_pow) as usize..;
-                PolynomialSlice::new(*min_pow, &coeffs[r], var)
-            }
-        }
+    fn as_slice(self, r: RangeFrom<isize>) -> Self::Output {
+        self.as_slice(..).as_slice(r)
     }
 }
 
-impl<'a, Var: 'a, C: 'a + Coeff> AsSlice<'a, RangeTo<isize>>
-    for Polynomial<Var, C>
+impl<'a, Var: 'a, C: 'a + Coeff> AsSlice<RangeTo<isize>>
+    for &'a Polynomial<Var, C>
 {
     type Output = PolynomialSlice<'a, Var, C>;
 
-    fn as_slice(&'a self, r: RangeTo<isize>) -> Self::Output {
-        match self {
-            Polynomial::Const(c) => {
-                if r.end != 1 || c.is_zero() {
-                    panic!("index out of bounds");
-                } else {
-                    PolynomialSlice::Const(c)
-                }
-            }
-            Polynomial::Poly(NonConstPoly {
-                min_pow,
-                coeffs,
-                var,
-            }) => {
-                let r = ..(r.end - *min_pow) as usize;
-                PolynomialSlice::new(*min_pow, &coeffs[r], var)
-            }
-        }
+    fn as_slice(self, r: RangeTo<isize>) -> Self::Output {
+        self.as_slice(..).as_slice(r)
     }
 }
 
-impl<'a, Var: 'a, C: 'a + Coeff> AsSlice<'a, RangeFull> for Polynomial<Var, C> {
+impl<'a, Var, C: Coeff> AsSlice<RangeFull> for &'a Polynomial<Var, C> {
     type Output = PolynomialSlice<'a, Var, C>;
 
-    fn as_slice(&'a self, _: RangeFull) -> Self::Output {
+    fn as_slice(self, _: RangeFull) -> Self::Output {
         match self {
             Polynomial::Const(c) => PolynomialSlice::Const(c),
             Polynomial::Poly(NonConstPoly {
@@ -1872,6 +1786,150 @@ where
                     res_coeffs.push(c)
                 }
                 Polynomial::new(var.clone(), res_min_pow, res_coeffs)
+            }
+        }
+    }
+}
+
+impl<'a, Var, C: Coeff> AsSlice<RangeFull> for PolynomialSlice<'a, Var, C> {
+    type Output = PolynomialSlice<'a, Var, C>;
+
+    fn as_slice(self, _: RangeFull) -> Self::Output {
+        self
+    }
+}
+
+impl<'a, Var, C: 'static + Coeff + Send + Sync> AsSlice<Range<isize>>
+    for PolynomialSlice<'a, Var, C>
+{
+    type Output = PolynomialSlice<'a, Var, C>;
+
+    fn as_slice(self, r: Range<isize>) -> Self::Output {
+        match self {
+            Self::Const(c) => {
+                if r.is_empty() {
+                    PolynomialSlice::zero()
+                } else if r.start != 0 || r.end != 0 || c.is_zero() {
+                    panic!("index out of bounds");
+                } else {
+                    PolynomialSlice::Const(c)
+                }
+            }
+            Self::Poly{
+                min_pow,
+                coeffs,
+                var,
+            } => {
+                let [start, end] =
+                    [r.start, r.end].map(|c| (c - min_pow) as usize);
+                PolynomialSlice::new(min_pow, &coeffs[start..end], var)
+            }
+        }
+    }
+}
+
+impl<'a, Var, C: 'static + Coeff + Send + Sync>
+    AsSlice<RangeInclusive<isize>> for PolynomialSlice<'a, Var, C>
+{
+    type Output = PolynomialSlice<'a, Var, C>;
+
+    fn as_slice(self, r: RangeInclusive<isize>) -> Self::Output {
+        match self {
+            Self::Const(c) => {
+                if r.is_empty() {
+                    PolynomialSlice::zero()
+                } else if *r.start() != 0 || *r.end() != 0 || c.is_zero() {
+                    panic!("index out of bounds");
+                } else {
+                    PolynomialSlice::Const(c)
+                }
+            }
+            Self::Poly{
+                min_pow,
+                coeffs,
+                var,
+            } => {
+                let [start, end] =
+                    [r.start(), r.end()].map(|c| (c - min_pow) as usize);
+                PolynomialSlice::new(min_pow, &coeffs[start..=end], var)
+            }
+        }
+    }
+}
+
+impl<'a, Var, C: Coeff> AsSlice<RangeToInclusive<isize>>
+    for PolynomialSlice<'a, Var, C>
+{
+    type Output = PolynomialSlice<'a, Var, C>;
+
+    fn as_slice(self, r: RangeToInclusive<isize>) -> Self::Output {
+        match self {
+            Self::Const(c) => {
+                if r.end != 0 || c.is_zero() {
+                    panic!("index out of bounds");
+                } else {
+                    PolynomialSlice::Const(c)
+                }
+            }
+            Self::Poly{
+                min_pow,
+                coeffs,
+                var,
+            } => {
+                let r = ..=(r.end - min_pow) as usize;
+                PolynomialSlice::new(min_pow, &coeffs[r], var)
+            }
+        }
+    }
+}
+
+impl<'a, Var, C: Coeff> AsSlice<RangeFrom<isize>>
+    for PolynomialSlice<'a, Var, C>
+{
+    type Output = PolynomialSlice<'a, Var, C>;
+
+    fn as_slice(self, r: RangeFrom<isize>) -> Self::Output {
+        match self {
+            Self::Const(c) => {
+                if r.start != 0 || c.is_zero() {
+                    panic!("index out of bounds");
+                } else {
+                    PolynomialSlice::Const(c)
+                }
+            }
+            Self::Poly{
+                min_pow,
+                coeffs,
+                var,
+            } => {
+                let r = (r.start - min_pow) as usize..;
+                PolynomialSlice::new(min_pow, &coeffs[r], var)
+            }
+        }
+    }
+}
+
+impl<'a, Var, C: Coeff> AsSlice<RangeTo<isize>>
+    for PolynomialSlice<'a, Var, C>
+{
+    type Output = PolynomialSlice<'a, Var, C>;
+
+    fn as_slice(self, r: RangeTo<isize>) -> Self::Output {
+        match self {
+            Self::Const(c) => {
+                if r.end != 1 || c.is_zero() {
+                    panic!("index out of bounds");
+                } else {
+                    PolynomialSlice::Const(c)
+                }
+            }
+            Self::Poly{
+                min_pow,
+                coeffs,
+                var,
+            } => {
+                let r = ..(r.end - min_pow) as usize;
+                PolynomialSlice::new(min_pow, &coeffs[r], var)
             }
         }
     }

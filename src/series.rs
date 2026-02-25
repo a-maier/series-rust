@@ -1,5 +1,5 @@
 use crate::ops::{Exp, Ln, Pow};
-use crate::traits::*;
+use crate::{Polynomial, PolynomialSlice, traits::*};
 use crate::{Coeff, IntoIter, Iter};
 use crate::{anon_series::AnonSeries, series_slice::*};
 
@@ -246,7 +246,7 @@ impl<Var, C: 'static + Coeff + Send + Sync> Series<Var, C> {
     }
 }
 
-impl<'a, Var: 'a, C: 'a + Coeff> AsSlice<'a, Range<isize>> for Series<Var, C> {
+impl<'a, Var, C: Coeff> AsSlice<Range<isize>> for &'a Series<Var, C> {
     type Output = SeriesSlice<'a, Var, C>;
 
     /// A slice of the series truncated to the given range of powers.
@@ -269,13 +269,13 @@ impl<'a, Var: 'a, C: 'a + Coeff> AsSlice<'a, Range<isize>> for Series<Var, C> {
     /// assert_eq!(t[1], s[1]);
     /// assert!(std::panic::catch_unwind(|| t[2]).is_err());
     /// ```
-    fn as_slice(&'a self, r: Range<isize>) -> Self::Output {
+    fn as_slice(self, r: Range<isize>) -> Self::Output {
         self.series.as_slice(r).in_var(self.var())
     }
 }
 
-impl<'a, Var: 'a, C: 'a + Coeff> AsSlice<'a, RangeInclusive<isize>>
-    for Series<Var, C>
+impl<'a, Var, C: Coeff> AsSlice<RangeInclusive<isize>>
+    for &'a Series<Var, C>
 {
     type Output = SeriesSlice<'a, Var, C>;
 
@@ -299,13 +299,13 @@ impl<'a, Var: 'a, C: 'a + Coeff> AsSlice<'a, RangeInclusive<isize>>
     /// assert_eq!(t[1], s[1]);
     /// assert!(std::panic::catch_unwind(|| t[2]).is_err());
     /// ```
-    fn as_slice(&'a self, r: RangeInclusive<isize>) -> Self::Output {
+    fn as_slice(self, r: RangeInclusive<isize>) -> Self::Output {
         self.series.as_slice(r).in_var(self.var())
     }
 }
 
-impl<'a, Var: 'a, C: 'a + Coeff> AsSlice<'a, RangeToInclusive<isize>>
-    for Series<Var, C>
+impl<'a, Var, C: Coeff> AsSlice<RangeToInclusive<isize>>
+    for &'a Series<Var, C>
 {
     type Output = SeriesSlice<'a, Var, C>;
 
@@ -328,13 +328,13 @@ impl<'a, Var: 'a, C: 'a + Coeff> AsSlice<'a, RangeToInclusive<isize>>
     /// assert_eq!(t[1], s[1]);
     /// assert!(std::panic::catch_unwind(|| t[2]).is_err());
     /// ```
-    fn as_slice(&'a self, r: RangeToInclusive<isize>) -> Self::Output {
+    fn as_slice(self, r: RangeToInclusive<isize>) -> Self::Output {
         self.series.as_slice(r).in_var(self.var())
     }
 }
 
-impl<'a, Var: 'a, C: 'a + Coeff> AsSlice<'a, RangeFrom<isize>>
-    for Series<Var, C>
+impl<'a, Var, C: Coeff> AsSlice<RangeFrom<isize>>
+    for &'a Series<Var, C>
 {
     type Output = SeriesSlice<'a, Var, C>;
 
@@ -358,13 +358,13 @@ impl<'a, Var: 'a, C: 'a + Coeff> AsSlice<'a, RangeFrom<isize>>
     /// assert_eq!(t[1], s[1]);
     /// assert_eq!(t[2], s[2]);
     /// ```
-    fn as_slice(&'a self, r: RangeFrom<isize>) -> Self::Output {
+    fn as_slice(self, r: RangeFrom<isize>) -> Self::Output {
         self.series.as_slice(r).in_var(self.var())
     }
 }
 
-impl<'a, Var: 'a, C: 'a + Coeff> AsSlice<'a, RangeTo<isize>>
-    for Series<Var, C>
+impl<'a, Var, C: Coeff> AsSlice<RangeTo<isize>>
+    for &'a Series<Var, C>
 {
     type Output = SeriesSlice<'a, Var, C>;
 
@@ -387,12 +387,12 @@ impl<'a, Var: 'a, C: 'a + Coeff> AsSlice<'a, RangeTo<isize>>
     /// assert_eq!(t[1], s[1]);
     /// assert!(std::panic::catch_unwind(|| t[2]).is_err());
     /// ```
-    fn as_slice(&'a self, r: RangeTo<isize>) -> Self::Output {
+    fn as_slice(self, r: RangeTo<isize>) -> Self::Output {
         self.series.as_slice(r).in_var(self.var())
     }
 }
 
-impl<'a, Var: 'a, C: 'a + Coeff> AsSlice<'a, RangeFull> for Series<Var, C> {
+impl<'a, Var, C: Coeff> AsSlice<RangeFull> for &'a Series<Var, C> {
     type Output = SeriesSlice<'a, Var, C>;
 
     /// A slice containing the complete series.
@@ -411,7 +411,7 @@ impl<'a, Var: 'a, C: 'a + Coeff> AsSlice<'a, RangeFull> for Series<Var, C> {
     /// assert_eq!(t[1], s[1]);
     /// assert_eq!(t[2], s[2]);
     /// ```
-    fn as_slice(&'a self, r: RangeFull) -> Self::Output {
+    fn as_slice(self, r: RangeFull) -> Self::Output {
         self.series.as_slice(r).in_var(self.var())
     }
 }
@@ -593,9 +593,8 @@ where
     }
 }
 
-impl<Var, C: Coeff> AddAssign<Series<Var, C>> for Series<Var, C>
+impl<Var, C: AddAssign + Coeff> AddAssign for Series<Var, C>
 where
-    for<'c> C: AddAssign<&'c C>,
     Var: PartialEq + fmt::Debug,
 {
     /// Set s = s + t for two series s and t
@@ -633,7 +632,7 @@ where
     }
 }
 
-impl<Var: Clone, C: Coeff + Clone, Rhs> Add<Rhs> for Series<Var, C>
+impl<Var, C: Coeff + Clone, Rhs> Add<Rhs> for Series<Var, C>
 where
     Series<Var, C>: AddAssign<Rhs>,
 {

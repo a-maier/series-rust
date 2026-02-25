@@ -283,7 +283,7 @@ impl<C: 'static + Coeff + Send + Sync> AnonSeries<C> {
     }
 }
 
-impl<'a, C: 'a + Coeff> AsSlice<'a, Range<isize>> for AnonSeries<C> {
+impl<'a, C: Coeff> AsSlice<Range<isize>> for &'a AnonSeries<C> {
     type Output = AnonSeriesSlice<'a, C>;
 
     /// A slice of the series truncated to the given range of powers.
@@ -306,14 +306,14 @@ impl<'a, C: 'a + Coeff> AsSlice<'a, Range<isize>> for AnonSeries<C> {
     /// assert_eq!(t[1], s[1]);
     /// assert!(std::panic::catch_unwind(|| t[2]).is_err());
     /// ```
-    fn as_slice(&'a self, r: Range<isize>) -> Self::Output {
+    fn as_slice(self, r: Range<isize>) -> Self::Output {
         let start = (r.start - self.min_pow()) as usize;
         let end = (r.end - self.min_pow()) as usize;
         AnonSeriesSlice::new(r.start, &self.coeffs[start..end])
     }
 }
 
-impl<'a, C: 'a + Coeff> AsSlice<'a, RangeInclusive<isize>> for AnonSeries<C> {
+impl<'a, C: Coeff> AsSlice<RangeInclusive<isize>> for &'a AnonSeries<C> {
     type Output = AnonSeriesSlice<'a, C>;
 
     /// A slice of the series truncated to the given range of powers.
@@ -336,7 +336,7 @@ impl<'a, C: 'a + Coeff> AsSlice<'a, RangeInclusive<isize>> for AnonSeries<C> {
     /// assert_eq!(t[1], s[1]);
     /// assert!(std::panic::catch_unwind(|| t[2]).is_err());
     /// ```
-    fn as_slice(&'a self, r: RangeInclusive<isize>) -> Self::Output {
+    fn as_slice(self, r: RangeInclusive<isize>) -> Self::Output {
         let (start, end) = r.into_inner();
         let ustart = (start - self.min_pow()) as usize;
         let end = (end - self.min_pow()) as usize;
@@ -344,7 +344,7 @@ impl<'a, C: 'a + Coeff> AsSlice<'a, RangeInclusive<isize>> for AnonSeries<C> {
     }
 }
 
-impl<'a, C: 'a + Coeff> AsSlice<'a, RangeToInclusive<isize>> for AnonSeries<C> {
+impl<'a, C: Coeff> AsSlice<RangeToInclusive<isize>> for &'a AnonSeries<C> {
     type Output = AnonSeriesSlice<'a, C>;
 
     /// A slice of the series truncated to the given range of powers.
@@ -366,13 +366,13 @@ impl<'a, C: 'a + Coeff> AsSlice<'a, RangeToInclusive<isize>> for AnonSeries<C> {
     /// assert_eq!(t[1], s[1]);
     /// assert!(std::panic::catch_unwind(|| t[2]).is_err());
     /// ```
-    fn as_slice(&'a self, r: RangeToInclusive<isize>) -> Self::Output {
+    fn as_slice(self, r: RangeToInclusive<isize>) -> Self::Output {
         let end = (r.end - self.min_pow()) as usize;
         AnonSeriesSlice::new(self.min_pow, &self.coeffs[..=end])
     }
 }
 
-impl<'a, C: 'a + Coeff> AsSlice<'a, RangeFrom<isize>> for AnonSeries<C> {
+impl<'a, C: Coeff> AsSlice<RangeFrom<isize>> for &'a AnonSeries<C> {
     type Output = AnonSeriesSlice<'a, C>;
 
     /// A slice of the series truncated to the given range of powers.
@@ -395,13 +395,13 @@ impl<'a, C: 'a + Coeff> AsSlice<'a, RangeFrom<isize>> for AnonSeries<C> {
     /// assert_eq!(t[1], s[1]);
     /// assert_eq!(t[2], s[2]);
     /// ```
-    fn as_slice(&'a self, r: RangeFrom<isize>) -> Self::Output {
+    fn as_slice(self, r: RangeFrom<isize>) -> Self::Output {
         let start = (r.start - self.min_pow()) as usize;
         AnonSeriesSlice::new(r.start, &self.coeffs[start..])
     }
 }
 
-impl<'a, C: 'a + Coeff> AsSlice<'a, RangeTo<isize>> for AnonSeries<C> {
+impl<'a, C: Coeff> AsSlice<RangeTo<isize>> for &'a AnonSeries<C> {
     type Output = AnonSeriesSlice<'a, C>;
 
     /// A slice of the series truncated to the given range of powers.
@@ -423,13 +423,13 @@ impl<'a, C: 'a + Coeff> AsSlice<'a, RangeTo<isize>> for AnonSeries<C> {
     /// assert_eq!(t[1], s[1]);
     /// assert!(std::panic::catch_unwind(|| t[2]).is_err());
     /// ```
-    fn as_slice(&'a self, r: RangeTo<isize>) -> Self::Output {
+    fn as_slice(self, r: RangeTo<isize>) -> Self::Output {
         let end = (r.end - self.min_pow()) as usize;
         AnonSeriesSlice::new(self.min_pow, &self.coeffs[..end])
     }
 }
 
-impl<'a, C: 'a + Coeff> AsSlice<'a, RangeFull> for AnonSeries<C> {
+impl<'a, C: Coeff> AsSlice<RangeFull> for &'a AnonSeries<C> {
     type Output = AnonSeriesSlice<'a, C>;
 
     /// A slice containing the complete series.
@@ -448,7 +448,7 @@ impl<'a, C: 'a + Coeff> AsSlice<'a, RangeFull> for AnonSeries<C> {
     /// assert_eq!(t[1], s[1]);
     /// assert_eq!(t[2], s[2]);
     /// ```
-    fn as_slice(&'a self, r: RangeFull) -> Self::Output {
+    fn as_slice(self, r: RangeFull) -> Self::Output {
         AnonSeriesSlice::new(self.min_pow, &self.coeffs[r])
     }
 }
