@@ -1155,6 +1155,66 @@ where
     }
 }
 
+impl<Var, C: Coeff> AddAssign<Polynomial<Var, C>> for Series<Var, C>
+where
+    Self: AddAssign,
+    Var: Clone + PartialEq + fmt::Debug,
+{
+    fn add_assign(&mut self, other: Polynomial<Var, C>) {
+        self.add_assign(other.cutoff_at(self.var(), self.cutoff_pow()))
+    }
+}
+
+impl<Var, C: Coeff> AddAssign<&Polynomial<Var, C>> for Series<Var, C>
+where
+    Polynomial<Var, C>: Clone,
+    Self: AddAssign<Polynomial<Var, C>>
+{
+    fn add_assign(&mut self, other: &Polynomial<Var, C>) {
+        self.add_assign(other.to_owned())
+    }
+}
+
+impl<'a, Var, C: Coeff> AddAssign<PolynomialSlice<'a, Var, C>> for Series<Var, C>
+where
+    Polynomial<Var, C>: From<PolynomialSlice<'a, Var, C>>,
+    Self: AddAssign<Polynomial<Var, C>>
+{
+    fn add_assign(&mut self, other: PolynomialSlice<'a, Var, C>) {
+        self.add_assign(Polynomial::from(other))
+    }
+}
+
+impl<Var, C: Coeff> SubAssign<Polynomial<Var, C>> for Series<Var, C>
+where
+    Self: SubAssign,
+    Var: Clone + PartialEq + fmt::Debug,
+{
+    fn sub_assign(&mut self, other: Polynomial<Var, C>) {
+        self.sub_assign(other.cutoff_at(self.var(), self.cutoff_pow()))
+    }
+}
+
+impl<Var, C: Coeff> SubAssign<&Polynomial<Var, C>> for Series<Var, C>
+where
+    Polynomial<Var, C>: Clone,
+    Self: SubAssign<Polynomial<Var, C>>
+{
+    fn sub_assign(&mut self, other: &Polynomial<Var, C>) {
+        self.sub_assign(other.to_owned())
+    }
+}
+
+impl<'a, Var, C: Coeff> SubAssign<PolynomialSlice<'a, Var, C>> for Series<Var, C>
+where
+    Polynomial<Var, C>: From<PolynomialSlice<'a, Var, C>>,
+    Self: SubAssign<Polynomial<Var, C>>
+{
+    fn sub_assign(&mut self, other: PolynomialSlice<'a, Var, C>) {
+        self.sub_assign(Polynomial::from(other))
+    }
+}
+
 impl<'a, Var: Clone, C: Coeff + Clone> From<SeriesSlice<'a, Var, C>>
     for Series<Var, C>
 {

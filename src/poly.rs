@@ -1,7 +1,7 @@
 use crate::traits::AsSlice;
 use crate::util::{NumDisplay, trim_slice_zero, trim_zero};
 use crate::zero_ref::zero_ref;
-use crate::{Coeff, IntoIter, Series, SeriesParts};
+use crate::{Coeff, IntoIter, Series, SeriesParts, SeriesSlice};
 
 use core::slice;
 use std::fmt::Display;
@@ -719,7 +719,7 @@ where
     /// # use series::Polynomial;
     /// let p = Polynomial::new("x", -3, vec![1, 0, -3]);
     /// let minus_p = Polynomial::new("x", -3, vec![-1, 0, 3]);
-    /// assert_eq!(-p, minus_p);
+    /// assert_eq!(-&p, minus_p);
     /// ```
     fn neg(self) -> Self::Output {
         self.as_slice(..).neg()
@@ -1963,3 +1963,111 @@ impl<'a, C> Iterator for Iter<'a, C> {
         self.next()
     }
 }
+
+macro_rules! impl_add_series {
+    ($p:ty, $s:ty) => {
+        impl<'a, Var, C: Coeff> Add<$s> for $p
+        where
+            $s: Add<Self, Output = Series<Var, C>>,
+        {
+            type Output = Series<Var, C>;
+
+            fn add(self, other: $s) -> Self::Output {
+                other.add(self)
+            }
+        }
+    };
+}
+
+impl_add_series!(Polynomial<Var, C>, Series<Var, C>);
+impl_add_series!(Polynomial<Var, C>, &'a Series<Var, C>);
+impl_add_series!(Polynomial<Var, C>, SeriesSlice<'a, Var, C>);
+impl_add_series!(&'a Polynomial<Var, C>, Series<Var, C>);
+impl_add_series!(&'a Polynomial<Var, C>, &'a Series<Var, C>);
+impl_add_series!(&'a Polynomial<Var, C>, SeriesSlice<'a, Var, C>);
+impl_add_series!(PolynomialSlice<'a, Var, C>, Series<Var, C>);
+impl_add_series!(PolynomialSlice<'a, Var, C>, &'a Series<Var, C>);
+impl_add_series!(PolynomialSlice<'a, Var, C>, SeriesSlice<'a, Var, C>);
+
+macro_rules! impl_mul_series {
+    ($p:ty, $s:ty) => {
+        impl<'a, Var, C: Coeff> Mul<$s> for $p
+        where
+            $s: Mul<Self, Output = Series<Var, C>>,
+        {
+            type Output = Series<Var, C>;
+
+            fn mul(self, other: $s) -> Self::Output {
+                other.mul(self)
+            }
+        }
+    };
+}
+
+impl_mul_series!(Polynomial<Var, C>, Series<Var, C>);
+impl_mul_series!(Polynomial<Var, C>, &'a Series<Var, C>);
+impl_mul_series!(Polynomial<Var, C>, SeriesSlice<'a, Var, C>);
+impl_mul_series!(&'a Polynomial<Var, C>, Series<Var, C>);
+impl_mul_series!(&'a Polynomial<Var, C>, &'a Series<Var, C>);
+impl_mul_series!(&'a Polynomial<Var, C>, SeriesSlice<'a, Var, C>);
+impl_mul_series!(PolynomialSlice<'a, Var, C>, Series<Var, C>);
+impl_mul_series!(PolynomialSlice<'a, Var, C>, &'a Series<Var, C>);
+impl_mul_series!(PolynomialSlice<'a, Var, C>, SeriesSlice<'a, Var, C>);
+
+macro_rules! impl_poly_sub_series {
+    ($($s:ty), *) => {
+        $(
+            impl<'a, Var, C: Coeff> Sub<$s> for Polynomial<Var, C>
+            where
+                Series<Var, C>: Sub<$s, Output = Series<Var, C>>,
+                Var: Clone + PartialEq + Debug,
+            {
+                type Output = Series<Var, C>;
+
+                fn sub(self, rhs: $s) -> Self::Output {
+                    self.cutoff_at(rhs.var(), rhs.cutoff_pow()).sub(rhs)
+                }
+            }
+        )*
+    };
+}
+
+impl_poly_sub_series!(Series<Var, C>, &'a Series<Var, C>, SeriesSlice<'a, Var, C>);
+
+macro_rules! impl_poly_ref_sub_series {
+    ($($s:ty), *) => {
+        $(
+            impl<'a, Var, C: Coeff> Sub<$s> for &'a Polynomial<Var, C>
+            where
+                Polynomial<Var, C>: Clone + Sub<$s, Output = Series<Var, C>>
+            {
+                type Output = Series<Var, C>;
+
+                fn sub(self, rhs: $s) -> Self::Output {
+                    self.clone().sub(rhs)
+                }
+            }
+        )*
+    };
+}
+
+impl_poly_ref_sub_series!(Series<Var, C>, &'a Series<Var, C>, SeriesSlice<'a, Var, C>);
+
+macro_rules! impl_poly_slice_sub_series {
+    ($($s:ty), *) => {
+        $(
+            impl<'a, Var, C: Coeff> Sub<$s> for PolynomialSlice<'a, Var, C>
+            where
+                Polynomial<Var, C>: From<Self> + Sub<$s, Output = Series<Var, C>>
+            {
+                type Output = Series<Var, C>;
+
+                fn sub(self, rhs: $s) -> Self::Output {
+                    Polynomial::from(self).sub(rhs)
+                }
+            }
+        )*
+    };
+}
+
+impl_poly_slice_sub_series!(Series<Var, C>, &'a Series<Var, C>, SeriesSlice<'a, Var, C>);
