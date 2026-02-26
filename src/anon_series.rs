@@ -1137,102 +1137,69 @@ where
     }
 }
 
-impl<C: Coeff + Clone> AddAssign<C> for AnonSeries<C>
-where
-    C: AddAssign<C>,
-{
-    fn add_assign(&mut self, rhs: C) {
-        if self.cutoff_pow() <= 0 || rhs.is_zero() {
-            return;
-        }
-        if self.min_pow() <= 0 {
-            let idx = (-self.min_pow()) as usize;
-            self.coeffs[idx] += rhs;
-            if self.min_pow() == 0 {
-                self.trim()
+macro_rules! impl_add_assign_const {
+    ($($rhs:ty), *) => {
+        $(
+            impl<'a, C: Coeff> AddAssign<$rhs> for AnonSeries<C>
+            where
+                C: AddAssign<$rhs>,
+            {
+                fn add_assign(&mut self, rhs: $rhs) {
+                    if self.cutoff_pow() <= 0 || rhs.is_zero() {
+                        return;
+                    }
+                    if self.min_pow() > 0 {
+                        self.coeffs.splice(
+                            0..0,
+                            std::iter::repeat_with(|| C::zero())
+                                .take(self.min_pow() as usize)
+                        );
+                        self.min_pow = 0;
+                    }
+                    let idx = (-self.min_pow()) as usize;
+                    self.coeffs[idx].add_assign(rhs);
+                    if self.min_pow() == 0 {
+                        self.trim()
+                    }
+                }
             }
-        } else {
-            let mut new_coeffs = vec![rhs];
-            new_coeffs.resize(self.min_pow() as usize, C::zero());
-            new_coeffs.append(&mut self.coeffs);
-            self.coeffs = new_coeffs;
-            self.min_pow = 0;
-        }
-    }
+        )*
+    };
 }
 
-impl<'a, C: Coeff + Clone> AddAssign<&'a C> for AnonSeries<C>
-where
-    C: AddAssign<&'a C>,
-{
-    fn add_assign(&mut self, rhs: &'a C) {
-        if self.cutoff_pow() <= 0 || rhs.is_zero() {
-            return;
-        }
-        if self.min_pow() <= 0 {
-            let idx = (-self.min_pow()) as usize;
-            self.coeffs[idx] += rhs;
-            if self.min_pow() == 0 {
-                self.trim()
+impl_add_assign_const!(C, &'a C);
+
+macro_rules! impl_sub_assign_const {
+    ($($rhs:ty), *) => {
+        $(
+            impl<'a, C: Coeff> SubAssign<$rhs> for AnonSeries<C>
+            where
+                C: SubAssign<$rhs>,
+            {
+                fn sub_assign(&mut self, rhs: $rhs) {
+                    if self.cutoff_pow() <= 0 || rhs.is_zero() {
+                        return;
+                    }
+                    if self.min_pow() > 0 {
+                        self.coeffs.splice(
+                            0..0,
+                            std::iter::repeat_with(|| C::zero())
+                                .take(self.min_pow() as usize)
+                        );
+                        self.min_pow = 0;
+                    }
+                    let idx = (-self.min_pow()) as usize;
+                    self.coeffs[idx].sub_assign(rhs);
+                    if self.min_pow() == 0 {
+                        self.trim()
+                    }
+                }
             }
-        } else {
-            let mut new_coeffs = vec![rhs.clone()];
-            new_coeffs.resize(self.min_pow() as usize, C::zero());
-            new_coeffs.append(&mut self.coeffs);
-            self.coeffs = new_coeffs;
-            self.min_pow = 0;
-        }
-    }
+        )*
+    };
 }
 
-impl<C: Coeff + Clone> SubAssign<C> for AnonSeries<C>
-where
-    C: Neg<Output = C> + SubAssign<C>,
-{
-    fn sub_assign(&mut self, rhs: C) {
-        if self.cutoff_pow() <= 0 || rhs.is_zero() {
-            return;
-        }
-        if self.min_pow() <= 0 {
-            let idx = (-self.min_pow()) as usize;
-            self.coeffs[idx] -= rhs;
-            if self.min_pow() == 0 {
-                self.trim()
-            }
-        } else {
-            let mut new_coeffs = vec![-rhs];
-            new_coeffs.resize(self.min_pow() as usize, C::zero());
-            new_coeffs.append(&mut self.coeffs);
-            self.coeffs = new_coeffs;
-            self.min_pow = 0;
-        }
-    }
-}
-
-impl<'a, C: Coeff + Clone> SubAssign<&'a C> for AnonSeries<C>
-where
-    C: SubAssign<&'a C>,
-    &'a C: Neg<Output = C>,
-{
-    fn sub_assign(&mut self, rhs: &'a C) {
-        if self.cutoff_pow() <= 0 || rhs.is_zero() {
-            return;
-        }
-        if self.min_pow() <= 0 {
-            let idx = (-self.min_pow()) as usize;
-            self.coeffs[idx] -= rhs;
-            if self.min_pow() == 0 {
-                self.trim()
-            }
-        } else {
-            let mut new_coeffs = vec![-rhs];
-            new_coeffs.resize(self.min_pow() as usize, C::zero());
-            new_coeffs.append(&mut self.coeffs);
-            self.coeffs = new_coeffs;
-            self.min_pow = 0;
-        }
-    }
-}
+impl_sub_assign_const!(C, &'a C);
 
 impl<'a, C: Coeff> MulAssign<&'a C> for AnonSeries<C>
 where

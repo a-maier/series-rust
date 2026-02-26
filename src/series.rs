@@ -1116,23 +1116,39 @@ where
     }
 }
 
-impl<Var, C: Coeff + Clone> AddAssign<C> for Series<Var, C>
-where
-    C: AddAssign<C>,
-{
-    fn add_assign(&mut self, rhs: C) {
-        self.series.add_assign(rhs)
-    }
+macro_rules! impl_add_assign_const {
+    ($($rhs:ty), *) => {
+        $(
+            impl<'a, Var, C: Coeff> AddAssign<$rhs> for Series<Var, C>
+            where
+                C: AddAssign<$rhs>,
+            {
+                fn add_assign(&mut self, rhs: $rhs) {
+                    self.series.add_assign(rhs)
+                }
+            }
+        )*
+    };
 }
 
-impl<Var, C: Coeff + Clone> SubAssign<C> for Series<Var, C>
-where
-    C: Neg<Output = C> + SubAssign<C>,
-{
-    fn sub_assign(&mut self, rhs: C) {
-        self.series.sub_assign(rhs)
-    }
+impl_add_assign_const!(C, &'a C);
+
+macro_rules! impl_sub_assign_const {
+    ($($rhs:ty), *) => {
+        $(
+            impl<'a, Var, C: Coeff> SubAssign<$rhs> for Series<Var, C>
+            where
+                C: SubAssign<$rhs>,
+            {
+                fn sub_assign(&mut self, rhs: $rhs) {
+                    self.series.sub_assign(rhs)
+                }
+            }
+        )*
+    };
 }
+
+impl_sub_assign_const!(C, &'a C);
 
 impl<'a, Var, C: Coeff> MulAssign<&'a C> for Series<Var, C>
 where
