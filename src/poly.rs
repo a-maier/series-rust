@@ -1045,77 +1045,39 @@ macro_rules! impl_sub_via_sub_assign {
 
 impl_sub_via_sub_assign!(Self, &'a Polynomial<Var, C>, PolynomialSlice<'a, Var, C>, C, &'a C);
 
-impl<'a, Var, C: Coeff + Clone + AddAssign> MulAssign<&'a Polynomial<Var, C>>
-    for Polynomial<Var, C>
-where
-    Polynomial<Var, C>: MulAssign<PolynomialSlice<'a, Var, C>>,
-{
-    /// Set p = p * q for two polynomials p,q
-    ///
-    /// # Panics
-    ///
-    /// Panics if the polynomial variables differ and neither of the
-    /// polynomials is a constant.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// # use series::Polynomial;
-    /// let mut p = Polynomial::new("x", -3, vec![1., 0., -3.]);
-    /// p *= &p.clone();
-    /// let res = Polynomial::new("x", -6, vec![1., 0., -6., 0., 9.]);
-    /// assert_eq!(res, p);
-    /// ```
-    fn mul_assign(&mut self, other: &'a Polynomial<Var, C>) {
-        self.mul_assign(other.as_slice(..))
-    }
+macro_rules! impl_mul_assign_via_slice_mul {
+    ($($t:ty), *) => {
+        $(
+            impl<'a, Var: 'a, C: Coeff + 'a> MulAssign<$t> for Polynomial<Var, C>
+            where
+                for<'b> PolynomialSlice<'b, Var, C>: Mul<Output = Polynomial<Var, C>>,
+            {
+                /// Set p = p * q for two polynomials p,q
+                ///
+                /// # Panics
+                ///
+                /// Panics if the polynomial variables differ and neither of the
+                /// polynomials is a constant.
+                ///
+                /// # Example
+                ///
+                /// ```rust
+                /// # use series::Polynomial;
+                /// let mut p = Polynomial::new("x", -3, vec![1., 0., -3.]);
+                /// p *= &p.clone();
+                /// let res = Polynomial::new("x", -6, vec![1., 0., -6. ,0. ,9.]);
+                /// assert_eq!(res, p);
+                /// ```
+                fn mul_assign(&mut self, other: $t) {
+                    let prod = self.as_slice(..).mul(other.as_slice(..));
+                    *self = prod;
+                }
+            }
+        )*
+    };
 }
 
-// TODO: pass `var` in `Mul` so it does not have to be cloned
-
-impl<'a, Var, C: Coeff> MulAssign<PolynomialSlice<'a, Var, C>>
-    for Polynomial<Var, C>
-where
-    for<'b> PolynomialSlice<'b, Var, C>:
-        Mul<PolynomialSlice<'a, Var, C>, Output = Polynomial<Var, C>>,
-{
-    /// Set p = p * q for two polynomials p,q
-    ///
-    /// # Panics
-    ///
-    /// Panics if the polynomial variables differ and neither of the
-    /// polynomials is a constant.
-    ///
-    fn mul_assign(&mut self, other: PolynomialSlice<'a, Var, C>) {
-        let prod = self.as_slice(..) * other;
-        *self = prod;
-    }
-}
-
-impl<Var, C: Coeff> MulAssign for Polynomial<Var, C>
-where
-    for<'a> Polynomial<Var, C>: MulAssign<&'a Polynomial<Var, C>>,
-{
-    /// Set p = p * q for two polynomials p,q
-    ///
-    /// # Panics
-    ///
-    /// Panics if the polynomial variables differ and neither of the
-    /// polynomials is a constant.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// # use series::Polynomial;
-    /// let mut p = Polynomial::new("x", -3, vec![1., 0., -3.]);
-    /// p *= &p.clone();
-    /// let res = Polynomial::new("x", -6, vec![1., 0., -6. ,0. ,9.]);
-    /// assert_eq!(res, p);
-    /// ```
-    fn mul_assign(&mut self, other: Polynomial<Var, C>) {
-        self.mul_assign(&other)
-    }
-}
+impl_mul_assign_via_slice_mul!(Self, &'a Polynomial<Var, C>, PolynomialSlice<'a, Var, C>);
 
 impl<Var, C: Coeff> MulAssign<C> for Polynomial<Var, C>
 where
@@ -1215,6 +1177,30 @@ where
     }
 }
 
+macro_rules! impl_mul_via_slice {
+    ($s:ty, $t:ty) => {
+        impl<'a, Var, C: Coeff> Mul<$s> for $t
+        where
+            for<'c> PolynomialSlice<'c, Var, C>: Mul<Output = Polynomial<Var, C>>,
+        {
+            type Output = Polynomial<Var, C>;
+
+            fn mul(self, other: $s) -> Self::Output {
+                self.as_slice(..).mul(other.as_slice(..))
+            }
+        }
+    };
+}
+
+impl_mul_via_slice!(Polynomial<Var, C>, Polynomial<Var, C>);
+impl_mul_via_slice!(Polynomial<Var, C>,  &'a Polynomial<Var, C>);
+impl_mul_via_slice!(Polynomial<Var, C>,  PolynomialSlice<'a, Var, C>);
+impl_mul_via_slice!(&'a Polynomial<Var, C>,  Polynomial<Var, C>);
+impl_mul_via_slice!(&'a Polynomial<Var, C>,  &'a Polynomial<Var, C>);
+impl_mul_via_slice!(&'a Polynomial<Var, C>,  PolynomialSlice<'a, Var, C>);
+impl_mul_via_slice!(PolynomialSlice<'a, Var, C>,  Polynomial<Var, C>);
+impl_mul_via_slice!(PolynomialSlice<'a, Var, C>,  &'a Polynomial<Var, C>);
+
 macro_rules! impl_mul_via_mul_assign {
     ($($t:ty), *) => {
         $(
@@ -1233,7 +1219,7 @@ macro_rules! impl_mul_via_mul_assign {
     };
 }
 
-impl_mul_via_mul_assign!(Self, &'a Polynomial<Var, C>, PolynomialSlice<'a, Var, C>, C, &'a C);
+impl_mul_via_mul_assign!(C, &'a C);
 
 macro_rules! impl_div_via_div_assign {
     ($($t:ty), *) => {
@@ -1255,49 +1241,121 @@ macro_rules! impl_div_via_div_assign {
 
 impl_div_via_div_assign!(C, &'a C);
 
-impl<'a, Var, C: Coeff, T> Mul<T> for &'a Polynomial<Var, C>
-where
-    PolynomialSlice<'a, Var, C>: Mul<T, Output = Polynomial<Var, C>>,
-{
-    type Output = Polynomial<Var, C>;
+macro_rules! impl_add_poly {
+    ($($t:ty), *) => {
+        $(
+            impl<'a, Var, C: Coeff> Add<Polynomial<Var, C>> for $t
+            where
+                Polynomial<Var, C>: Add<Self, Output = Polynomial<Var, C>>
+            {
+                type Output = Polynomial<Var, C>;
 
-    fn mul(self, other: T) -> Self::Output {
-        self.as_slice(..) * other
-    }
+                fn add(self, other: Polynomial<Var, C>) -> Self::Output {
+                    other.add(self)
+                }
+            }
+        )*
+    };
 }
 
-impl<'a, Var, C: Coeff, T> Div<T> for &'a Polynomial<Var, C>
-where
-    PolynomialSlice<'a, Var, C>: Div<T, Output = Polynomial<Var, C>>,
-{
-    type Output = Polynomial<Var, C>;
+impl_add_poly!(&'a Polynomial<Var, C>, PolynomialSlice<'a, Var, C>);
 
-    fn div(self, other: T) -> Self::Output {
-        self.as_slice(..) / other
-    }
+macro_rules! impl_sub_poly {
+    ($($t:ty), *) => {
+        $(
+            impl<'a, Var, C: Coeff> Sub<Polynomial<Var, C>> for $t
+            where
+                Polynomial<Var, C>: Neg<Output = Polynomial<Var, C>> + Add<Self, Output = Polynomial<Var, C>>
+            {
+                type Output = Polynomial<Var, C>;
+
+                fn sub(self, other: Polynomial<Var, C>) -> Self::Output {
+                    (-other) + self
+                }
+            }
+        )*
+    };
 }
 
-impl<'a, Var, C: Coeff, T> Add<T> for &'a Polynomial<Var, C>
-where
-    PolynomialSlice<'a, Var, C>: Add<T, Output = Polynomial<Var, C>>,
-{
-    type Output = Polynomial<Var, C>;
+impl_sub_poly!(&'a Polynomial<Var, C>, PolynomialSlice<'a, Var, C>);
 
-    fn add(self, other: T) -> Self::Output {
-        self.as_slice(..) + other
-    }
+macro_rules! impl_ref_add_via_owned {
+    ($($t:ty), *) => {
+        $(
+            impl<'a, Var, C: Coeff> Add<$t> for &'a Polynomial<Var, C>
+            where
+                Polynomial<Var, C>: Add<$t, Output = Polynomial<Var, C>> + Clone,
+            {
+                type Output = Polynomial<Var, C>;
+
+                fn add(self, rhs: $t) -> Self::Output {
+                    // TODO: make the longer polynomial owned
+                    self.clone().add(rhs)
+                }
+            }
+        )*
+    };
 }
 
-impl<'a, Var, C: Coeff, T> Sub<T> for &'a Polynomial<Var, C>
-where
-    PolynomialSlice<'a, Var, C>: Sub<T, Output = Polynomial<Var, C>>,
-{
-    type Output = Polynomial<Var, C>;
+impl_ref_add_via_owned!(&'a Polynomial<Var, C>, PolynomialSlice<'a, Var, C>, C, &'a C);
 
-    fn sub(self, other: T) -> Self::Output {
-        self.as_slice(..) - other
-    }
+macro_rules! impl_ref_sub_via_owned {
+    ($($t:ty), *) => {
+        $(
+            impl<'a, Var, C: Coeff> Sub<$t> for &'a Polynomial<Var, C>
+            where
+                Polynomial<Var, C>: Sub<$t, Output = Polynomial<Var, C>> + Clone,
+            {
+                type Output = Polynomial<Var, C>;
+
+                fn sub(self, rhs: $t) -> Self::Output {
+                    // TODO: make the longer polynomial owned
+                    self.clone().sub(rhs)
+                }
+            }
+        )*
+    };
 }
+
+impl_ref_sub_via_owned!(&'a Polynomial<Var, C>, PolynomialSlice<'a, Var, C>, C, &'a C);
+
+macro_rules! impl_ref_mul_via_owned {
+    ($($t:ty), *) => {
+        $(
+            impl<'a, Var, C: Coeff> Mul<$t> for &'a Polynomial<Var, C>
+            where
+                Polynomial<Var, C>: Mul<$t, Output = Polynomial<Var, C>> + Clone,
+            {
+                type Output = Polynomial<Var, C>;
+
+                fn mul(self, rhs: $t) -> Self::Output {
+                    self.clone().mul(rhs)
+                }
+            }
+        )*
+    };
+}
+
+impl_ref_mul_via_owned!(C, &'a C);
+
+macro_rules! impl_ref_div_via_owned {
+    ($($t:ty), *) => {
+        $(
+            impl<'a, Var, C: Coeff> Div<$t> for &'a Polynomial<Var, C>
+            where
+                Polynomial<Var, C>: Div<$t, Output = Polynomial<Var, C>> + Clone,
+            {
+                type Output = Polynomial<Var, C>;
+
+                fn div(self, rhs: $t) -> Self::Output {
+                    self.clone().div(rhs)
+                }
+            }
+        )*
+    };
+}
+
+impl_ref_div_via_owned!(C, &'a C);
 
 impl<Var, C: Coeff> Zero for Polynomial<Var, C>
 where
@@ -1509,235 +1567,83 @@ where
     }
 }
 
-impl<'a, Var: Clone, C> Add<C> for PolynomialSlice<'a, Var, C>
-where
-    C: Coeff + Clone + AddAssign,
-{
-    type Output = Polynomial<Var, C>;
+macro_rules! impl_slice_add_via_owned {
+    ($($t:ty), *) => {
+        $(
+            impl<'a, Var, C: Coeff> Add<$t> for PolynomialSlice<'a, Var, C>
+            where
+                Polynomial<Var, C>: Add<$t, Output = Polynomial<Var, C>> + From<Self>,
+            {
+                type Output = Polynomial<Var, C>;
 
-    fn add(self, rhs: C) -> Self::Output {
-        Polynomial::from(self).add(rhs)
-    }
-}
-
-impl<'a, 'b, Var: Clone, C> Add<&'b C> for PolynomialSlice<'a, Var, C>
-where
-    C: Coeff + Clone + AddAssign<&'b C>,
-{
-    type Output = Polynomial<Var, C>;
-
-    fn add(self, rhs: &'b C) -> Self::Output {
-        Polynomial::from(self).add(rhs)
-    }
-}
-
-impl<'a, Var: Clone, C> Sub<C> for PolynomialSlice<'a, Var, C>
-where
-    C: Coeff + Clone + SubAssign,
-{
-    type Output = Polynomial<Var, C>;
-
-    fn sub(self, rhs: C) -> Self::Output {
-        Polynomial::from(self).sub(rhs)
-    }
-}
-
-impl<'a, 'b, Var: Clone, C> Sub<&'b C> for PolynomialSlice<'a, Var, C>
-where
-    C: Coeff + Clone + SubAssign<&'b C>,
-{
-    type Output = Polynomial<Var, C>;
-
-    fn sub(self, rhs: &'b C) -> Self::Output {
-        Polynomial::from(self).sub(rhs)
-    }
-}
-
-impl<'a, Var: Clone, C: Coeff + Clone> Mul<C> for PolynomialSlice<'a, Var, C>
-where
-    for<'c> C: MulAssign<&'c C>,
-{
-    type Output = Polynomial<Var, C>;
-
-    fn mul(self, rhs: C) -> Self::Output {
-        Polynomial::from(self).mul(rhs)
-    }
-}
-
-impl<'a, Var: Clone, C: Coeff + Clone> Mul<&C> for PolynomialSlice<'a, Var, C>
-where
-    for<'c> C: MulAssign<&'c C>,
-{
-    type Output = Polynomial<Var, C>;
-
-    fn mul(self, rhs: &C) -> Self::Output {
-        Polynomial::from(self).mul(rhs)
-    }
-}
-
-impl<'a, Var: Clone, C: Coeff + Clone> Div<C> for PolynomialSlice<'a, Var, C>
-where
-    for<'c> C: DivAssign<&'c C>,
-{
-    type Output = Polynomial<Var, C>;
-
-    fn div(self, rhs: C) -> Self::Output {
-        Polynomial::from(self).div(rhs)
-    }
-}
-
-impl<'a, Var: Clone, C: Coeff + Clone> Div<&C> for PolynomialSlice<'a, Var, C>
-where
-    for<'c> C: DivAssign<&'c C>,
-{
-    type Output = Polynomial<Var, C>;
-
-    fn div(self, rhs: &C) -> Self::Output {
-        Polynomial::from(self).div(rhs)
-    }
-}
-
-impl<'a, Var, C> Add for PolynomialSlice<'a, Var, C>
-where
-    Var: Clone + Debug + PartialEq,
-    C: Coeff + Clone,
-    for<'c> C: AddAssign<&'c C>,
-    &'a C: Add<Output = C>,
-{
-    type Output = Polynomial<Var, C>;
-
-    fn add(self, rhs: Self) -> Self::Output {
-        match (self, rhs) {
-            (PolynomialSlice::Const(c), PolynomialSlice::Const(d)) => {
-                Polynomial::Const(c + d)
-            }
-            (PolynomialSlice::Const(c), PolynomialSlice::Poly { .. }) => {
-                Polynomial::from(rhs) + c
-            }
-            (PolynomialSlice::Poly { .. }, PolynomialSlice::Const(c)) => {
-                Polynomial::from(self) + c
-            }
-            (
-                PolynomialSlice::Poly { coeffs, .. },
-                PolynomialSlice::Poly {
-                    coeffs: rhs_coeffs, ..
-                },
-            ) => {
-                if coeffs.len() >= rhs_coeffs.len() {
-                    Polynomial::from(self) + rhs
-                } else {
-                    Polynomial::from(rhs) + self
+                fn add(self, rhs: $t) -> Self::Output {
+                    // TODO: make the longer polynomial owned
+                    Polynomial::from(self).add(rhs)
                 }
             }
-        }
-    }
+        )*
+    };
 }
 
-impl<'a, Var, C: Coeff> Add<&'a Polynomial<Var, C>>
-    for PolynomialSlice<'a, Var, C>
-where
-    Self: Add,
-{
-    type Output = <Self as Add>::Output;
+impl_slice_add_via_owned!(&'a Polynomial<Var, C>, PolynomialSlice<'a, Var, C>, C, &'a C);
 
-    fn add(self, rhs: &'a Polynomial<Var, C>) -> Self::Output {
-        self.add(rhs.as_slice(..))
-    }
-}
+macro_rules! impl_slice_sub_via_owned {
+    ($($t:ty), *) => {
+        $(
+            impl<'a, Var, C: Coeff> Sub<$t> for PolynomialSlice<'a, Var, C>
+            where
+                Polynomial<Var, C>: Sub<$t, Output = Polynomial<Var, C>> + From<Self>,
+            {
+                type Output = Polynomial<Var, C>;
 
-impl<'a, Var, C: Coeff> Add<Polynomial<Var, C>> for PolynomialSlice<'a, Var, C>
-where
-    Polynomial<Var, C>: Add<Self>,
-{
-    type Output = <Polynomial<Var, C> as Add<Self>>::Output;
-
-    fn add(self, rhs: Polynomial<Var, C>) -> Self::Output {
-        rhs.add(self)
-    }
-}
-
-impl<'a, Var, C> Sub for PolynomialSlice<'a, Var, C>
-where
-    Var: Clone + Debug + PartialEq,
-    C: Coeff + Clone + Neg<Output = C> + AddAssign,
-    for<'c> C: AddAssign<&'c C> + SubAssign<&'c C>,
-    &'a C: Sub<Output = C>,
-{
-    type Output = Polynomial<Var, C>;
-
-    fn sub(self, rhs: Self) -> Self::Output {
-        match (self, rhs) {
-            (PolynomialSlice::Const(c), PolynomialSlice::Const(d)) => {
-                Polynomial::Const(c - d)
-            }
-            (PolynomialSlice::Const(c), PolynomialSlice::Poly { .. }) => {
-                -(Polynomial::from(rhs) - c)
-            }
-            (PolynomialSlice::Poly { .. }, PolynomialSlice::Const(c)) => {
-                Polynomial::from(self) - c
-            }
-            (
-                PolynomialSlice::Poly { coeffs, .. },
-                PolynomialSlice::Poly {
-                    coeffs: rhs_coeffs, ..
-                },
-            ) => {
-                if coeffs.len() >= rhs_coeffs.len() {
-                    Polynomial::from(self) - rhs
-                } else {
-                    -(Polynomial::from(rhs) - self)
+                fn sub(self, rhs: $t) -> Self::Output {
+                    // TODO: make the longer polynomial owned
+                    Polynomial::from(self).sub(rhs)
                 }
             }
-        }
-    }
+        )*
+    };
 }
 
-impl<'a, Var, C: Coeff> Sub<&'a Polynomial<Var, C>>
-    for PolynomialSlice<'a, Var, C>
-where
-    Self: Sub,
-{
-    type Output = <Self as Sub>::Output;
+impl_slice_sub_via_owned!(&'a Polynomial<Var, C>, PolynomialSlice<'a, Var, C>, C, &'a C);
 
-    fn sub(self, rhs: &'a Polynomial<Var, C>) -> Self::Output {
-        self.sub(rhs.as_slice(..))
-    }
+macro_rules! impl_slice_mul_via_owned {
+    ($($t:ty), *) => {
+        $(
+            impl<'a, Var, C: Coeff> Mul<$t> for PolynomialSlice<'a, Var, C>
+            where
+                Polynomial<Var, C>: Mul<$t, Output = Polynomial<Var, C>> + From<Self>,
+            {
+                type Output = Polynomial<Var, C>;
+
+                fn mul(self, rhs: $t) -> Self::Output {
+                    Polynomial::from(self).mul(rhs)
+                }
+            }
+        )*
+    };
 }
 
-impl<'a, Var, C: Coeff> Sub<Polynomial<Var, C>> for PolynomialSlice<'a, Var, C>
-where
-    Polynomial<Var, C>: Sub<Self, Output = Polynomial<Var, C>>
-        + Neg<Output = Polynomial<Var, C>>,
-{
-    type Output = <Polynomial<Var, C> as Sub<Self>>::Output;
+impl_slice_mul_via_owned!(C, &'a C);
 
-    fn sub(self, rhs: Polynomial<Var, C>) -> Self::Output {
-        -rhs.sub(self)
-    }
+macro_rules! impl_slice_div_via_owned {
+    ($($t:ty), *) => {
+        $(
+            impl<'a, Var, C: Coeff> Div<$t> for PolynomialSlice<'a, Var, C>
+            where
+                Polynomial<Var, C>: Div<$t, Output = Polynomial<Var, C>> + From<Self>,
+            {
+                type Output = Polynomial<Var, C>;
+
+                fn div(self, rhs: $t) -> Self::Output {
+                    Polynomial::from(self).div(rhs)
+                }
+            }
+        )*
+    };
 }
 
-impl<'a, 'b, Var, C: Coeff> Mul<&'b Polynomial<Var, C>>
-    for PolynomialSlice<'a, Var, C>
-where
-    Self: Mul<PolynomialSlice<'b, Var, C>, Output = Polynomial<Var, C>>,
-{
-    type Output = Polynomial<Var, C>;
-
-    fn mul(self, rhs: &'b Polynomial<Var, C>) -> Self::Output {
-        self.mul(rhs.as_slice(..))
-    }
-}
-
-impl<'a, Var, C: Coeff> Mul<Polynomial<Var, C>> for PolynomialSlice<'a, Var, C>
-where
-    for<'c> Self: Mul<PolynomialSlice<'c, Var, C>, Output = Polynomial<Var, C>>,
-{
-    type Output = Polynomial<Var, C>;
-
-    fn mul(self, rhs: Polynomial<Var, C>) -> Self::Output {
-        self.mul(rhs.as_slice(..))
-    }
-}
+impl_slice_div_via_owned!(C, &'a C);
 
 impl<'a, 'b, Var, C> Mul<PolynomialSlice<'b, Var, C>>
     for PolynomialSlice<'a, Var, C>
