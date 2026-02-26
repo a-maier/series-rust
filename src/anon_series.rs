@@ -109,6 +109,21 @@ impl<C: Coeff> AnonSeries<C> {
         self.as_slice(..).cutoff_pow()
     }
 
+    /// Get the number of known coefficients in the series.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use series::anon_series::AnonSeries;
+    /// let s = AnonSeries::with_cutoff(-1..5, vec!(1,2,3));
+    /// assert_eq!(s.len(), 6);
+    /// // This holds true for any series
+    /// assert_eq!(s.len(), (s.cutoff_pow() - s.min_pow()) as usize);
+    /// ```
+    pub fn len(&self) -> usize {
+        self.as_slice(..).len()
+    }
+
     /// Iterator over the series powers and coefficients.
     ///
     /// # Example

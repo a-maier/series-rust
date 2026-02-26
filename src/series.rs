@@ -97,6 +97,21 @@ impl<Var, C: Coeff> Series<Var, C> {
         self.series.cutoff_pow()
     }
 
+    /// Get the number of known coefficients in the series.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use series::Series;
+    /// let s = Series::with_cutoff("x", -1..5, vec!(1,2,3));
+    /// assert_eq!(s.len(), 6);
+    /// // This holds true for any series
+    /// assert_eq!(s.len(), (s.cutoff_pow() - s.min_pow()) as usize);
+    /// ```
+    pub fn len(&self) -> usize {
+        self.series.len()
+    }
+
     /// Iterator over the series powers and coefficients.
     ///
     /// # Example

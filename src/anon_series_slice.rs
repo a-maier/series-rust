@@ -68,6 +68,21 @@ impl<'a, C: Coeff> AnonSeriesSlice<'a, C> {
         self.min_pow + (self.coeffs.len() as isize)
     }
 
+    /// Get the number of known coefficients in the series.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use series::{anon_series::AnonSeries, AsSlice};
+    /// let s = AnonSeries::with_cutoff(-1..5, vec![1, 2, 3]);
+    /// assert_eq!(s.as_slice(..).len(), 6);
+    /// // This holds true for any series
+    /// assert_eq!(s.as_slice(..).len(), (s.cutoff_pow() - s.min_pow()) as usize);
+    /// ```
+    pub fn len(&self) -> usize {
+        self.coeffs.len()
+    }
+
     /// Iterator over the series powers and coefficients.
     ///
     /// # Example
