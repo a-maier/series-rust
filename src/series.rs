@@ -549,9 +549,9 @@ impl<Var, C: Coeff + Neg<Output = C>> Neg for Series<Var, C> {
     }
 }
 
-impl<Var: Clone, C: Coeff> Neg for &Series<Var, C>
+impl<'a, Var: Clone, C: Coeff> Neg for &'a Series<Var, C>
 where
-    for<'c> &'c C: Neg<Output = C>,
+    &'a C: Neg<Output = C>,
 {
     type Output = Series<Var, C>;
 

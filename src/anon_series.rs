@@ -590,9 +590,9 @@ impl<C: Coeff + Neg<Output = C>> Neg for AnonSeries<C> {
     }
 }
 
-impl<C: Coeff> Neg for &AnonSeries<C>
+impl<'a, C: Coeff> Neg for &'a AnonSeries<C>
 where
-    for<'c> &'c C: Neg<Output = C>,
+    &'a C: Neg<Output = C>,
 {
     type Output = AnonSeries<C>;
 

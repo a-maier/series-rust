@@ -251,9 +251,9 @@ where
     }
 }
 
-impl<C: Coeff> Neg for AnonSeriesSlice<'_, C>
+impl<'a, C: Coeff> Neg for AnonSeriesSlice<'a, C>
 where
-    for<'c> &'c C: Neg<Output = C>,
+    &'a C: Neg<Output = C>,
 {
     type Output = AnonSeries<C>;
 

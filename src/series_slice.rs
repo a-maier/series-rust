@@ -228,9 +228,9 @@ where
     }
 }
 
-impl<Var: Clone, C: Coeff> Neg for SeriesSlice<'_, Var, C>
+impl<'a, Var: Clone, C: Coeff> Neg for SeriesSlice<'a, Var, C>
 where
-    for<'c> &'c C: Neg<Output = C>,
+    &'a C: Neg<Output = C>,
 {
     type Output = Series<Var, C>;
 
