@@ -333,6 +333,9 @@ where
     type Output = AnonSeries<C>;
 
     fn mul(self, other: C) -> Self::Output {
+        if other.is_zero() {
+            panic!("Cannot multiply series by 0")
+        }
         let coeffs = self.coeffs.iter().map(|c| c * &other).collect();
         AnonSeries::new(self.min_pow(), coeffs)
     }
@@ -345,6 +348,9 @@ where
     type Output = AnonSeries<C>;
 
     fn mul(self, other: &'b C) -> Self::Output {
+        if other.is_zero() {
+            panic!("Cannot multiply series by 0")
+        }
         let coeffs = self.coeffs.iter().map(|c| c * other).collect();
         AnonSeries::new(self.min_pow(), coeffs)
     }
