@@ -4,7 +4,7 @@ use crate::{Coeff, IntoIter, Iter};
 use crate::{anon_series::AnonSeries, series_slice::*};
 
 use std::convert::From;
-use std::fmt::{self, Display};
+use std::fmt::{self, Debug, Display};
 use std::ops::{
     Add, AddAssign, Div, DivAssign, Index, Mul, MulAssign, Neg, Range,
     RangeFrom, RangeFull, RangeInclusive, RangeTo, RangeToInclusive, Sub,
@@ -806,65 +806,71 @@ where
     }
 }
 
-// TODO: somehow make multiplication symmetric?
-impl<Var, C: Coeff> Mul for Series<Var, C>
+impl<Var, C: Coeff> MulAssign<Polynomial<Var, C>> for Series<Var, C>
 where
-    Series<Var, C>: MulAssign,
+    Self: MulAssign + MulAssign<C>,
 {
-    type Output = Series<Var, C>;
-
-    fn mul(mut self, other: Series<Var, C>) -> Self::Output {
-        self *= other;
-        self
+    fn mul_assign(&mut self, rhs: Polynomial<Var, C>) {
+        match rhs {
+            Polynomial::Const(c) => self.mul_assign(c),
+            Polynomial::Poly(p) => {
+                let cutoff_pow = self.len() as isize + p.min_pow();
+                self.mul_assign(p.cutoff_at(cutoff_pow))
+            },
+        }
     }
 }
 
-impl<'a, Var, C: Coeff> Mul<&'a Series<Var, C>> for Series<Var, C>
+impl<'a, Var, C: Coeff> MulAssign<&'a Polynomial<Var, C>> for Series<Var, C>
 where
-    Series<Var, C>: MulAssign<SeriesSlice<'a, Var, C>>,
+    Self: MulAssign<PolynomialSlice<'a, Var, C>>
 {
-    type Output = Series<Var, C>;
-
-    fn mul(self, other: &'a Series<Var, C>) -> Self::Output {
-        self * other.as_slice(..)
+    fn mul_assign(&mut self, rhs: &'a Polynomial<Var, C>) {
+        self.mul_assign(rhs.as_slice(..));
     }
 }
 
-impl<'a, Var, C: Coeff> Mul<SeriesSlice<'a, Var, C>> for Series<Var, C>
+impl<'a, Var, C: Coeff> MulAssign<PolynomialSlice<'a, Var, C>> for Series<Var, C>
 where
-    Series<Var, C>: MulAssign<SeriesSlice<'a, Var, C>>,
+    Self: MulAssign + MulAssign<&'a C>,
+    Polynomial<Var, C>: From<PolynomialSlice<'a, Var, C>>,
+    Var: Clone + Debug + PartialEq,
 {
-    type Output = Series<Var, C>;
-
-    fn mul(mut self, other: SeriesSlice<'a, Var, C>) -> Self::Output {
-        self *= other;
-        self
+    fn mul_assign(&mut self, rhs: PolynomialSlice<'a, Var, C>) {
+        match rhs {
+            PolynomialSlice::Const(c) => self.mul_assign(c),
+            PolynomialSlice::Poly{min_pow, coeffs: _, var } => {
+                let cutoff_pow = self.len() as isize + min_pow;
+                let p = Polynomial::from(rhs);
+                self.mul_assign(p.cutoff_at(var, cutoff_pow))
+            },
+        }
     }
 }
 
-impl<Var, C: Coeff> Mul<C> for Series<Var, C>
-where
-    for<'c> C: MulAssign<&'c C>,
-{
-    type Output = Series<Var, C>;
+macro_rules! impl_mul_via_mul_assign {
+    ($($t:ty), *) => {
+        $(
+            impl<'a, Var, C: Coeff> Mul<$t> for Series<Var, C>
+            where
+                Series<Var, C>: MulAssign<$t>,
+            {
+                type Output = Series<Var, C>;
 
-    fn mul(mut self, other: C) -> Self::Output {
-        self *= &other;
-        self
-    }
+                fn mul(mut self, other: $t) -> Self::Output {
+                    self.mul_assign(other);
+                    self
+                }
+            }
+        )*
+    };
 }
 
-impl<'a, Var, C: Coeff> Mul<&'a C> for Series<Var, C>
-where
-    for<'c> C: MulAssign<&'c C>,
-{
-    type Output = Series<Var, C>;
-
-    fn mul(mut self, other: &'a C) -> Self::Output {
-        self *= other;
-        self
-    }
-}
+impl_mul_via_mul_assign!(
+    Series<Var, C>, &'a Series<Var, C>, SeriesSlice<'a, Var, C>,
+    Polynomial<Var, C>, &'a Polynomial<Var, C>, PolynomialSlice<'a, Var, C>,
+    C, &'a C
+);
 
 impl<'a, Var, C: Coeff, T> Mul<T> for &'a Series<Var, C>
 where
