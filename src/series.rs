@@ -29,7 +29,7 @@ impl<Var, C: Coeff> Series<Var, C> {
     /// 3*x + O(x^2).
     /// ```rust
     /// # use series::Series;
-    /// let s = Series::new("x", -1, vec!(1,2,3));
+    /// let s = Series::new("x", -1, vec![1, 2, 3]);
     /// ```
     pub fn new(var: Var, min_pow: isize, coeffs: Vec<C>) -> Series<Var, C> {
         let series = AnonSeries::new(min_pow, coeffs);
@@ -63,7 +63,7 @@ impl<Var, C: Coeff> Series<Var, C> {
     ///
     /// ```rust
     /// # use series::Series;
-    /// let s = Series::new("x", -1, vec!(1,2,3));
+    /// let s = Series::new("x", -1, vec![1, 2, 3]);
     /// assert_eq!(s.var(), &"x");
     /// ```
     pub fn var(&self) -> &Var {
@@ -76,7 +76,7 @@ impl<Var, C: Coeff> Series<Var, C> {
     ///
     /// ```rust
     /// # use series::Series;
-    /// let s = Series::new("x", -1, vec!(1,2,3));
+    /// let s = Series::new("x", -1, vec![1, 2, 3]);
     /// assert_eq!(s.min_pow(), -1);
     /// ```
     pub fn min_pow(&self) -> isize {
@@ -90,7 +90,7 @@ impl<Var, C: Coeff> Series<Var, C> {
     ///
     /// ```rust
     /// # use series::Series;
-    /// let s = Series::new("x", -1, vec!(1,2,3));
+    /// let s = Series::new("x", -1, vec![1, 2, 3]);
     /// assert_eq!(s.cutoff_pow(), 2);
     /// ```
     pub fn cutoff_pow(&self) -> isize {
@@ -103,7 +103,7 @@ impl<Var, C: Coeff> Series<Var, C> {
     ///
     /// ```rust
     /// # use series::Series;
-    /// let s = Series::with_cutoff("x", -1..5, vec!(1,2,3));
+    /// let s = Series::with_cutoff("x", -1..5, vec![1, 2, 3]);
     /// assert_eq!(s.len(), 6);
     /// // This holds true for any series
     /// assert_eq!(s.len(), (s.cutoff_pow() - s.min_pow()) as usize);
@@ -118,7 +118,7 @@ impl<Var, C: Coeff> Series<Var, C> {
     ///
     /// ```rust
     /// # use series::Series;
-    /// let s = Series::new("x", -1, vec!(1,2,3));
+    /// let s = Series::new("x", -1, vec![1, 2, 3]);
     /// let mut iter = s.iter();
     /// assert_eq!(iter.next(), Some((-1, &1)));
     /// assert_eq!(iter.next(), Some((0, &2)));
@@ -139,7 +139,7 @@ impl<Var, C: Coeff> Series<Var, C> {
     ///
     /// ```rust
     /// # use series::Series;
-    /// let s = Series::new("x", -1, vec!(1,2,3));
+    /// let s = Series::new("x", -1, vec![1, 2, 3]);
     /// assert_eq!(s.try_coeff(-5), None);
     /// assert_eq!(s.try_coeff(-2), None);
     /// assert_eq!(s.try_coeff(-1), Some(&1));
@@ -194,7 +194,7 @@ impl<Var, C: Coeff> Series<Var, C> {
     /// Replace each coefficient by its square
     /// ```rust
     /// # use series::Series;
-    /// let mut s = Series::new("x", -1, vec!(1,2,3,4));
+    /// let mut s = Series::new("x", -1, vec![1, 2, 3, 4]);
     /// s.for_each(|_, c| *c *= *c);
     /// assert_eq!(s.coeff(-1), Some(&1));
     /// assert_eq!(s.coeff(0), Some(&4));
@@ -219,7 +219,7 @@ impl<Var, C: Coeff> Series<Var, C> {
     /// Replace each coefficient by its square
     /// ```rust
     /// # use series::Series;
-    /// let s = Series::new("x", -1, vec!(1,2,3,4));
+    /// let s = Series::new("x", -1, vec![1, 2, 3, 4]);
     /// let s = s.map(|_, c| c * c);
     /// assert_eq!(s.coeff(-1), Some(&1));
     /// assert_eq!(s.coeff(0), Some(&4));
@@ -247,7 +247,7 @@ impl<Var, C: 'static + Coeff + Send + Sync> Series<Var, C> {
     ///
     /// ```rust
     /// # use series::Series;
-    /// let s = Series::new("x", -1, vec!(1,2,3));
+    /// let s = Series::new("x", -1, vec![1, 2, 3]);
     /// assert_eq!(s.coeff(-5), Some(&0));
     /// assert_eq!(s.coeff(-2), Some(&0));
     /// assert_eq!(s.coeff(-1), Some(&1));
@@ -276,7 +276,7 @@ impl<'a, Var, C: Coeff> AsSlice<Range<isize>> for &'a Series<Var, C> {
     /// ```rust
     /// # use series::Series;
     /// use series::AsSlice;
-    /// let s = Series::new("x", -1, vec!(1,2,3,4));
+    /// let s = Series::new("x", -1, vec![1, 2, 3, 4]);
     /// let t = s.as_slice(0..2);
     /// assert_eq!(t.min_pow(), 0);
     /// assert_eq!(t.cutoff_pow(), 2);
@@ -306,7 +306,7 @@ impl<'a, Var, C: Coeff> AsSlice<RangeInclusive<isize>>
     /// ```rust
     /// # use series::Series;
     /// use series::AsSlice;
-    /// let s = Series::new("x", -1, vec!(1,2,3,4));
+    /// let s = Series::new("x", -1, vec![1, 2, 3, 4]);
     /// let t = s.as_slice(0..=1);
     /// assert_eq!(t.min_pow(), 0);
     /// assert_eq!(t.cutoff_pow(), 2);
@@ -335,7 +335,7 @@ impl<'a, Var, C: Coeff> AsSlice<RangeToInclusive<isize>>
     /// ```rust
     /// # use series::Series;
     /// use series::AsSlice;
-    /// let s = Series::new("x", -1, vec!(1,2,3,4));
+    /// let s = Series::new("x", -1, vec![1, 2, 3, 4]);
     /// let t = s.as_slice(..=1);
     /// assert_eq!(t.min_pow(), s.min_pow());
     /// assert_eq!(t.cutoff_pow(), 2);
@@ -364,7 +364,7 @@ impl<'a, Var, C: Coeff> AsSlice<RangeFrom<isize>>
     /// ```rust
     /// # use series::Series;
     /// use series::AsSlice;
-    /// let s = Series::new("x", -1, vec!(1,2,3,4));
+    /// let s = Series::new("x", -1, vec![1, 2, 3, 4]);
     /// let t = s.as_slice(0..);
     /// assert_eq!(t.min_pow(), 0);
     /// assert_eq!(t.cutoff_pow(), s.cutoff_pow());
@@ -394,7 +394,7 @@ impl<'a, Var, C: Coeff> AsSlice<RangeTo<isize>>
     /// ```rust
     /// # use series::Series;
     /// use series::AsSlice;
-    /// let s = Series::new("x", -1, vec!(1,2,3,4));
+    /// let s = Series::new("x", -1, vec![1, 2, 3, 4]);
     /// let t = s.as_slice(..2);
     /// assert_eq!(t.min_pow(), s.min_pow());
     /// assert_eq!(t.cutoff_pow(), 2);
@@ -417,7 +417,7 @@ impl<'a, Var, C: Coeff> AsSlice<RangeFull> for &'a Series<Var, C> {
     /// ```rust
     /// # use series::Series;
     /// use series::AsSlice;
-    /// let s = Series::new("x", -1, vec!(1,2,3,4));
+    /// let s = Series::new("x", -1, vec![1, 2, 3, 4]);
     /// let t = s.as_slice(..);
     /// assert_eq!(t.min_pow(), s.min_pow());
     /// assert_eq!(t.cutoff_pow(), s.cutoff_pow());
@@ -447,7 +447,7 @@ impl<Var, C: Coeff> Index<isize> for Series<Var, C> {
     /// ```rust
     /// # use series::Series;
     /// use series::AsSlice;
-    /// let s = Series::new("x", -1, vec!(1,2,3));
+    /// let s = Series::new("x", -1, vec![1, 2, 3]);
     /// assert_eq!(s[-1], 1);
     /// assert_eq!(s[0], 2);
     /// assert_eq!(s[1], 3);
@@ -469,7 +469,7 @@ impl<Var, C: Coeff> std::iter::IntoIterator for Series<Var, C> {
     ///
     /// ```rust
     /// # use series::Series;
-    /// let s = Series::new("x", -1, vec!(1,2,3));
+    /// let s = Series::new("x", -1, vec![1, 2, 3]);
     /// let mut iter = s.into_iter();
     /// assert_eq!(iter.next(), Some((-1, 1)));
     /// assert_eq!(iter.next(), Some((0, 2)));
@@ -496,9 +496,9 @@ where
     /// ```rust
     /// # use series::Series;
     /// use series::MulInverse;
-    /// let s = Series::new("x", -1, vec!(1.,2.,3.));
+    /// let s = Series::new("x", -1, vec![1., 2., 3.]);
     /// let s_inv = (&s).mul_inverse();
-    /// let one = Series::new("x", 0, vec!(1.,0.,0.));
+    /// let one = Series::new("x", 0, vec![1., 0., 0.]);
     /// assert_eq!(s * s_inv, one);
     /// ```
     fn mul_inverse(self) -> Self::Output {
@@ -519,9 +519,9 @@ where
     /// ```rust
     /// # use series::Series;
     /// use series::MulInverse;
-    /// let s = Series::new("x", -1, vec!(1.,2.,3.));
+    /// let s = Series::new("x", -1, vec![1., 2., 3.]);
     /// let s_inv = s.clone().mul_inverse();
-    /// let one = Series::new("x", 0, vec!(1.,0.,0.));
+    /// let one = Series::new("x", 0, vec![1., 0., 0.]);
     /// assert_eq!(s * s_inv, one);
     /// ```
     fn mul_inverse(self) -> Self::Output {
@@ -538,8 +538,8 @@ impl<Var, C: Coeff + Neg<Output = C>> Neg for Series<Var, C> {
     ///
     /// ```rust
     /// # use series::Series;
-    /// let s = Series::new("x", -3, vec!(1.,0.,-3.));
-    /// let minus_s = Series::new("x", -3, vec!(-1.,0.,3.));
+    /// let s = Series::new("x", -3, vec![1., 0., -3.]);
+    /// let minus_s = Series::new("x", -3, vec![-1., 0., 3.]);
     /// assert_eq!(-s, minus_s);
     /// ```
     fn neg(self) -> Self::Output {
@@ -561,8 +561,8 @@ where
     ///
     /// ```rust
     /// # use series::Series;
-    /// let s = Series::new("x", -3, vec!(1.,0.,-3.));
-    /// let minus_s = Series::new("x", -3, vec!(-1.,0.,3.));
+    /// let s = Series::new("x", -3, vec![1., 0., -3.]);
+    /// let minus_s = Series::new("x", -3, vec![-1., 0., 3.]);
     /// assert_eq!(-&s, minus_s);
     /// ```
     fn neg(self) -> Self::Output {
@@ -581,9 +581,9 @@ where
     ///
     /// ```rust
     /// # use series::Series;
-    /// let mut s = Series::new("x", -3, vec!(1.,0.,-3.));
-    /// let t = Series::new("x", -1, vec!(3., 4., 5.));
-    /// let res = Series::new("x", -3, vec!(1.,0.,0.));
+    /// let mut s = Series::new("x", -3, vec![1., 0., -3.]);
+    /// let t = Series::new("x", -1, vec![3., 4., 5.]);
+    /// let res = Series::new("x", -3, vec![1., 0., 0.]);
     /// s += &t;
     /// assert_eq!(res, s);
     /// ```
@@ -618,9 +618,9 @@ where
     ///
     /// ```rust
     /// # use series::Series;
-    /// let mut s = Series::new("x", -3, vec!(1.,0.,-3.));
-    /// let t = Series::new("x", -1, vec!(3., 4., 5.));
-    /// let res = Series::new("x", -3, vec!(1.,0.,0.));
+    /// let mut s = Series::new("x", -3, vec![1., 0., -3.]);
+    /// let t = Series::new("x", -1, vec![3., 4., 5.]);
+    /// let res = Series::new("x", -3, vec![1., 0., 0.]);
     /// s += t;
     /// assert_eq!(res, s);
     /// ```
@@ -669,9 +669,9 @@ where
     /// # Example
     ///
     /// ```rust
-    /// # use series::Series;
-    /// let mut s = Series::new("x", -3, vec!(1.,0.,-3.));
-    /// let res = Series::new("x", 0, vec!());
+    /// # use series::{O, Series};
+    /// let mut s = Series::new("x", -3, vec![1., 0., -3.]);
+    /// let res = O!("x"^0);
     /// s -= &s.clone();
     /// assert_eq!(res, s);
     /// ```
@@ -703,9 +703,9 @@ where
     /// # Example
     ///
     /// ```rust
-    /// # use series::Series;
-    /// let mut s = Series::new("x", -3, vec!(1.,0.,-3.));
-    /// let res = Series::new("x", 0, vec!());
+    /// # use series::{O, Series};
+    /// let mut s = Series::new("x", -3, vec![1., 0., -3.]);
+    /// let res = O!("x"^0);
     /// s -= s.clone();
     /// assert_eq!(res, s);
     /// ```
@@ -756,9 +756,9 @@ where
     ///
     /// ```rust
     /// # use series::Series;
-    /// let mut s = Series::new("x", -3, vec!(1.,0.,-3.));
+    /// let mut s = Series::new("x", -3, vec![1., 0., -3.]);
     /// s *= &s.clone();
-    /// let res = Series::new("x", -6, vec!(1.,0.,-6.));
+    /// let res = Series::new("x", -6, vec![1., 0., -6.]);
     /// assert_eq!(res, s);
     /// ```
     ///
@@ -792,9 +792,9 @@ where
     ///
     /// ```rust
     /// # use series::Series;
-    /// let mut s = Series::new("x", -3, vec!(1.,0.,-3.));
+    /// let mut s = Series::new("x", -3, vec![1., 0., -3.]);
     /// s *= &s.clone();
-    /// let res = Series::new("x", -6, vec!(1.,0.,-6.));
+    /// let res = Series::new("x", -6, vec![1., 0., -6.]);
     /// assert_eq!(res, s);
     /// ```
     ///
@@ -896,9 +896,9 @@ where
     ///
     /// ```rust
     /// # use series::Series;
-    /// let mut s = Series::new("x", -3, vec!(1.,0.,-3.));
+    /// let mut s = Series::new("x", -3, vec![1., 0., -3.]);
     /// s /= &s.clone();
-    /// let res = Series::new("x", 0, vec!(1.,0.,0.));
+    /// let res = Series::new("x", 0, vec![1., 0., 0.]);
     /// assert_eq!(res, s);
     /// ```
     ///
@@ -921,9 +921,9 @@ where
     ///
     /// ```rust
     /// # use series::Series;
-    /// let mut s = Series::new("x", -3, vec!(1.,0.,-3.));
+    /// let mut s = Series::new("x", -3, vec![1., 0., -3.]);
     /// s /= s.clone();
-    /// let res = Series::new("x", 0, vec!(1.,0.,0.));
+    /// let res = Series::new("x", 0, vec![1., 0., 0.]);
     /// assert_eq!(res, s);
     /// ```
     ///
