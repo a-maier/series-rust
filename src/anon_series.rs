@@ -1205,7 +1205,17 @@ impl<'a, C: Coeff> MulAssign<&'a C> for AnonSeries<C>
 where
     C: MulAssign<&'a C>,
 {
+    /// Multiply by a constant
+    ///
+    /// # Panics
+    ///
+    /// Panics if the constant is zero, since the result is exactly
+    /// zero and not representable as a Laurent series anymore. Use
+    /// [Laurent] instead if this can happen.
     fn mul_assign(&mut self, rhs: &'a C) {
+        if rhs.is_zero() {
+            panic!("Cannot multiply series by 0")
+        }
         for coeff in &mut self.coeffs {
             *coeff *= rhs
         }
@@ -1216,6 +1226,13 @@ impl<C: Coeff> MulAssign<C> for AnonSeries<C>
 where
     for<'a> AnonSeries<C>: MulAssign<&'a C>,
 {
+    /// Multiply by a constant
+    ///
+    /// # Panics
+    ///
+    /// Panics if the constant is zero, since the result is exactly
+    /// zero and not representable as a Laurent series anymore. Use
+    /// [Laurent] instead if this can happen.
     fn mul_assign(&mut self, rhs: C) {
         *self *= &rhs
     }

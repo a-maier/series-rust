@@ -810,6 +810,13 @@ impl<Var, C: Coeff> MulAssign<Polynomial<Var, C>> for Series<Var, C>
 where
     Self: MulAssign + MulAssign<C>,
 {
+    /// Multiply by a polynomial
+    ///
+    /// # Panics
+    ///
+    /// Panics if the polynomial is zero, since the result is exactly
+    /// zero and not representable as a Laurent series anymore. Use
+    /// [Laurent] instead if this can happen.
     fn mul_assign(&mut self, rhs: Polynomial<Var, C>) {
         match rhs {
             Polynomial::Const(c) => self.mul_assign(c),
@@ -1160,6 +1167,13 @@ impl<'a, Var, C: Coeff> MulAssign<&'a C> for Series<Var, C>
 where
     C: MulAssign<&'a C>,
 {
+    /// Multiply by a constant
+    ///
+    /// # Panics
+    ///
+    /// Panics if the constant is zero, since the result is exactly
+    /// zero and not representable as a Laurent series anymore. Use
+    /// [Laurent] instead if this can happen.
     fn mul_assign(&mut self, rhs: &'a C) {
         self.series.mul_assign(rhs)
     }
@@ -1169,6 +1183,13 @@ impl<Var, C: Coeff> MulAssign<C> for Series<Var, C>
 where
     for<'a> AnonSeries<C>: MulAssign<C>,
 {
+    /// Multiply by a constant
+    ///
+    /// # Panics
+    ///
+    /// Panics if the constant is zero, since the result is exactly
+    /// zero and not representable as a Laurent series anymore. Use
+    /// [Laurent] instead if this can happen.
     fn mul_assign(&mut self, rhs: C) {
         self.series.mul_assign(rhs)
     }
