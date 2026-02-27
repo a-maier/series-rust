@@ -954,6 +954,72 @@ where
     }
 }
 
+impl<Var, C: Coeff> DivAssign<Polynomial<Var, C>> for Series<Var, C>
+where
+    Self: DivAssign + DivAssign<C>,
+{
+    fn div_assign(&mut self, rhs: Polynomial<Var, C>) {
+        match rhs {
+            Polynomial::Const(c) => self.div_assign(c),
+            Polynomial::Poly(p) => {
+                let cutoff_pow = self.len() as isize + p.min_pow();
+                self.div_assign(p.cutoff_at(cutoff_pow))
+            },
+        }
+    }
+}
+
+impl<'a, Var, C: Coeff> DivAssign<&'a Polynomial<Var, C>> for Series<Var, C>
+where
+    Self: DivAssign<PolynomialSlice<'a, Var, C>>
+{
+    fn div_assign(&mut self, rhs: &'a Polynomial<Var, C>) {
+        self.div_assign(rhs.as_slice(..));
+    }
+}
+
+impl<'a, Var, C: Coeff> DivAssign<PolynomialSlice<'a, Var, C>> for Series<Var, C>
+where
+    Self: DivAssign + DivAssign<&'a C>,
+    Polynomial<Var, C>: From<PolynomialSlice<'a, Var, C>>,
+    Var: Clone + Debug + PartialEq,
+{
+    fn div_assign(&mut self, rhs: PolynomialSlice<'a, Var, C>) {
+        match rhs {
+            PolynomialSlice::Const(c) => self.div_assign(c),
+            PolynomialSlice::Poly{min_pow, coeffs: _, var } => {
+                let cutoff_pow = self.len() as isize + min_pow;
+                let p = Polynomial::from(rhs);
+                self.div_assign(p.cutoff_at(var, cutoff_pow))
+            },
+        }
+    }
+}
+
+macro_rules! impl_div_via_div_assign {
+    ($($t:ty), *) => {
+        $(
+            impl<'a, Var, C: Coeff> Div<$t> for Series<Var, C>
+            where
+                Series<Var, C>: DivAssign<$t>,
+            {
+                type Output = Series<Var, C>;
+
+                fn div(mut self, other: $t) -> Self::Output {
+                    self.div_assign(other);
+                    self
+                }
+            }
+        )*
+    };
+}
+
+impl_div_via_div_assign!(
+    Series<Var, C>, &'a Series<Var, C>, SeriesSlice<'a, Var, C>,
+    Polynomial<Var, C>, &'a Polynomial<Var, C>, PolynomialSlice<'a, Var, C>,
+    C, &'a C
+);
+
 impl<Var, C: Coeff, T> Div<T> for &Series<Var, C>
 where
     Series<Var, C>: Clone + DivAssign<T>,
@@ -964,18 +1030,6 @@ where
         let mut res = self.clone();
         res /= other;
         res
-    }
-}
-
-impl<Var, C: Coeff, T> Div<T> for Series<Var, C>
-where
-    Series<Var, C>: DivAssign<T>,
-{
-    type Output = Series<Var, C>;
-
-    fn div(mut self, other: T) -> Self::Output {
-        self /= other;
-        self
     }
 }
 
