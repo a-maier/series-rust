@@ -1851,16 +1851,13 @@ impl<'a, Var, C: 'static + Coeff + Send + Sync> PolynomialSlice<'a, Var, C> {
     }
 }
 
-// TODO: restore implementation from tag
-//       `generic_display_broken_by_trait_resolver`
-//       as soon as the trait resolver is ready
-impl<C: Coeff + Clone, Var: Display> Display for PolynomialSlice<'_, Var, C>
+impl<'a, C: Coeff, Var: Display> Display for PolynomialSlice<'a, Var, C>
 where
-    C: SplitSign + Display + NeedsCoeffBracket,
-    <C as SplitSign>::Signless: Display + One + PartialEq,
+    C: SplitSign<'a> + Display + NeedsCoeffBracket,
+    <C as SplitSign<'a>>::Signless: Display + One + PartialEq,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
+        match *self {
             PolynomialSlice::Const(c) => return write!(f, "{c}"),
             PolynomialSlice::Poly { min_pow, coeffs, var } => {
                 if coeffs.is_empty() {
@@ -1868,10 +1865,10 @@ where
                 }
                 let terms = coeffs.iter()
                     .enumerate()
-                    .filter_map(|(n, c)| if c.is_zero() {
+                    .filter_map(|(n, c): (usize, &'a C)| if c.is_zero() {
                         None
                     } else {
-                        Some((*min_pow + n as isize, c.clone()))
+                        Some((min_pow + n as isize, c))
                     });
                 fmt_terms(var, terms, f)?;
                 Ok(())
@@ -1880,14 +1877,14 @@ where
     }
 }
 
-pub(crate) fn fmt_terms<Var: Display, C>(
+pub(crate) fn fmt_terms<'a, Var: Display, C>(
     var: Var,
-    terms: impl Iterator<Item = (isize, C)>,
+    terms: impl Iterator<Item = (isize, &'a C)>,
     f: &mut std::fmt::Formatter<'_>,
 ) -> Result<bool, std::fmt::Error>
 where
-    C: Display + NeedsCoeffBracket + SplitSign + One + PartialEq,
-    <C as SplitSign>::Signless: Display + One + PartialEq,
+    C: Display + NeedsCoeffBracket + SplitSign<'a> + One + PartialEq + 'a,
+    <C as SplitSign<'a>>::Signless: Display + One + PartialEq,
 {
     let mut first = true;
     for (pow, c) in terms {
@@ -1911,7 +1908,7 @@ where
                     },
                     Sign::Minus => write!(f, " - ")?,
                 }
-                fmt_term(c, &var, pow, f)?;
+                fmt_term(&c, &var, pow, f)?;
             }
         }
         first = false;
@@ -1920,7 +1917,7 @@ where
 }
 
 fn fmt_term<Var: Display, C: Display + One + PartialEq>(
-    c: C,
+    c: &C,
     var: Var,
     pow: isize,
     f: &mut std::fmt::Formatter<'_>

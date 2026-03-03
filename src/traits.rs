@@ -36,21 +36,20 @@ pub(crate) trait ExpCoeff {
     fn exp_coeff(&self) -> Self::Output;
 }
 
-/// Split an object into the leading sign and a remainder
+/// Split an object into the leading sign and a signless remainder
 ///
 /// This trait is needed for the [Display] implementations of [Series]
-/// and [Polynomials](Polynomial). Note that it should usually be
-/// implemented on _reference types_. `split_sign` does not take a
-/// reference to facilitate an efficient implementation on complex
-/// types: it makes it easier to define `Signless` as a lightweight reference type:
+/// and [Polynomials](Polynomial). The lifetime of the reference is
+/// part of the trait signature to support a lightweight reference
+/// type for `Signless`.
 /// ```
 /// # use series::{SplitSign, Sign};
 /// # struct SomeComplexType();
 /// # struct LightweightReference<'a>(std::marker::PhantomData<&'a ()>);
-/// impl<'a> SplitSign for &'a SomeComplexType {
+/// impl<'a> SplitSign<'a> for SomeComplexType {
 ///     type Signless = LightweightReference<'a>; // can reuse lifetime 'a here
 ///
-///     fn split_sign(self) -> (Sign, Self::Signless) {
+///     fn split_sign(&'a self) -> (Sign, Self::Signless) {
 ///         todo!()
 ///     }
 /// }
@@ -68,28 +67,36 @@ pub(crate) trait ExpCoeff {
 ///     im: i32,
 /// }
 ///
-/// impl SplitSign for &Complex {
+/// impl<'a> SplitSign<'a> for Complex {
 ///     type Signless = Complex;
 ///
-///     fn split_sign(self) -> (Sign, Self::Signless) {
-///         let Complex{re, im} = self;
+///     fn split_sign(&'a self) -> (Sign, Self::Signless) {
+///         let Complex{re, im} = *self;
 ///         // split off the sign of the real part, unless it's zero
 ///         match re.cmp(&0) {
 ///             Ordering::Greater => (Sign::Plus, *self),
-///             Ordering::Less => (Sign::Minus, Complex{re: -re, im: *im}),
-///             Ordering::Equal => if *im >= 0 {
+///             Ordering::Less => (Sign::Minus, Complex{re: -re, im}),
+///             Ordering::Equal => if im >= 0 {
 ///                 (Sign::Plus, *self)
 ///             } else {
-///                 (Sign::Minus, Complex{re: *re, im: -im})
+///                 (Sign::Minus, Complex{re, im: -im})
 ///             }
 ///         }
 ///     }
 /// }
 /// ```
-pub trait SplitSign {
+pub trait SplitSign<'a> {
     type Signless;
 
-    fn split_sign(self) -> (Sign, Self::Signless);
+    fn split_sign(&'a self) -> (Sign, Self::Signless);
+}
+
+impl<'a, T: SplitSign<'a>> SplitSign<'a> for &'a T {
+    type Signless = <T as SplitSign<'a>>::Signless;
+
+    fn split_sign(&'a self) -> (Sign, Self::Signless) {
+        (*self).split_sign()
+    }
 }
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
@@ -110,12 +117,12 @@ impl Display for Sign {
 macro_rules! impl_split_sign_signed_int {
     ($($t:ty), *) => {
         $(
-            impl SplitSign for $t {
+            impl<'a> SplitSign<'a> for $t {
                 type Signless = $t;
 
-                fn split_sign(self) -> (Sign, Self::Signless) {
-                    if self > 0 {
-                        (Sign::Plus, self)
+                fn split_sign(&'a self) -> (Sign, Self::Signless) {
+                    if *self > 0 {
+                        (Sign::Plus, *self)
                     } else {
                         (Sign::Minus, -self)
                     }
@@ -130,11 +137,11 @@ impl_split_sign_signed_int!(i8, i16, i32, i64, i128, isize);
 macro_rules! impl_split_sign_unsigned_int {
     ($($t:ty), *) => {
         $(
-            impl SplitSign for $t {
+            impl<'a> SplitSign<'a> for $t {
                 type Signless = $t;
 
-                fn split_sign(self) -> (Sign, Self::Signless) {
-                    (Sign::Plus, self)
+                fn split_sign(&'a self) -> (Sign, Self::Signless) {
+                    (Sign::Plus, *self)
                 }
             }
         )*
@@ -146,15 +153,15 @@ impl_split_sign_unsigned_int!(u8, u16, u32, u64, u128, usize);
 macro_rules! impl_split_sign_float {
     ($($t:ty), *) => {
         $(
-            impl SplitSign for $t {
+            impl<'a> SplitSign<'a> for $t {
                 type Signless = $t;
 
-                fn split_sign(self) -> (Sign, Self::Signless) {
+                fn split_sign(&'a self) -> (Sign, Self::Signless) {
                     // use `<` for comparison so that NaN ends up with a Plus sign
-                    if self < 0.0 {
+                    if *self < 0.0 {
                         (Sign::Minus, -self)
                     } else {
-                        (Sign::Plus, self)
+                        (Sign::Plus, *self)
                     }
                 }
             }
