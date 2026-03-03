@@ -1,14 +1,14 @@
 use crate::ops::{Exp, Ln, Pow};
-use crate::traits::{AsSlice, ExpCoeff, MulInverse};
+use crate::poly::fmt_terms;
+use crate::traits::{AsSlice, ExpCoeff, MulInverse, NeedsCoeffBracket, SplitSign};
 use crate::{
     Coeff, Iter, PolynomialSlice, Series, anon_series_slice::AnonSeriesSlice,
-    util::NumDisplay,
 };
 
-use num_traits::{One, Zero};
+use num_traits::One;
 use std::fmt::Display;
 use std::ops::{
-    Add, AddAssign, Div, DivAssign, Index, Mul, MulAssign, Neg, Sub, SubAssign,
+    Add, AddAssign, Div, DivAssign, Index, Mul, MulAssign, Neg, Sub, SubAssign
 };
 
 // TODO: lots of code duplication with SeriesSlice
@@ -427,50 +427,22 @@ where
     }
 }
 
-macro_rules! impl_num_display {
-    ($($t:ty), *) => {
-        $(
-            impl<'a, Var: Display> Display for SeriesSlice<'a, Var, $t> {
-                fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-                    let terms = self.iter().filter(|(_, c)| !c.is_zero());
-                    let mut first = true;
-                    for (pow, c) in terms {
-                        let mut c = *c;
-                        if !first {
-                            if c.starts_with_minus() {
-                                c = c.abs();
-                                write!(f, " - ")?;
-                            } else {
-                                write!(f, " + ")?;
-                            }
-                        }
-                        first = false;
-                        if pow == 0 {
-                            write!(f, "{c}")?;
-                        } else {
-                            if !c.is_one() {
-                                write!(f, "{c}*")?;
-                            }
-                            write!(f, "{}", self.var())?;
-                            if pow != 1 {
-                                write!(f, "^{pow}")?;
-                            }
-                        }
-                    }
-                    if !first {
-                        write!(f, " + ")?;
-                    }
-                    if self.cutoff_pow() == 1 {
-                        write!(f, "O({})", self.var())
-                    } else {
-                        write!(f, "O({}^{})", self.var(), self.cutoff_pow())
-                    }
-                }
-            }
-        )*
-    };
+impl<C: Coeff, Var: Display> Display for SeriesSlice<'_, Var, C>
+where
+    for<'c> &'c C: Display + NeedsCoeffBracket + SplitSign,
+    for<'c> <&'c C as SplitSign>::Signless: Display + One + PartialEq,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let var = self.var();
+        let terms = self.iter().filter(|(_, c)| !c.is_zero());
+        let is_coeffs_empty = !fmt_terms(var, terms, f)?;
+        if !is_coeffs_empty {
+            write!(f, " + ")?;
+        }
+        if self.cutoff_pow() == 1 {
+            write!(f, "O({var})")
+        } else {
+            write!(f, "O({var}^{})", self.cutoff_pow())
+        }
+    }
 }
-
-impl_num_display!(
-    i8, i16, i32, i64, i128, isize, f32, f64, u8, u16, u32, u64, u128, usize
-);

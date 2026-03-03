@@ -33,8 +33,7 @@ series = "0.13"
 # Examples
 
 ```rust
-use series::{MulInverse, Series, Polynomial};
-use series::ops::{Ln,Exp,Pow};
+use series::{Laurent, MulInverse, Series, Polynomial};
 
 // Create a new series in x, starting at order x^2 with coefficients 1, 2, 3,
 // i.e. s = 1*x^2 + 2*x^3 + 3*x^4 + O(x^5).
@@ -70,10 +69,28 @@ println!("s/t = {}", &s / t);
 // We can also multiply or divide each coefficient by a number
 println!("s*3 = {}", &s * 3.);
 println!("s/3 = {}", &s / 3.);
+// Polynomials can be multiplied by 0
+assert_eq!(&p * 0, Polynomial::zero());
+// But for series, multiplication by 0 is not defined,
+// as the result is not a series anymore
+assert!(std::panic::catch_unwind(|| &s * 0.).is_err());
+// We can instead use the Laurent sum type, which can be either
+// a series or a polynomial
+let l = Laurent::from(s);
+assert_eq!(&l * 0., Laurent::zero());
 
-// More advanced operations on Laurent series in general require the
-// variable type to be convertible to the coefficient type by
-// implementing the From trait.
+```
+
+# Exponentials, logarithms, and powers
+
+More advanced operations on Laurent series in general require the
+variable type to be convertible to the coefficient type by
+implementing the [From] trait:
+
+```
+use series::Series;
+use series::ops::{Ln, Exp, Pow};
+
 // In the examples shown here, this conversion is actually never used,
 // so we can get away with a dummy implementation.
 #[derive(Debug, Clone, PartialEq)]
@@ -98,4 +115,27 @@ println!("ln(s) = {}", s.clone().ln());
 let t = s.clone();
 println!("s^s = {}", (&s).pow(&t));
 println!("s^4 = {}", s.powi(4));
+```
+
+# Multivariate series
+
+Multivariate polynomials can be created via nesting:
+
+```
+use series::Polynomial;
+
+let p = Polynomial::new("x0", 0, vec![1, 2, 3]);
+let p = Polynomial::new("x1", 0, vec![p.clone(), &p + 3,  &p * 2]);
+```
+
+Laurent series are not supported as coefficients, since they can never
+be identically zero. A way around this limitation is to use the
+[Laurent] struct:
+
+```
+use series::{Laurent, Polynomial, Series};
+
+let s = Series::new("x0", 0, vec![1, 2, 3]);
+let s = Laurent::from(s);
+let p = Polynomial::new("x1", 0, vec![s.clone(), &s + 3,  &s * 2]);
 ```

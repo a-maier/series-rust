@@ -1,5 +1,5 @@
-use crate::traits::AsSlice;
-use crate::util::{NumDisplay, trim_slice_zero, trim_zero};
+use crate::traits::{AsSlice, NeedsCoeffBracket, SplitSign};
+use crate::util::{trim_slice_zero, trim_zero};
 use crate::zero_ref::zero_ref;
 use crate::{Coeff, IntoIter, Series, SeriesParts, SeriesSlice};
 
@@ -1851,59 +1851,73 @@ impl<'a, Var, C: 'static + Coeff + Send + Sync> PolynomialSlice<'a, Var, C> {
     }
 }
 
-macro_rules! impl_num_display {
-    ($($t:ty), *) => {
-        $(
-            impl<'a, Var: Display> Display for PolynomialSlice<'a, Var, $t> {
-                fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-                    match self {
-                        PolynomialSlice::Const(c) => return write!(f, "{c}"),
-                        PolynomialSlice::Poly { min_pow, coeffs, var } => {
-                            if coeffs.is_empty() {
-                                return write!(f, "0");
-                            }
-                            let terms = coeffs.iter()
-                                .enumerate()
-                                .filter_map(|(n, c)| if c.is_zero() {
-                                    None
-                                } else {
-                                    Some((*min_pow + n as isize, *c))
-                                });
-                            let mut first = true;
-                            for (pow, mut c) in terms {
-                                if !first {
-                                    if c.starts_with_minus() {
-                                        c = c.abs();
-                                        write!(f, " - ")?;
-                                    } else {
-                                        write!(f, " + ")?;
-                                    }
-                                }
-                                first = false;
-                                if pow == 0 {
-                                    write!(f, "{c}")?;
-                                } else {
-                                    if !c.is_one() {
-                                        write!(f, "{c}*")?;
-                                    }
-                                    write!(f, "{var}")?;
-                                    if pow != 1 {
-                                        write!(f, "^{pow}")?;
-                                    }
-                                }
-                            }
-                            Ok(())
-                        },
-                    }
+impl<C: Coeff, Var: Display> Display for PolynomialSlice<'_, Var, C>
+where
+    for<'c> &'c C: SplitSign + Display + NeedsCoeffBracket,
+    for<'c> <&'c C as SplitSign>::Signless: Display + One + PartialEq,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            PolynomialSlice::Const(c) => return write!(f, "{c}"),
+            PolynomialSlice::Poly { min_pow, coeffs, var } => {
+                if coeffs.is_empty() {
+                    return write!(f, "0");
                 }
-            }
-        )*
-    };
+                let terms = coeffs.iter()
+                    .enumerate()
+                    .filter_map(|(n, c)| if c.is_zero() {
+                        None
+                    } else {
+                        Some((*min_pow + n as isize, c))
+                    });
+                fmt_terms(var, terms, f)?;
+                Ok(())
+            },
+        }
+    }
 }
 
-impl_num_display!(
-    i8, i16, i32, i64, i128, isize, f32, f64, u8, u16, u32, u64, u128, usize
-);
+pub(crate) fn fmt_terms<Var: Display, C>(
+    var: Var,
+    terms: impl Iterator<Item = (isize, C)>,
+    f: &mut std::fmt::Formatter<'_>,
+) -> Result<bool, std::fmt::Error>
+where
+    C: Display + NeedsCoeffBracket + SplitSign,
+    <C as SplitSign>::Signless: Display + One + PartialEq,
+{
+    let mut first = true;
+    for (pow, c) in terms {
+        if pow != 0 && c.needs_coeff_bracket() {
+            if !first {
+                write!(f, " + ")?;
+            }
+            write!(f, "({c})*{var}")?;
+            if pow != 1 {
+                write!(f, "^{pow}")?;
+            }
+        } else {
+            use crate::traits::Sign;
+            let (sign, c) = c.split_sign();
+            match sign {
+                Sign::Plus => if !first {
+                    write!(f, " + ")?;
+                },
+                Sign::Minus => write!(f, " - ")?,
+            }
+            if pow == 0 {
+                write!(f, "{c}")?;
+            } else {
+                if !c.is_one() {
+                    write!(f, "{c}*")?;
+                }
+                write!(f, "{var}")?;
+            }
+        }
+        first = false;
+    }
+    Ok(!first)
+}
 
 #[derive(Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
 pub struct Iter<'a, C> {

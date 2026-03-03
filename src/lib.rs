@@ -2,12 +2,14 @@
 #![doc = include_str!("../Readme.md")]
 pub mod anon_series;
 pub mod anon_series_slice;
+pub mod laurent;
 pub mod ops;
 pub mod poly;
 pub mod series;
 pub mod series_slice;
 mod zero_ref;
 
+pub use self::laurent::Laurent;
 pub use self::ops::{Exp, Ln, Pow};
 pub use self::poly::{Polynomial, PolynomialParts, PolynomialSlice};
 pub use self::series::{Series, SeriesParts};
