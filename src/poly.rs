@@ -1851,10 +1851,13 @@ impl<'a, Var, C: 'static + Coeff + Send + Sync> PolynomialSlice<'a, Var, C> {
     }
 }
 
-impl<C: Coeff, Var: Display> Display for PolynomialSlice<'_, Var, C>
+// TODO: restore implementation from tag
+//       `generic_display_broken_by_trait_resolver`
+//       as soon as the trait resolver is ready
+impl<C: Coeff + Clone, Var: Display> Display for PolynomialSlice<'_, Var, C>
 where
-    for<'c> &'c C: SplitSign + Display + NeedsCoeffBracket,
-    for<'c> <&'c C as SplitSign>::Signless: Display + One + PartialEq,
+    C: SplitSign + Display + NeedsCoeffBracket,
+    <C as SplitSign>::Signless: Display + One + PartialEq,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
@@ -1868,7 +1871,7 @@ where
                     .filter_map(|(n, c)| if c.is_zero() {
                         None
                     } else {
-                        Some((*min_pow + n as isize, c))
+                        Some((*min_pow + n as isize, c.clone()))
                     });
                 fmt_terms(var, terms, f)?;
                 Ok(())
@@ -1883,7 +1886,7 @@ pub(crate) fn fmt_terms<Var: Display, C>(
     f: &mut std::fmt::Formatter<'_>,
 ) -> Result<bool, std::fmt::Error>
 where
-    C: Display + NeedsCoeffBracket + SplitSign,
+    C: Display + NeedsCoeffBracket + SplitSign + One + PartialEq,
     <C as SplitSign>::Signless: Display + One + PartialEq,
 {
     let mut first = true;
@@ -1898,25 +1901,42 @@ where
             }
         } else {
             use crate::traits::Sign;
-            let (sign, c) = c.split_sign();
-            match sign {
-                Sign::Plus => if !first {
-                    write!(f, " + ")?;
-                },
-                Sign::Minus => write!(f, " - ")?,
-            }
-            if pow == 0 {
-                write!(f, "{c}")?;
+            if first {
+                fmt_term(c, &var, pow, f)?;
             } else {
-                if !c.is_one() {
-                    write!(f, "{c}*")?;
+                let (sign, c) = c.split_sign();
+                match sign {
+                    Sign::Plus => if !first {
+                        write!(f, " + ")?;
+                    },
+                    Sign::Minus => write!(f, " - ")?,
                 }
-                write!(f, "{var}")?;
+                fmt_term(c, &var, pow, f)?;
             }
         }
         first = false;
     }
     Ok(!first)
+}
+
+fn fmt_term<Var: Display, C: Display + One + PartialEq>(
+    c: C,
+    var: Var,
+    pow: isize,
+    f: &mut std::fmt::Formatter<'_>
+) -> std::fmt::Result {
+    if pow == 0 {
+        write!(f, "{c}")
+    } else {
+        if !c.is_one() {
+            write!(f, "{c}*")?;
+        }
+        write!(f, "{var}")?;
+        if pow != 1 {
+            write!(f, "^{pow}")?;
+        }
+        Ok(())
+    }
 }
 
 #[derive(Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]

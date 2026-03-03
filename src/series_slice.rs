@@ -427,14 +427,23 @@ where
     }
 }
 
-impl<C: Coeff, Var: Display> Display for SeriesSlice<'_, Var, C>
+// TODO: restore implementation from tag
+//       `generic_display_broken_by_trait_resolver`
+//       as soon as the trait resolver is ready
+impl<C: Coeff + Clone, Var: Display> Display for SeriesSlice<'_, Var, C>
 where
-    for<'c> &'c C: Display + NeedsCoeffBracket + SplitSign,
-    for<'c> <&'c C as SplitSign>::Signless: Display + One + PartialEq,
+    C: Display + NeedsCoeffBracket + SplitSign,
+    <C as SplitSign>::Signless: Display + One + PartialEq,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let var = self.var();
-        let terms = self.iter().filter(|(_, c)| !c.is_zero());
+        let terms = self.iter().filter_map(
+            |(pow, c)| if !c.is_zero() {
+                Some((pow, c.clone()))
+            } else {
+                None
+            }
+        );
         let is_coeffs_empty = !fmt_terms(var, terms, f)?;
         if !is_coeffs_empty {
             write!(f, " + ")?;

@@ -15,7 +15,7 @@ pub use self::poly::{Polynomial, PolynomialParts, PolynomialSlice};
 pub use self::series::{Series, SeriesParts};
 pub use self::series_slice::SeriesSlice;
 mod traits;
-pub use self::traits::{AsSlice, KaratsubaMul, MulInverse};
+pub use self::traits::{AsSlice, KaratsubaMul, MulInverse, Sign, SplitSign, NeedsCoeffBracket};
 mod util;
 
 use std::iter::Zip;

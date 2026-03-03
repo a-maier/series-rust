@@ -44,6 +44,7 @@ pub(crate) trait ExpCoeff {
 /// reference to facilitate an efficient implementation on complex
 /// types: it makes it easier to define `Signless` as a lightweight reference type:
 /// ```
+/// # use series::{SplitSign, Sign};
 /// # struct SomeComplexType();
 /// # struct LightweightReference<'a>(std::marker::PhantomData<&'a ()>);
 /// impl<'a> SplitSign for &'a SomeComplexType {
@@ -58,6 +59,7 @@ pub(crate) trait ExpCoeff {
 ///
 /// ```
 /// # use std::cmp::Ordering;
+/// # use series::{Sign, SplitSign};
 /// // Define a custom complex number type
 /// // with integer real and imaginary parts
 /// #[derive(Copy, Clone)]
@@ -108,12 +110,12 @@ impl Display for Sign {
 macro_rules! impl_split_sign_signed_int {
     ($($t:ty), *) => {
         $(
-            impl SplitSign for &$t {
+            impl SplitSign for $t {
                 type Signless = $t;
 
                 fn split_sign(self) -> (Sign, Self::Signless) {
-                    if *self > 0 {
-                        (Sign::Plus, *self)
+                    if self > 0 {
+                        (Sign::Plus, self)
                     } else {
                         (Sign::Minus, -self)
                     }
@@ -128,11 +130,11 @@ impl_split_sign_signed_int!(i8, i16, i32, i64, i128, isize);
 macro_rules! impl_split_sign_unsigned_int {
     ($($t:ty), *) => {
         $(
-            impl SplitSign for &$t {
+            impl SplitSign for $t {
                 type Signless = $t;
 
                 fn split_sign(self) -> (Sign, Self::Signless) {
-                    (Sign::Plus, *self)
+                    (Sign::Plus, self)
                 }
             }
         )*
@@ -144,15 +146,15 @@ impl_split_sign_unsigned_int!(u8, u16, u32, u64, u128, usize);
 macro_rules! impl_split_sign_float {
     ($($t:ty), *) => {
         $(
-            impl SplitSign for &$t {
+            impl SplitSign for $t {
                 type Signless = $t;
 
                 fn split_sign(self) -> (Sign, Self::Signless) {
                     // use `<` for comparison so that NaN ends up with a Plus sign
-                    if *self < 0.0 {
+                    if self < 0.0 {
                         (Sign::Minus, -self)
                     } else {
-                        (Sign::Plus, *self)
+                        (Sign::Plus, self)
                     }
                 }
             }
@@ -172,6 +174,7 @@ impl_split_sign_float!(f32, f64);
 /// # Example
 ///
 /// ```
+/// # use series::NeedsCoeffBracket;
 /// // Define a custom complex number type
 /// // with integer real and imaginary parts
 /// #[derive(Copy, Clone)]
@@ -180,13 +183,14 @@ impl_split_sign_float!(f32, f64);
 ///     im: i32,
 /// }
 ///
-/// impl NeedsCoeffBracket for &Complex {
+/// impl NeedsCoeffBracket for Complex {
 ///     fn needs_coeff_bracket(&self) -> bool {
+///         let Self{re, im} = self;
 ///         // assuming the usual way to display complex numbers as
 ///         // re + im*i and omitting any vanishing terms
 ///         // we need brackets in expressions like (re + im*i)*x,
 ///         // if the following condition is fulfilled:
-///         (re != 0) && (im != 0)
+///         (*re != 0) && (*im != 0)
 ///     }
 /// }
 /// ```
