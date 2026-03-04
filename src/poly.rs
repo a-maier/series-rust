@@ -1,7 +1,7 @@
 use crate::traits::{AsSlice, NeedsCoeffBracket, SplitSign};
 use crate::util::{trim_slice_zero, trim_zero};
 use crate::zero_ref::zero_ref;
-use crate::{Coeff, IntoIter, Series, SeriesParts, SeriesSlice};
+use crate::{Coeff, IntoIter, Series, SeriesParts, SeriesSlice, Sign};
 
 use core::slice;
 use std::fmt::Display;
@@ -1898,18 +1898,15 @@ where
             }
         } else {
             use crate::traits::Sign;
+            let (sign, c) = c.split_sign();
             if first {
-                fmt_term(c, &var, pow, f)?;
-            } else {
-                let (sign, c) = c.split_sign();
-                match sign {
-                    Sign::Plus => if !first {
-                        write!(f, " + ")?;
-                    },
-                    Sign::Minus => write!(f, " - ")?,
+                if sign == Sign::Minus {
+                    write!(f, "-")?;
                 }
-                fmt_term(&c, &var, pow, f)?;
+            } else {
+                write!(f, " {sign} ")?;
             }
+            fmt_term(&c, &var, pow, f)?;
         }
         first = false;
     }

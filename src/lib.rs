@@ -587,6 +587,8 @@ mod tests {
         assert_eq!(format!("{s}"), "0");
         let s = Polynomial::new("x", -3, vec![1., 0., -3.]);
         assert_eq!(format!("{s}"), "x^-3 - 3*x^-1");
+        let s = Polynomial::new("x", -3, vec![-1., 0., 3.]);
+        assert_eq!(format!("{s}"), "-x^-3 + 3*x^-1");
         let s = Polynomial::new("x", -1, vec![1., 2., -3.]);
         assert_eq!(format!("{s}"), "x^-1 + 2 - 3*x");
     }
