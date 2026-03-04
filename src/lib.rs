@@ -609,6 +609,23 @@ mod tests {
     }
 
     #[test]
+    fn tst_nested_laurent() {
+        let p = Polynomial::new(
+            "x",
+            -3,
+            vec![
+                Laurent::from(Polynomial::from_const(-1.)),
+                Laurent::from(Polynomial::new("y", 0, vec![1., 2., -3.])),
+                Laurent::from(Polynomial::zero()),
+                Laurent::from(Polynomial::new("y", -1, vec![-1., 0., 3.])),
+                Laurent::from(O!("y"^3)),
+                Laurent::from(Series::with_cutoff("y", 0..2, vec![-1.])),
+            ]
+        );
+        assert_eq!(format!("{p}"), "-x^-3 + (1 + 2*y - 3*y^2)*x^-2 - y^-1 + 3*y + O(y^3)*x + (-1 + O(y^2))*x^2");
+    }
+
+    #[test]
     fn tst_poly_neg() {
         let s = Polynomial::new("x", -3, vec![1., 0., -3.]);
         let res = Polynomial::new("x", -3, vec![-1., 0., 3.]);

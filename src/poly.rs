@@ -98,7 +98,7 @@ where C: SplitSign<'a>
 }
 
 #[derive(PartialEq)]
-pub struct SignlessPoly<'a, Var, C>(&'a Polynomial<Var, C>);
+pub struct SignlessPoly<'a, Var, C>(pub(crate) &'a Polynomial<Var, C>);
 
 impl<'a, Var, C: Coeff> Mul for SignlessPoly<'a, Var, C> {
     type Output = Self;
@@ -1973,7 +1973,7 @@ where
     Ok(!first)
 }
 
-fn fmt_term<Var: Display, C: Display + One + PartialEq>(
+pub(crate) fn fmt_term<Var: Display, C: Display + One + PartialEq>(
     c: &C,
     var: Var,
     pow: isize,

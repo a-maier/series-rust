@@ -1,12 +1,12 @@
 use std::{
-    fmt::Debug,
+    fmt::{Debug, Display},
     ops::{Add, AddAssign, Div, DivAssign, Sub, SubAssign, Mul, MulAssign, Neg},
 };
 
 use derive_more::{Display, From};
 use num_traits::{One, Zero};
 
-use crate::{Coeff, Polynomial, PolynomialSlice, Series, SeriesSlice};
+use crate::{Coeff, NeedsCoeffBracket, Polynomial, PolynomialSlice, Series, SeriesSlice, Sign, SplitSign, poly::SignlessPoly, series::SignlessSeries};
 
 /// A Laurent polynomial or series in a single variable
 #[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Display, From)]
@@ -695,3 +695,72 @@ macro_rules! impl_div_const {
 }
 
 impl_div_const!(C, &'a C);
+
+impl<Var, C: Coeff> NeedsCoeffBracket for Laurent<Var, C>
+where
+    Polynomial<Var, C>: NeedsCoeffBracket,
+    Series<Var, C>: NeedsCoeffBracket,
+{
+    fn needs_coeff_bracket(&self) -> bool {
+        match self {
+            Laurent::Polynomial(p) => p.needs_coeff_bracket(),
+            Laurent::Series(s) => s.needs_coeff_bracket(),
+        }
+    }
+}
+
+impl<'a, Var: 'a, C: Coeff + 'a> SplitSign<'a> for Laurent<Var, C>
+where
+    Polynomial<Var, C>: SplitSign<'a>,
+    Series<Var, C>: SplitSign<'a>,
+{
+    type Signless = SignlessLaurent<'a, Var, C>;
+
+    fn split_sign(&'a self) -> (Sign, Self::Signless) {
+        let sign = match self {
+            Laurent::Polynomial(p) => p.split_sign().0,
+            Laurent::Series(s) => s.split_sign().0,
+        };
+        (sign, SignlessLaurent(self))
+    }
+}
+
+#[derive(PartialEq)]
+pub struct SignlessLaurent<'a, Var, C: Coeff>(&'a Laurent<Var, C>);
+
+impl<'a, C: Coeff, Var: Display> Display for SignlessLaurent<'a, Var, C>
+where
+    SignlessPoly<'a, Var, C>: Display,
+    SignlessSeries<'a, Var, C>: Display,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self.0 {
+            Laurent::Polynomial(p) => SignlessPoly(p).fmt(f),
+            Laurent::Series(s) => SignlessSeries(s).fmt(f)
+        }
+    }
+}
+
+impl<'a, Var, C: Coeff> Mul for SignlessLaurent<'a, Var, C> {
+    type Output = Self;
+
+    fn mul(self, _: Self) -> Self::Output {
+        unimplemented!("`Mul` is only implemented to satisfy the trait bounds for `One`.")
+    }
+}
+
+impl<'a, Var: PartialEq, C: Coeff + SplitSign<'a>> One for SignlessLaurent<'a, Var, C>
+where
+    <C as SplitSign<'a>>::Signless: One + PartialEq
+{
+    fn one() -> Self {
+        unimplemented!("`One` is only implemented to satisfy trait bounds. Only the `is_one` function should be used")
+    }
+
+    fn is_one(&self) -> bool {
+        match self.0 {
+            Laurent::Polynomial(p) => p.split_sign().1.is_one(),
+            Laurent::Series(_) => false,
+        }
+    }
+}

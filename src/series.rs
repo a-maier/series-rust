@@ -1,4 +1,7 @@
+use num_traits::One;
+
 use crate::ops::{Exp, Ln, Pow};
+use crate::poly::fmt_term;
 use crate::{Polynomial, PolynomialSlice, traits::*};
 use crate::{Coeff, IntoIter, Iter};
 use crate::{anon_series::AnonSeries, series_slice::*};
@@ -1332,6 +1335,86 @@ impl<'a, Var: Clone, C: Coeff + Clone> From<SeriesSlice<'a, Var, C>>
 {
     fn from(s: SeriesSlice<'a, Var, C>) -> Self {
         Series::new(s.var.clone(), s.series.min_pow, s.series.coeffs.to_vec())
+    }
+}
+
+impl<Var, C: Coeff> NeedsCoeffBracket for Series<Var, C> {
+    fn needs_coeff_bracket(&self) -> bool {
+        self.len() > 0
+    }
+}
+
+impl<'a, Var: 'a, C: Coeff + 'a> SplitSign<'a> for Series<Var, C>
+where C: SplitSign<'a>
+{
+    type Signless = SignlessSeries<'a, Var, C>;
+
+    fn split_sign(&'a self) -> (Sign, Self::Signless) {
+        let sign = self.series.coeffs.first()
+            .map(|c| c.split_sign().0)
+            .unwrap_or(Sign::Plus);
+        (sign, SignlessSeries(self))
+    }
+}
+
+#[derive(PartialEq)]
+pub struct SignlessSeries<'a, Var, C: Coeff>(pub(crate) &'a Series<Var, C>);
+
+impl<'a, Var, C: Coeff> Mul for SignlessSeries<'a, Var, C> {
+    type Output = Self;
+
+    fn mul(self, _: Self) -> Self::Output {
+        unimplemented!("`Mul` is only implemented to satisfy the trait bounds for `One`.")
+    }
+}
+
+impl<'a, Var, C: Coeff + SplitSign<'a>> One for SignlessSeries<'a, Var, C> {
+    fn one() -> Self {
+        unimplemented!("`One` is only implemented to satisfy trait bounds. Only the `is_one` function should be used")
+    }
+
+    fn is_one(&self) -> bool {
+        false
+    }
+}
+
+// TODO: logic duplication with Display impl for SeriesSlice and SignlessPolySlice
+impl<'a, C: Coeff, Var: Display> Display for SignlessSeries<'a, Var, C>
+where
+    C: SplitSign<'a> + Display + NeedsCoeffBracket,
+    <C as SplitSign<'a>>::Signless: Display + One + PartialEq,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let s = self.0;
+        let var = s.var();
+        let terms = s.iter().filter(|(_, c)| !c.is_zero());
+        let mut first = true;
+        for (pow, c) in terms {
+            if pow != 0 && c.needs_coeff_bracket() {
+                if !first {
+                    write!(f, " + ")?;
+                }
+                write!(f, "({c})*{var}")?;
+                if pow != 1 {
+                    write!(f, "^{pow}")?;
+                }
+            } else {
+                let (sign, c) = c.split_sign();
+                if !first {
+                    write!(f, " {sign} ")?;
+                }
+                fmt_term(&c, &var, pow, f)?;
+            }
+            first = false;
+        }
+        if !first {
+            write!(f, " + ")?;
+        }
+        if s.cutoff_pow() == 1 {
+            write!(f, "O({var})")
+        } else {
+            write!(f, "O({var}^{})", s.cutoff_pow())
+        }
     }
 }
 
