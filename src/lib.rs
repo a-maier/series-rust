@@ -594,6 +594,21 @@ mod tests {
     }
 
     #[test]
+    fn tst_nested_poly_display() {
+        let p = Polynomial::new(
+            "x",
+            -3,
+            vec![
+                Polynomial::from_const(-1.),
+                Polynomial::new("y", 0, vec![1., 2., -3.]),
+                Polynomial::zero(),
+                Polynomial::new("y", -1, vec![-1., 0., 3.]),
+            ]
+        );
+        assert_eq!(format!("{p}"), "-x^-3 + (1 + 2*y - 3*y^2)*x^-2 - y^-1 + 3*y");
+    }
+
+    #[test]
     fn tst_poly_neg() {
         let s = Polynomial::new("x", -3, vec![1., 0., -3.]);
         let res = Polynomial::new("x", -3, vec![-1., 0., 3.]);
