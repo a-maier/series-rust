@@ -2063,15 +2063,9 @@ where
                             write!(f, "^{pow}")?;
                         }
                     } else {
-                        use crate::traits::Sign;
                         let (sign, c) = c.split_sign();
                         if !first {
-                            match sign {
-                                Sign::Plus => if !first {
-                                    write!(f, " + ")?;
-                                },
-                                Sign::Minus => write!(f, " - ")?,
-                            }
+                            write!(f, " {sign} ")?;
                         }
                         fmt_term(&c, &var, pow, f)?;
                     }
