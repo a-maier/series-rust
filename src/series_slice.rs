@@ -427,9 +427,6 @@ where
     }
 }
 
-// TODO: restore implementation from tag
-//       `generic_display_broken_by_trait_resolver`
-//       as soon as the trait resolver is ready
 impl<'a, C: Coeff + Clone, Var: Display> Display for SeriesSlice<'a, Var, C>
 where
     C: Display + NeedsCoeffBracket + SplitSign<'a>,
