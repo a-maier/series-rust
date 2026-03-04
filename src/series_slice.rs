@@ -1,6 +1,8 @@
 use crate::ops::{Exp, Ln, Pow};
 use crate::poly::fmt_terms;
-use crate::traits::{AsSlice, ExpCoeff, MulInverse, NeedsCoeffBracket, SplitSign};
+use crate::traits::{
+    AsSlice, ExpCoeff, MulInverse, NeedsCoeffBracket, SplitSign,
+};
 use crate::{
     Coeff, Iter, PolynomialSlice, Series, anon_series_slice::AnonSeriesSlice,
 };
@@ -8,7 +10,7 @@ use crate::{
 use num_traits::One;
 use std::fmt::Display;
 use std::ops::{
-    Add, AddAssign, Div, DivAssign, Index, Mul, MulAssign, Neg, Sub, SubAssign
+    Add, AddAssign, Div, DivAssign, Index, Mul, MulAssign, Neg, Sub, SubAssign,
 };
 
 // TODO: lots of code duplication with SeriesSlice

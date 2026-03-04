@@ -84,7 +84,8 @@ where
 
 // TODO: forward to PolynomialSlice impl
 impl<'a, Var: 'a, C: Coeff + 'a> SplitSign<'a> for Polynomial<Var, C>
-where C: SplitSign<'a>
+where
+    C: SplitSign<'a>,
 {
     type Signless = SignlessPoly<'a, Var, C>;
 
@@ -104,16 +105,20 @@ impl<'a, Var, C: Coeff> Mul for SignlessPoly<'a, Var, C> {
     type Output = Self;
 
     fn mul(self, _: Self) -> Self::Output {
-        unimplemented!("`Mul` is only implemented to satisfy the trait bounds for `One`.")
+        unimplemented!(
+            "`Mul` is only implemented to satisfy the trait bounds for `One`."
+        )
     }
 }
 
 impl<'a, Var, C: Coeff + SplitSign<'a>> One for SignlessPoly<'a, Var, C>
 where
-    <C as SplitSign<'a>>::Signless: One + PartialEq
+    <C as SplitSign<'a>>::Signless: One + PartialEq,
 {
     fn one() -> Self {
-        unimplemented!("`One` is only implemented to satisfy trait bounds. Only the `is_one` function should be used")
+        unimplemented!(
+            "`One` is only implemented to satisfy trait bounds. Only the `is_one` function should be used"
+        )
     }
 
     fn is_one(&self) -> bool {
@@ -126,7 +131,7 @@ where
 
 impl<'a, C: Coeff, Var: Display> Display for SignlessPoly<'a, Var, C>
 where
-    SignlessPolySlice<'a, Var, C>: Display
+    SignlessPolySlice<'a, Var, C>: Display,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         SignlessPolySlice(self.0.as_slice(..)).fmt(f)
@@ -789,7 +794,8 @@ where
 macro_rules! impl_add_assign_const {
     ($t:ty) => {
         impl<'a, Var, C: Coeff> AddAssign<$t> for Polynomial<Var, C>
-        where C: AddAssign<$t>
+        where
+            C: AddAssign<$t>,
         {
             /// Add a constant to the polynomial
             ///
@@ -831,7 +837,8 @@ impl_add_assign_const!(&'a C);
 macro_rules! impl_sub_assign_const {
     ($t:ty) => {
         impl<'a, Var, C: Coeff> SubAssign<$t> for Polynomial<Var, C>
-        where C: SubAssign<$t>
+        where
+            C: SubAssign<$t>,
         {
             /// Subtrac a constant from the polynomial
             ///
@@ -869,7 +876,6 @@ macro_rules! impl_sub_assign_const {
 
 impl_sub_assign_const!(C);
 impl_sub_assign_const!(&'a C);
-
 
 impl<'a, Var, C> AddAssign<&'a Polynomial<Var, C>> for Polynomial<Var, C>
 where
@@ -1025,7 +1031,13 @@ macro_rules! impl_add_via_add_assign {
     };
 }
 
-impl_add_via_add_assign!(Self, &'a Polynomial<Var, C>, PolynomialSlice<'a, Var, C>, C, &'a C);
+impl_add_via_add_assign!(
+    Self,
+    &'a Polynomial<Var, C>,
+    PolynomialSlice<'a, Var, C>,
+    C,
+    &'a C
+);
 
 // TODO: avoid potentially costly clone
 impl<'a, Var: Clone, C: Coeff + Clone> SubAssign<PolynomialSlice<'a, Var, C>>
@@ -1103,7 +1115,13 @@ macro_rules! impl_sub_via_sub_assign {
     };
 }
 
-impl_sub_via_sub_assign!(Self, &'a Polynomial<Var, C>, PolynomialSlice<'a, Var, C>, C, &'a C);
+impl_sub_via_sub_assign!(
+    Self,
+    &'a Polynomial<Var, C>,
+    PolynomialSlice<'a, Var, C>,
+    C,
+    &'a C
+);
 
 macro_rules! impl_mul_assign_via_slice_mul {
     ($($t:ty), *) => {
@@ -1137,7 +1155,11 @@ macro_rules! impl_mul_assign_via_slice_mul {
     };
 }
 
-impl_mul_assign_via_slice_mul!(Self, &'a Polynomial<Var, C>, PolynomialSlice<'a, Var, C>);
+impl_mul_assign_via_slice_mul!(
+    Self,
+    &'a Polynomial<Var, C>,
+    PolynomialSlice<'a, Var, C>
+);
 
 impl<Var, C: Coeff> MulAssign<C> for Polynomial<Var, C>
 where
@@ -1241,7 +1263,8 @@ macro_rules! impl_mul_via_slice {
     ($s:ty, $t:ty) => {
         impl<'a, Var, C: Coeff> Mul<$s> for $t
         where
-            for<'c> PolynomialSlice<'c, Var, C>: Mul<Output = Polynomial<Var, C>>,
+            for<'c> PolynomialSlice<'c, Var, C>:
+                Mul<Output = Polynomial<Var, C>>,
         {
             type Output = Polynomial<Var, C>;
 
@@ -1256,10 +1279,10 @@ impl_mul_via_slice!(Polynomial<Var, C>, Polynomial<Var, C>);
 impl_mul_via_slice!(Polynomial<Var, C>,  &'a Polynomial<Var, C>);
 impl_mul_via_slice!(Polynomial<Var, C>,  PolynomialSlice<'a, Var, C>);
 impl_mul_via_slice!(&'a Polynomial<Var, C>,  Polynomial<Var, C>);
-impl_mul_via_slice!(&'a Polynomial<Var, C>,  &'a Polynomial<Var, C>);
-impl_mul_via_slice!(&'a Polynomial<Var, C>,  PolynomialSlice<'a, Var, C>);
+impl_mul_via_slice!(&'a Polynomial<Var, C>, &'a Polynomial<Var, C>);
+impl_mul_via_slice!(&'a Polynomial<Var, C>, PolynomialSlice<'a, Var, C>);
 impl_mul_via_slice!(PolynomialSlice<'a, Var, C>,  Polynomial<Var, C>);
-impl_mul_via_slice!(PolynomialSlice<'a, Var, C>,  &'a Polynomial<Var, C>);
+impl_mul_via_slice!(PolynomialSlice<'a, Var, C>, &'a Polynomial<Var, C>);
 
 macro_rules! impl_mul_via_mul_assign {
     ($($t:ty), *) => {
@@ -1357,7 +1380,12 @@ macro_rules! impl_ref_add_via_owned {
     };
 }
 
-impl_ref_add_via_owned!(&'a Polynomial<Var, C>, PolynomialSlice<'a, Var, C>, C, &'a C);
+impl_ref_add_via_owned!(
+    &'a Polynomial<Var, C>,
+    PolynomialSlice<'a, Var, C>,
+    C,
+    &'a C
+);
 
 macro_rules! impl_ref_sub_via_owned {
     ($($t:ty), *) => {
@@ -1377,7 +1405,12 @@ macro_rules! impl_ref_sub_via_owned {
     };
 }
 
-impl_ref_sub_via_owned!(&'a Polynomial<Var, C>, PolynomialSlice<'a, Var, C>, C, &'a C);
+impl_ref_sub_via_owned!(
+    &'a Polynomial<Var, C>,
+    PolynomialSlice<'a, Var, C>,
+    C,
+    &'a C
+);
 
 macro_rules! impl_ref_mul_via_owned {
     ($($t:ty), *) => {
@@ -1645,7 +1678,12 @@ macro_rules! impl_slice_add_via_owned {
     };
 }
 
-impl_slice_add_via_owned!(&'a Polynomial<Var, C>, PolynomialSlice<'a, Var, C>, C, &'a C);
+impl_slice_add_via_owned!(
+    &'a Polynomial<Var, C>,
+    PolynomialSlice<'a, Var, C>,
+    C,
+    &'a C
+);
 
 macro_rules! impl_slice_sub_via_owned {
     ($($t:ty), *) => {
@@ -1665,7 +1703,12 @@ macro_rules! impl_slice_sub_via_owned {
     };
 }
 
-impl_slice_sub_via_owned!(&'a Polynomial<Var, C>, PolynomialSlice<'a, Var, C>, C, &'a C);
+impl_slice_sub_via_owned!(
+    &'a Polynomial<Var, C>,
+    PolynomialSlice<'a, Var, C>,
+    C,
+    &'a C
+);
 
 macro_rules! impl_slice_mul_via_owned {
     ($($t:ty), *) => {
@@ -1781,7 +1824,7 @@ impl<'a, Var, C: 'static + Coeff + Send + Sync> AsSlice<Range<isize>>
                     PolynomialSlice::Const(c)
                 }
             }
-            Self::Poly{
+            Self::Poly {
                 min_pow,
                 coeffs,
                 var,
@@ -1794,8 +1837,8 @@ impl<'a, Var, C: 'static + Coeff + Send + Sync> AsSlice<Range<isize>>
     }
 }
 
-impl<'a, Var, C: 'static + Coeff + Send + Sync>
-    AsSlice<RangeInclusive<isize>> for PolynomialSlice<'a, Var, C>
+impl<'a, Var, C: 'static + Coeff + Send + Sync> AsSlice<RangeInclusive<isize>>
+    for PolynomialSlice<'a, Var, C>
 {
     type Output = PolynomialSlice<'a, Var, C>;
 
@@ -1810,7 +1853,7 @@ impl<'a, Var, C: 'static + Coeff + Send + Sync>
                     PolynomialSlice::Const(c)
                 }
             }
-            Self::Poly{
+            Self::Poly {
                 min_pow,
                 coeffs,
                 var,
@@ -1837,7 +1880,7 @@ impl<'a, Var, C: Coeff> AsSlice<RangeToInclusive<isize>>
                     PolynomialSlice::Const(c)
                 }
             }
-            Self::Poly{
+            Self::Poly {
                 min_pow,
                 coeffs,
                 var,
@@ -1863,7 +1906,7 @@ impl<'a, Var, C: Coeff> AsSlice<RangeFrom<isize>>
                     PolynomialSlice::Const(c)
                 }
             }
-            Self::Poly{
+            Self::Poly {
                 min_pow,
                 coeffs,
                 var,
@@ -1889,7 +1932,7 @@ impl<'a, Var, C: Coeff> AsSlice<RangeTo<isize>>
                     PolynomialSlice::Const(c)
                 }
             }
-            Self::Poly{
+            Self::Poly {
                 min_pow,
                 coeffs,
                 var,
@@ -1919,20 +1962,26 @@ where
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match *self {
             PolynomialSlice::Const(c) => return write!(f, "{c}"),
-            PolynomialSlice::Poly { min_pow, coeffs, var } => {
+            PolynomialSlice::Poly {
+                min_pow,
+                coeffs,
+                var,
+            } => {
                 if coeffs.is_empty() {
                     return write!(f, "0");
                 }
-                let terms = coeffs.iter()
-                    .enumerate()
-                    .filter_map(|(n, c): (usize, &'a C)| if c.is_zero() {
-                        None
-                    } else {
-                        Some((min_pow + n as isize, c))
-                    });
+                let terms = coeffs.iter().enumerate().filter_map(
+                    |(n, c): (usize, &'a C)| {
+                        if c.is_zero() {
+                            None
+                        } else {
+                            Some((min_pow + n as isize, c))
+                        }
+                    },
+                );
                 fmt_terms(var, terms, f)?;
                 Ok(())
-            },
+            }
         }
     }
 }
@@ -1977,7 +2026,7 @@ pub(crate) fn fmt_term<Var: Display, C: Display + One + PartialEq>(
     c: &C,
     var: Var,
     pow: isize,
-    f: &mut std::fmt::Formatter<'_>
+    f: &mut std::fmt::Formatter<'_>,
 ) -> std::fmt::Result {
     if pow == 0 {
         write!(f, "{c}")
@@ -1995,19 +2044,25 @@ pub(crate) fn fmt_term<Var: Display, C: Display + One + PartialEq>(
 
 impl<'a, Var, C: Coeff> NeedsCoeffBracket for PolynomialSlice<'a, Var, C>
 where
-    C: NeedsCoeffBracket
+    C: NeedsCoeffBracket,
 {
     fn needs_coeff_bracket(&self) -> bool {
         match *self {
             PolynomialSlice::Const(c) => c.needs_coeff_bracket(),
-            PolynomialSlice::Poly { min_pow, coeffs, var: _ } => match coeffs.len() {
+            PolynomialSlice::Poly {
+                min_pow,
+                coeffs,
+                var: _,
+            } => match coeffs.len() {
                 0 => false,
-                1 => if min_pow != 0 {
-                    false
-                } else {
-                    coeffs[0].needs_coeff_bracket()
+                1 => {
+                    if min_pow != 0 {
+                        false
+                    } else {
+                        coeffs[0].needs_coeff_bracket()
+                    }
                 }
-                _ => true
+                _ => true,
             },
         }
     }
@@ -2015,15 +2070,17 @@ where
 
 impl<'a, 'b: 'a, Var, C: Coeff> SplitSign<'a> for PolynomialSlice<'b, Var, C>
 where
-    C: SplitSign<'a>
+    C: SplitSign<'a>,
 {
     type Signless = SignlessPolySlice<'b, Var, C>;
 
     fn split_sign(&'a self) -> (Sign, Self::Signless) {
         let sign = match self {
             PolynomialSlice::Const(c) => c.split_sign().0,
-            PolynomialSlice::Poly { coeffs, .. } =>
-                coeffs.first().map(|c| c.split_sign().0).unwrap_or(Sign::Plus),
+            PolynomialSlice::Poly { coeffs, .. } => coeffs
+                .first()
+                .map(|c| c.split_sign().0)
+                .unwrap_or(Sign::Plus),
         };
         (sign, SignlessPolySlice(*self))
     }
@@ -2040,18 +2097,26 @@ where
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self.0 {
-            PolynomialSlice::Const(c) => return write!(f, "{}", c.split_sign().1),
-            PolynomialSlice::Poly { min_pow, coeffs, var } => {
+            PolynomialSlice::Const(c) => {
+                return write!(f, "{}", c.split_sign().1);
+            }
+            PolynomialSlice::Poly {
+                min_pow,
+                coeffs,
+                var,
+            } => {
                 if coeffs.is_empty() {
                     return write!(f, "0");
                 }
-                let terms = coeffs.iter()
-                    .enumerate()
-                    .filter_map(|(n, c): (usize, &'a C)| if c.is_zero() {
-                        None
-                    } else {
-                        Some((min_pow + n as isize, c))
-                    });
+                let terms = coeffs.iter().enumerate().filter_map(
+                    |(n, c): (usize, &'a C)| {
+                        if c.is_zero() {
+                            None
+                        } else {
+                            Some((min_pow + n as isize, c))
+                        }
+                    },
+                );
                 let mut first = true;
                 for (pow, c) in terms {
                     if pow != 0 && c.needs_coeff_bracket() {
@@ -2072,7 +2137,7 @@ where
                     first = false;
                 }
                 Ok(())
-            },
+            }
         }
     }
 }
@@ -2081,27 +2146,35 @@ impl<'a, Var, C: Coeff> Mul for SignlessPolySlice<'a, Var, C> {
     type Output = Self;
 
     fn mul(self, _: Self) -> Self::Output {
-        unimplemented!("`Mul` is only implemented to satisfy the trait bounds for `One`.")
+        unimplemented!(
+            "`Mul` is only implemented to satisfy the trait bounds for `One`."
+        )
     }
 }
 
 impl<'a, Var, C: Coeff + SplitSign<'a>> One for SignlessPolySlice<'a, Var, C>
 where
-    <C as SplitSign<'a>>::Signless: One + PartialEq
+    <C as SplitSign<'a>>::Signless: One + PartialEq,
 {
     fn one() -> Self {
-        unimplemented!("`One` is only implemented to satisfy trait bounds. Only the `is_one` function should be used")
+        unimplemented!(
+            "`One` is only implemented to satisfy trait bounds. Only the `is_one` function should be used"
+        )
     }
 
     fn is_one(&self) -> bool {
         match self.0 {
             PolynomialSlice::Const(c) => c.split_sign().1.is_one(),
-            PolynomialSlice::Poly { min_pow, coeffs, var: _ } => {
+            PolynomialSlice::Poly {
+                min_pow,
+                coeffs,
+                var: _,
+            } => {
                 // TODO: trim zeros
                 min_pow == 0
                     && coeffs.len() == 1
                     && coeffs[0].split_sign().1.is_one()
-            },
+            }
         }
     }
 }

@@ -1,12 +1,17 @@
 use std::{
     fmt::{Debug, Display},
-    ops::{Add, AddAssign, Div, DivAssign, Sub, SubAssign, Mul, MulAssign, Neg},
+    ops::{
+        Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign,
+    },
 };
 
 use derive_more::{Display, From};
 use num_traits::{One, Zero};
 
-use crate::{Coeff, NeedsCoeffBracket, Polynomial, PolynomialSlice, Series, SeriesSlice, Sign, SplitSign, poly::SignlessPoly, series::SignlessSeries};
+use crate::{
+    Coeff, NeedsCoeffBracket, Polynomial, PolynomialSlice, Series, SeriesSlice,
+    Sign, SplitSign, poly::SignlessPoly, series::SignlessSeries,
+};
 
 /// A Laurent polynomial or series in a single variable
 #[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Display, From)]
@@ -52,7 +57,7 @@ impl<Var, C: Coeff + Neg<Output = C>> Neg for Laurent<Var, C> {
 
 impl<'a, Var: Clone, C: Coeff + Clone> Neg for &'a Laurent<Var, C>
 where
-    &'a C: Neg<Output = C>
+    &'a C: Neg<Output = C>,
 {
     type Output = Laurent<Var, C>;
 
@@ -111,9 +116,15 @@ macro_rules! impl_add {
 
             fn add(self, rhs: $rhs) -> Self::Output {
                 match (self, rhs) {
-                    (Laurent::Polynomial(p), Laurent::Polynomial(q)) => p.add(q).into(),
-                    (Laurent::Polynomial(p), Laurent::Series(s)) => s.add(p).into(),
-                    (Laurent::Series(s), Laurent::Polynomial(p)) => p.add(s).into(),
+                    (Laurent::Polynomial(p), Laurent::Polynomial(q)) => {
+                        p.add(q).into()
+                    }
+                    (Laurent::Polynomial(p), Laurent::Series(s)) => {
+                        s.add(p).into()
+                    }
+                    (Laurent::Series(s), Laurent::Polynomial(p)) => {
+                        p.add(s).into()
+                    }
                     (Laurent::Series(s), Laurent::Series(t)) => s.add(t).into(),
                 }
             }
@@ -227,9 +238,15 @@ macro_rules! impl_sub {
 
             fn sub(self, rhs: $rhs) -> Self::Output {
                 match (self, rhs) {
-                    (Laurent::Polynomial(p), Laurent::Polynomial(q)) => p.sub(q).into(),
-                    (Laurent::Polynomial(p), Laurent::Series(s)) => s.sub(p).into(),
-                    (Laurent::Series(s), Laurent::Polynomial(p)) => p.sub(s).into(),
+                    (Laurent::Polynomial(p), Laurent::Polynomial(q)) => {
+                        p.sub(q).into()
+                    }
+                    (Laurent::Polynomial(p), Laurent::Series(s)) => {
+                        s.sub(p).into()
+                    }
+                    (Laurent::Series(s), Laurent::Polynomial(p)) => {
+                        p.sub(s).into()
+                    }
                     (Laurent::Series(s), Laurent::Series(t)) => s.sub(t).into(),
                 }
             }
@@ -370,21 +387,24 @@ where
     Polynomial<Var, C>: Mul<Output = Polynomial<Var, C>>
         + Mul<Series<Var, C>, Output = Series<Var, C>>,
     Series<Var, C>: Mul<Output = Series<Var, C>>
-    + Mul<Polynomial<Var, C>, Output = Series<Var, C>>,
+        + Mul<Polynomial<Var, C>, Output = Series<Var, C>>,
     Self: Zero,
 {
     type Output = Self;
 
     fn mul(self, rhs: Self) -> Self::Output {
         match (self, rhs) {
-            (Laurent::Polynomial(p1), Laurent::Polynomial(p2)) =>
-                p1.mul(p2).into(),
+            (Laurent::Polynomial(p1), Laurent::Polynomial(p2)) => {
+                p1.mul(p2).into()
+            }
             (Laurent::Polynomial(p), Laurent::Series(s))
-            | (Laurent::Series(s), Laurent::Polynomial(p)) => if p.is_zero() {
-                Self::zero()
-            } else {
-                s.mul(p).into()
-            },
+            | (Laurent::Series(s), Laurent::Polynomial(p)) => {
+                if p.is_zero() {
+                    Self::zero()
+                } else {
+                    s.mul(p).into()
+                }
+            }
             (Laurent::Series(s1), Laurent::Series(s2)) => s1.mul(s2).into(),
         }
     }
@@ -402,18 +422,23 @@ where
 
     fn mul(self, rhs: &'a Laurent<Var, C>) -> Self::Output {
         match (self, rhs) {
-            (Laurent::Polynomial(p1), Laurent::Polynomial(p2)) =>
-                p1.mul(p2).into(),
-            (Laurent::Polynomial(p), Laurent::Series(s)) => if p.is_zero() {
-                Self::zero()
-            } else {
-                p.mul(s).into()
-            },
-            (Laurent::Series(s), Laurent::Polynomial(p)) => if p.is_zero() {
-                Self::zero()
-            } else {
-                s.mul(p).into()
-            },
+            (Laurent::Polynomial(p1), Laurent::Polynomial(p2)) => {
+                p1.mul(p2).into()
+            }
+            (Laurent::Polynomial(p), Laurent::Series(s)) => {
+                if p.is_zero() {
+                    Self::zero()
+                } else {
+                    p.mul(s).into()
+                }
+            }
+            (Laurent::Series(s), Laurent::Polynomial(p)) => {
+                if p.is_zero() {
+                    Self::zero()
+                } else {
+                    s.mul(p).into()
+                }
+            }
             (Laurent::Series(s1), Laurent::Series(s2)) => s1.mul(s2).into(),
         }
     }
@@ -421,7 +446,7 @@ where
 
 impl<'a, Var, C: Coeff> Mul<Laurent<Var, C>> for &'a Laurent<Var, C>
 where
-    Laurent<Var, C>: Mul<&'a Laurent<Var, C>, Output = Laurent<Var, C>>
+    Laurent<Var, C>: Mul<&'a Laurent<Var, C>, Output = Laurent<Var, C>>,
 {
     type Output = Laurent<Var, C>;
 
@@ -435,22 +460,24 @@ where
     &'a Polynomial<Var, C>: Mul<Output = Polynomial<Var, C>>
         + Mul<&'a Series<Var, C>, Output = Series<Var, C>>,
     &'a Series<Var, C>: Mul<Output = Series<Var, C>>
-    + Mul<&'a Polynomial<Var, C>, Output = Series<Var, C>>,
+        + Mul<&'a Polynomial<Var, C>, Output = Series<Var, C>>,
     Laurent<Var, C>: Zero,
 {
     type Output = Laurent<Var, C>;
 
     fn mul(self, rhs: &'a Laurent<Var, C>) -> Self::Output {
         match (self, rhs) {
-            (Laurent::Polynomial(p1), Laurent::Polynomial(p2)) =>
-                p1.mul(p2).into(),
+            (Laurent::Polynomial(p1), Laurent::Polynomial(p2)) => {
+                p1.mul(p2).into()
+            }
             (Laurent::Polynomial(p), Laurent::Series(s))
-                | (Laurent::Series(s), Laurent::Polynomial(p))
-                => if p.is_zero() {
-                Self::Output::zero()
-            } else {
-                s.mul(p).into()
-            },
+            | (Laurent::Series(s), Laurent::Polynomial(p)) => {
+                if p.is_zero() {
+                    Self::Output::zero()
+                } else {
+                    s.mul(p).into()
+                }
+            }
             (Laurent::Series(s1), Laurent::Series(s2)) => s1.mul(s2).into(),
         }
     }
@@ -460,8 +487,8 @@ impl<Var, C: Coeff> Div for Laurent<Var, C>
 where
     Polynomial<Var, C>: Div<C, Output = Polynomial<Var, C>>,
     Series<Var, C>: Div<Output = Series<Var, C>>
-    + Div<Polynomial<Var, C>, Output = Series<Var, C>>
-    + Mul<C, Output = Series<Var, C>>,
+        + Div<Polynomial<Var, C>, Output = Series<Var, C>>
+        + Mul<C, Output = Series<Var, C>>,
     Laurent<Var, C>: Zero,
     C: Div<Output = C>,
 {
@@ -479,16 +506,24 @@ where
     /// ```
     fn div(self, rhs: Self) -> Self::Output {
         match (self, rhs) {
-            (Laurent::Polynomial(p), Laurent::Polynomial(Polynomial::Const(c))) =>
-                p.div(c).into(),
-            (Laurent::Polynomial(_), Laurent::Polynomial(Polynomial::Poly(_))) =>
-                unimplemented!("Dividing a polynomial by a non-constant polynomial"),
-            (Laurent::Polynomial(Polynomial::Const(c)), Laurent::Series(s)) => if c.is_zero() {
-                Self::zero()
-            } else {
-                // we cannot implement Div<Series> for C due to orphan rules
-                let c_inv = C::one().div(c);
-                s.mul(c_inv).into()
+            (
+                Laurent::Polynomial(p),
+                Laurent::Polynomial(Polynomial::Const(c)),
+            ) => p.div(c).into(),
+            (
+                Laurent::Polynomial(_),
+                Laurent::Polynomial(Polynomial::Poly(_)),
+            ) => unimplemented!(
+                "Dividing a polynomial by a non-constant polynomial"
+            ),
+            (Laurent::Polynomial(Polynomial::Const(c)), Laurent::Series(s)) => {
+                if c.is_zero() {
+                    Self::zero()
+                } else {
+                    // we cannot implement Div<Series> for C due to orphan rules
+                    let c_inv = C::one().div(c);
+                    s.mul(c_inv).into()
+                }
             }
             (Laurent::Polynomial(Polynomial::Poly(p)), Laurent::Series(s)) => {
                 let cutoff_pow = s.len() as isize + p.min_pow();
@@ -736,7 +771,7 @@ where
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self.0 {
             Laurent::Polynomial(p) => SignlessPoly(p).fmt(f),
-            Laurent::Series(s) => SignlessSeries(s).fmt(f)
+            Laurent::Series(s) => SignlessSeries(s).fmt(f),
         }
     }
 }
@@ -745,16 +780,21 @@ impl<'a, Var, C: Coeff> Mul for SignlessLaurent<'a, Var, C> {
     type Output = Self;
 
     fn mul(self, _: Self) -> Self::Output {
-        unimplemented!("`Mul` is only implemented to satisfy the trait bounds for `One`.")
+        unimplemented!(
+            "`Mul` is only implemented to satisfy the trait bounds for `One`."
+        )
     }
 }
 
-impl<'a, Var: PartialEq, C: Coeff + SplitSign<'a>> One for SignlessLaurent<'a, Var, C>
+impl<'a, Var: PartialEq, C: Coeff + SplitSign<'a>> One
+    for SignlessLaurent<'a, Var, C>
 where
-    <C as SplitSign<'a>>::Signless: One + PartialEq
+    <C as SplitSign<'a>>::Signless: One + PartialEq,
 {
     fn one() -> Self {
-        unimplemented!("`One` is only implemented to satisfy trait bounds. Only the `is_one` function should be used")
+        unimplemented!(
+            "`One` is only implemented to satisfy trait bounds. Only the `is_one` function should be used"
+        )
     }
 
     fn is_one(&self) -> bool {

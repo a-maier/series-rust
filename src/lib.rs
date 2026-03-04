@@ -15,7 +15,9 @@ pub use self::poly::{Polynomial, PolynomialParts, PolynomialSlice};
 pub use self::series::{Series, SeriesParts};
 pub use self::series_slice::SeriesSlice;
 mod traits;
-pub use self::traits::{AsSlice, KaratsubaMul, MulInverse, Sign, SplitSign, NeedsCoeffBracket};
+pub use self::traits::{
+    AsSlice, KaratsubaMul, MulInverse, NeedsCoeffBracket, Sign, SplitSign,
+};
 mod util;
 
 use std::iter::Zip;
@@ -603,9 +605,12 @@ mod tests {
                 Polynomial::new("y", 0, vec![1., 2., -3.]),
                 Polynomial::zero(),
                 Polynomial::new("y", -1, vec![-1., 0., 3.]),
-            ]
+            ],
         );
-        assert_eq!(format!("{p}"), "-x^-3 + (1 + 2*y - 3*y^2)*x^-2 - y^-1 + 3*y");
+        assert_eq!(
+            format!("{p}"),
+            "-x^-3 + (1 + 2*y - 3*y^2)*x^-2 - y^-1 + 3*y"
+        );
     }
 
     #[test]
@@ -618,11 +623,14 @@ mod tests {
                 Laurent::from(Polynomial::new("y", 0, vec![1., 2., -3.])),
                 Laurent::from(Polynomial::zero()),
                 Laurent::from(Polynomial::new("y", -1, vec![-1., 0., 3.])),
-                Laurent::from(O!("y"^3)),
+                Laurent::from(O!("y" ^ 3)),
                 Laurent::from(Series::with_cutoff("y", 0..2, vec![-1.])),
-            ]
+            ],
         );
-        assert_eq!(format!("{p}"), "-x^-3 + (1 + 2*y - 3*y^2)*x^-2 - y^-1 + 3*y + O(y^3)*x + (-1 + O(y^2))*x^2");
+        assert_eq!(
+            format!("{p}"),
+            "-x^-3 + (1 + 2*y - 3*y^2)*x^-2 - y^-1 + 3*y + O(y^3)*x + (-1 + O(y^2))*x^2"
+        );
     }
 
     #[test]

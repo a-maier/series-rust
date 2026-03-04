@@ -2,8 +2,8 @@ use num_traits::One;
 
 use crate::ops::{Exp, Ln, Pow};
 use crate::poly::fmt_term;
-use crate::{Polynomial, PolynomialSlice, traits::*};
 use crate::{Coeff, IntoIter, Iter};
+use crate::{Polynomial, PolynomialSlice, traits::*};
 use crate::{anon_series::AnonSeries, series_slice::*};
 
 use std::convert::From;
@@ -292,9 +292,7 @@ impl<'a, Var, C: Coeff> AsSlice<Range<isize>> for &'a Series<Var, C> {
     }
 }
 
-impl<'a, Var, C: Coeff> AsSlice<RangeInclusive<isize>>
-    for &'a Series<Var, C>
-{
+impl<'a, Var, C: Coeff> AsSlice<RangeInclusive<isize>> for &'a Series<Var, C> {
     type Output = SeriesSlice<'a, Var, C>;
 
     /// A slice of the series truncated to the given range of powers.
@@ -351,9 +349,7 @@ impl<'a, Var, C: Coeff> AsSlice<RangeToInclusive<isize>>
     }
 }
 
-impl<'a, Var, C: Coeff> AsSlice<RangeFrom<isize>>
-    for &'a Series<Var, C>
-{
+impl<'a, Var, C: Coeff> AsSlice<RangeFrom<isize>> for &'a Series<Var, C> {
     type Output = SeriesSlice<'a, Var, C>;
 
     /// A slice of the series truncated to the given range of powers.
@@ -381,9 +377,7 @@ impl<'a, Var, C: Coeff> AsSlice<RangeFrom<isize>>
     }
 }
 
-impl<'a, Var, C: Coeff> AsSlice<RangeTo<isize>>
-    for &'a Series<Var, C>
-{
+impl<'a, Var, C: Coeff> AsSlice<RangeTo<isize>> for &'a Series<Var, C> {
     type Output = SeriesSlice<'a, Var, C>;
 
     /// A slice of the series truncated to the given range of powers.
@@ -826,21 +820,22 @@ where
             Polynomial::Poly(p) => {
                 let cutoff_pow = self.len() as isize + p.min_pow();
                 self.mul_assign(p.cutoff_at(cutoff_pow))
-            },
+            }
         }
     }
 }
 
 impl<'a, Var, C: Coeff> MulAssign<&'a Polynomial<Var, C>> for Series<Var, C>
 where
-    Self: MulAssign<PolynomialSlice<'a, Var, C>>
+    Self: MulAssign<PolynomialSlice<'a, Var, C>>,
 {
     fn mul_assign(&mut self, rhs: &'a Polynomial<Var, C>) {
         self.mul_assign(rhs.as_slice(..));
     }
 }
 
-impl<'a, Var, C: Coeff> MulAssign<PolynomialSlice<'a, Var, C>> for Series<Var, C>
+impl<'a, Var, C: Coeff> MulAssign<PolynomialSlice<'a, Var, C>>
+    for Series<Var, C>
 where
     Self: MulAssign + MulAssign<&'a C>,
     Polynomial<Var, C>: From<PolynomialSlice<'a, Var, C>>,
@@ -849,11 +844,15 @@ where
     fn mul_assign(&mut self, rhs: PolynomialSlice<'a, Var, C>) {
         match rhs {
             PolynomialSlice::Const(c) => self.mul_assign(c),
-            PolynomialSlice::Poly{min_pow, coeffs: _, var } => {
+            PolynomialSlice::Poly {
+                min_pow,
+                coeffs: _,
+                var,
+            } => {
                 let cutoff_pow = self.len() as isize + min_pow;
                 let p = Polynomial::from(rhs);
                 self.mul_assign(p.cutoff_at(var, cutoff_pow))
-            },
+            }
         }
     }
 }
@@ -967,21 +966,22 @@ where
             Polynomial::Poly(p) => {
                 let cutoff_pow = self.len() as isize + p.min_pow();
                 self.div_assign(p.cutoff_at(cutoff_pow))
-            },
+            }
         }
     }
 }
 
 impl<'a, Var, C: Coeff> DivAssign<&'a Polynomial<Var, C>> for Series<Var, C>
 where
-    Self: DivAssign<PolynomialSlice<'a, Var, C>>
+    Self: DivAssign<PolynomialSlice<'a, Var, C>>,
 {
     fn div_assign(&mut self, rhs: &'a Polynomial<Var, C>) {
         self.div_assign(rhs.as_slice(..));
     }
 }
 
-impl<'a, Var, C: Coeff> DivAssign<PolynomialSlice<'a, Var, C>> for Series<Var, C>
+impl<'a, Var, C: Coeff> DivAssign<PolynomialSlice<'a, Var, C>>
+    for Series<Var, C>
 where
     Self: DivAssign + DivAssign<&'a C>,
     Polynomial<Var, C>: From<PolynomialSlice<'a, Var, C>>,
@@ -990,11 +990,15 @@ where
     fn div_assign(&mut self, rhs: PolynomialSlice<'a, Var, C>) {
         match rhs {
             PolynomialSlice::Const(c) => self.div_assign(c),
-            PolynomialSlice::Poly{min_pow, coeffs: _, var } => {
+            PolynomialSlice::Poly {
+                min_pow,
+                coeffs: _,
+                var,
+            } => {
                 let cutoff_pow = self.len() as isize + min_pow;
                 let p = Polynomial::from(rhs);
                 self.div_assign(p.cutoff_at(var, cutoff_pow))
-            },
+            }
         }
     }
 }
@@ -1283,17 +1287,18 @@ where
 impl<Var, C: Coeff> AddAssign<&Polynomial<Var, C>> for Series<Var, C>
 where
     Polynomial<Var, C>: Clone,
-    Self: AddAssign<Polynomial<Var, C>>
+    Self: AddAssign<Polynomial<Var, C>>,
 {
     fn add_assign(&mut self, other: &Polynomial<Var, C>) {
         self.add_assign(other.to_owned())
     }
 }
 
-impl<'a, Var, C: Coeff> AddAssign<PolynomialSlice<'a, Var, C>> for Series<Var, C>
+impl<'a, Var, C: Coeff> AddAssign<PolynomialSlice<'a, Var, C>>
+    for Series<Var, C>
 where
     Polynomial<Var, C>: From<PolynomialSlice<'a, Var, C>>,
-    Self: AddAssign<Polynomial<Var, C>>
+    Self: AddAssign<Polynomial<Var, C>>,
 {
     fn add_assign(&mut self, other: PolynomialSlice<'a, Var, C>) {
         self.add_assign(Polynomial::from(other))
@@ -1313,17 +1318,18 @@ where
 impl<Var, C: Coeff> SubAssign<&Polynomial<Var, C>> for Series<Var, C>
 where
     Polynomial<Var, C>: Clone,
-    Self: SubAssign<Polynomial<Var, C>>
+    Self: SubAssign<Polynomial<Var, C>>,
 {
     fn sub_assign(&mut self, other: &Polynomial<Var, C>) {
         self.sub_assign(other.to_owned())
     }
 }
 
-impl<'a, Var, C: Coeff> SubAssign<PolynomialSlice<'a, Var, C>> for Series<Var, C>
+impl<'a, Var, C: Coeff> SubAssign<PolynomialSlice<'a, Var, C>>
+    for Series<Var, C>
 where
     Polynomial<Var, C>: From<PolynomialSlice<'a, Var, C>>,
-    Self: SubAssign<Polynomial<Var, C>>
+    Self: SubAssign<Polynomial<Var, C>>,
 {
     fn sub_assign(&mut self, other: PolynomialSlice<'a, Var, C>) {
         self.sub_assign(Polynomial::from(other))
@@ -1345,12 +1351,16 @@ impl<Var, C: Coeff> NeedsCoeffBracket for Series<Var, C> {
 }
 
 impl<'a, Var: 'a, C: Coeff + 'a> SplitSign<'a> for Series<Var, C>
-where C: SplitSign<'a>
+where
+    C: SplitSign<'a>,
 {
     type Signless = SignlessSeries<'a, Var, C>;
 
     fn split_sign(&'a self) -> (Sign, Self::Signless) {
-        let sign = self.series.coeffs.first()
+        let sign = self
+            .series
+            .coeffs
+            .first()
             .map(|c| c.split_sign().0)
             .unwrap_or(Sign::Plus);
         (sign, SignlessSeries(self))
@@ -1364,13 +1374,17 @@ impl<'a, Var, C: Coeff> Mul for SignlessSeries<'a, Var, C> {
     type Output = Self;
 
     fn mul(self, _: Self) -> Self::Output {
-        unimplemented!("`Mul` is only implemented to satisfy the trait bounds for `One`.")
+        unimplemented!(
+            "`Mul` is only implemented to satisfy the trait bounds for `One`."
+        )
     }
 }
 
 impl<'a, Var, C: Coeff + SplitSign<'a>> One for SignlessSeries<'a, Var, C> {
     fn one() -> Self {
-        unimplemented!("`One` is only implemented to satisfy trait bounds. Only the `is_one` function should be used")
+        unimplemented!(
+            "`One` is only implemented to satisfy trait bounds. Only the `is_one` function should be used"
+        )
     }
 
     fn is_one(&self) -> bool {
