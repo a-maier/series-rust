@@ -5,7 +5,7 @@ use std::{
     },
 };
 
-use derive_more::{Display, From};
+use derive_more::{Display, From, IsVariant, Neg};
 use num_traits::{One, Zero};
 
 use crate::{
@@ -14,7 +14,19 @@ use crate::{
 };
 
 /// A Laurent polynomial or series in a single variable
-#[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Display, From)]
+#[derive(
+    Clone,
+    Debug,
+    Eq,
+    PartialEq,
+    Ord,
+    PartialOrd,
+    Hash,
+    Display,
+    From,
+    Neg,
+    IsVariant,
+)]
 pub enum Laurent<Var, C: Coeff> {
     Polynomial(Polynomial<Var, C>),
     Series(Series<Var, C>),
@@ -44,28 +56,14 @@ impl<Var, C: Coeff> Laurent<Var, C> {
     }
 }
 
-impl<Var, C: Coeff + Neg<Output = C>> Neg for Laurent<Var, C> {
-    type Output = Laurent<Var, C>;
-
-    fn neg(self) -> Self::Output {
-        match self {
-            Laurent::Polynomial(p) => (-p).into(),
-            Laurent::Series(s) => (-s).into(),
-        }
-    }
-}
-
-impl<'a, Var: Clone, C: Coeff + Clone> Neg for &'a Laurent<Var, C>
+impl<'a, Var, C: Coeff> Neg for &'a Laurent<Var, C>
 where
-    &'a C: Neg<Output = C>,
+    Laurent<Var, C>: Clone + Neg<Output = Laurent<Var, C>>,
 {
     type Output = Laurent<Var, C>;
 
     fn neg(self) -> Self::Output {
-        match self {
-            Laurent::Polynomial(p) => (-p).into(),
-            Laurent::Series(s) => (-s).into(),
-        }
+        self.clone().neg()
     }
 }
 
