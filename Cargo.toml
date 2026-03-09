@@ -15,6 +15,7 @@ derive_more = { version = "2.1.1", features = ["display", "is_variant", "from", 
 elsa = "1.10"
 num-traits = "0.2"
 serde = { version = "1.0", optional = true, features = ["derive"] }
+winnow = { version = "0.7.14", optional = true }
 
 [dev-dependencies]
 criterion = "0.5"
@@ -25,3 +26,9 @@ rug = "1.5"
 [[bench]]
 name = "benchmarks"
 harness = false
+
+[features]
+default = ["parse"]
+parse = ["winnow"]
+winnow = ["dep:winnow"]
+thiserror = []

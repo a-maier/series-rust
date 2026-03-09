@@ -4,21 +4,23 @@ pub mod anon_series;
 pub mod anon_series_slice;
 pub mod laurent;
 pub mod ops;
+#[cfg(feature = "parse")]
+pub mod parse;
 pub mod poly;
 pub mod series;
 pub mod series_slice;
 mod zero_ref;
+mod traits;
+mod util;
 
 pub use self::laurent::Laurent;
 pub use self::ops::{Exp, Ln, Pow};
 pub use self::poly::{Polynomial, PolynomialParts, PolynomialSlice};
 pub use self::series::{Series, SeriesParts};
 pub use self::series_slice::SeriesSlice;
-mod traits;
 pub use self::traits::{
     AsSlice, KaratsubaMul, MulInverse, NeedsCoeffBracket, Sign, SplitSign,
 };
-mod util;
 
 use std::iter::Zip;
 use std::ops::RangeFrom;
