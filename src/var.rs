@@ -46,4 +46,33 @@ macro_rules! var {
             }
         }
     };
+    ($v:vis $var:ident) => {
+        $crate::paste::paste! {
+            #[derive(Copy, Clone, Debug, Default, Eq, PartialEq, Ord, PartialOrd, Hash)]
+            $v struct [< $var:camel >] { }
+
+            $v const [< $var:snake:upper >]: [< $var:camel >] = [< $var:camel >]{};
+
+            $v const [< $var:snake:upper _STR >]: &str = stringify!([< $var:snake:lower >]);
+
+            impl std::fmt::Display for [< $var:camel >] {
+                fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                    std::fmt::Display::fmt([< $var:snake:upper _STR >], f)
+                }
+            }
+
+            impl std::str::FromStr for [< $var:camel >] {
+                type Err = $crate::var::VarParseError<Self>;
+
+                fn from_str(s: &str) -> Result<Self, Self::Err> {
+                    if s == [< $var:snake:upper _STR >] {
+                        Ok([< $var:snake:upper >])
+                    } else {
+                        Err($crate::var::VarParseError::new())
+                    }
+                }
+            }
+        }
+    };
+
 }
