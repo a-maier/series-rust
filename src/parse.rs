@@ -1,4 +1,5 @@
 use std::{
+    fmt::Debug,
     ops::{AddAssign, Mul, Neg},
     str::FromStr,
 };
@@ -7,12 +8,12 @@ use derive_more::Display;
 use winnow::{
     ModalResult, Parser,
     ascii::{dec_int, dec_uint, float, multispace0},
-    combinator::{alt, delimited, opt, preceded, repeat, trace},
+    combinator::{alt, delimited, opt, preceded, repeat, separated_pair, trace},
     error::ContextError,
     token::{any, take_while},
 };
 
-use crate::{Coeff, Polynomial, Sign};
+use crate::{Coeff, Polynomial, Series, Sign};
 
 /// Error parsing a polynomial
 #[derive(Debug, Display)]
@@ -32,6 +33,18 @@ where
     }
 }
 
+impl<Var, C> FromStr for Series<Var, C>
+where
+    C: AddAssign + Coeff + Neg<Output = C> + ParseCoeff,
+    Var: Clone + Debug + FromStr + PartialEq,
+{
+    type Err = ParseError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        series.parse(s).map_err(|e| ParseError(e.to_string()))
+    }
+}
+
 fn poly<Var, C>(input: &mut &str) -> ModalResult<Polynomial<Var, C>>
 where
     Var: FromStr + PartialEq,
@@ -42,6 +55,20 @@ where
             rest.push(first);
             poly_from_monomials(rest).ok()
         })
+        .parse_next(input)
+}
+
+fn series<Var, C>(input: &mut &str) -> ModalResult<Series<Var, C>>
+where
+    Var: Debug + Clone + FromStr + PartialEq,
+    C: AddAssign + Coeff + Neg<Output = C> + ParseCoeff,
+{
+    alt((
+        separated_pair(poly, plus, cutoff)
+            .map(|(p, (var, pow))| p.cutoff_at(&var, pow)),
+        preceded(opt(plus), cutoff)
+            .map(|(var, pow)| Series::new(var, pow, vec![])),
+    ))
         .parse_next(input)
 }
 
@@ -123,13 +150,13 @@ fn signed_monomial<
 fn monomial<Var: FromStr, C: Coeff + ParseCoeff>(
     input: &mut &str,
 ) -> ModalResult<Monomial<Var, C>> {
-    trace("monomial", alt((coeff_times_var_pow, var_pow))).parse_next(input)
+    trace("monomial", alt((coeff_times_var_pow, var_pow_as_monomial))).parse_next(input)
 }
 
 fn coeff_times_var_pow<Var: FromStr, C: Coeff + ParseCoeff>(
     input: &mut &str,
 ) -> ModalResult<Monomial<Var, C>> {
-    (coeff, opt((times_or_div, var_pow)))
+    (coeff, opt((times_or_div, var_pow_as_monomial)))
         .map(|(c, op_var_pow)| match op_var_pow {
             None => Monomial {
                 c,
@@ -170,17 +197,14 @@ fn coeff_no_bracket<C: ParseCoeff>(input: &mut &str) -> ModalResult<C> {
         .map_err(|_| winnow::error::ErrMode::Backtrack(ContextError::new()))
 }
 
-fn var_pow<Var: FromStr, C: Coeff>(
+fn var_pow_as_monomial<Var: FromStr, C: Coeff>(
     input: &mut &str,
 ) -> ModalResult<Monomial<Var, C>> {
-    (var, opt(num_pow))
-        .map(|(var, p)| {
-            let pow = p.unwrap_or(1);
-            Monomial {
+    var_pow
+        .map(|(var, pow)| Monomial {
                 c: C::one(),
                 var: Some(var),
                 pow,
-            }
         })
         .parse_next(input)
 }
@@ -289,6 +313,19 @@ fn pow(input: &mut &str) -> ModalResult<()> {
         .parse_next(input)
 }
 
+fn var_pow<Var: FromStr>(
+    input: &mut &str,
+) -> ModalResult<(Var, isize)> {
+    (var, opt(num_pow))
+        .map(|(v, p)| (v, p.unwrap_or(1)))
+        .parse_next(input)
+}
+
+fn cutoff<Var: FromStr>(input: &mut &str) -> ModalResult<(Var, isize)> {
+    delimited(("O(", multispace0), var_pow, closing_bracket)
+        .parse_next(input)
+}
+
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
 enum MulOp {
     Times,
@@ -343,9 +380,33 @@ macro_rules! impl_parse_coeff_float {
 
 impl_parse_coeff_float!(f32, f64);
 
+impl<Var, C> ParseCoeff for Polynomial<Var, C>
+where
+    Var: FromStr + PartialEq,
+    C: AddAssign + Coeff + Neg<Output = C> + ParseCoeff,
+{
+    type Error = winnow::error::ErrMode<ContextError>;
+
+    fn parse_coeff(input: &mut &str, inside_bracket: bool) -> Result<Self, Self::Error> {
+        if inside_bracket {
+            poly.parse_next(input)
+        } else {
+            monomial(input)
+                .map(
+                    |Monomial { c, var, pow }| if let Some(var) = var {
+                        Polynomial::new(var, pow, vec![c])
+                    } else {
+                        debug_assert_eq!(pow, 0);
+                        Polynomial::Const(c)
+                    })
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::{var, O};
 
     #[test]
     fn constants() {
@@ -423,6 +484,48 @@ mod tests {
 
         let p: Polynomial<String, i32> = "(0)*x^10".parse().unwrap();
         assert!(p.is_zero());
+    }
+
+    #[test]
+    fn nested_poly() {
+        var!(X);
+        var!(Y);
+
+        let p: Polynomial<X, Polynomial<Y, i32>> = "x + y".parse().unwrap();
+        let res = Polynomial::new(
+            X,
+            0,
+            vec![Polynomial::new(Y, 1, vec![1]), Polynomial::one()]
+        );
+        assert_eq!(p, res);
+
+        let p: Polynomial<X, Polynomial<Y, i32>> = "(1 + y)*x".parse().unwrap();
+        let res = Polynomial::new(
+            X,
+            1,
+            vec![Polynomial::new(Y, 0, vec![1, 1])]
+        );
+        assert_eq!(p, res);
+    }
+
+    #[test]
+    fn series() {
+        var!(X);
+        let p: Series<X, i32> = "1 + 0*x^0 + O(x)".parse().unwrap();
+        let res = Series::new(X, 0, vec![1]);
+        assert_eq!(p, res);
+
+        let p: Series<X, i32> = "2 + 3*x^0 + O(x^2)".parse().unwrap();
+        assert_eq!(p, Series::new(X, 0, vec![5, 0]));
+
+        let p: Series<X, i32> = "2/x - 3*x^3 + O(x^4)".parse().unwrap();
+        assert_eq!(
+            p,
+            Series::new(X, -1, vec![2, 0, 0, 0, -3])
+        );
+
+        let p: Series<X, i32> = "O(x^10)".parse().unwrap();
+        assert_eq!(p, O!(X^10));
     }
 
     #[test]
