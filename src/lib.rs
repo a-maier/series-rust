@@ -10,6 +10,7 @@ pub mod poly;
 pub mod series;
 pub mod series_slice;
 mod zero_ref;
+pub mod var;
 mod traits;
 mod util;
 
@@ -21,6 +22,7 @@ pub use self::series_slice::SeriesSlice;
 pub use self::traits::{
     AsSlice, KaratsubaMul, MulInverse, NeedsCoeffBracket, Sign, SplitSign,
 };
+pub use paste;
 
 use std::iter::Zip;
 use std::ops::RangeFrom;
@@ -51,17 +53,17 @@ mod tests {
 
     #[test]
     fn tst_series() {
-        let var = String::from("x");
+        var!(X);
         let min_pow = -10;
         let coeffs = vec![];
-        let s = Series::new(var.clone(), min_pow, coeffs);
+        let s = Series::new(X, min_pow, coeffs);
         assert_eq!(s.min_pow(), min_pow);
         assert_eq!(s.coeff(-11), Some(&0));
         assert_eq!(s.coeff(-10), None);
 
         let min_pow = -3;
         let coeffs = vec![1., 2., 3.];
-        let s = Series::new(var.clone(), min_pow, coeffs);
+        let s = Series::new(X, min_pow, coeffs);
         assert_eq!(s.min_pow(), min_pow);
         assert_eq!(s.coeff(-4), Some(&0.));
         assert_eq!(s.coeff(-3), Some(&1.));
@@ -71,19 +73,19 @@ mod tests {
 
         let min_pow = -2;
         let coeffs = vec![0., 0., 3.];
-        let s = Series::new(var.clone(), min_pow, coeffs);
+        let s = Series::new(X, min_pow, coeffs);
         assert_eq!(s.min_pow(), min_pow + 2);
         assert_eq!(s.coeff(-2), Some(&0.));
         assert_eq!(s.coeff(-1), Some(&0.));
         assert_eq!(s.coeff(0), Some(&3.));
         assert_eq!(s.coeff(1), None);
 
-        let s = Series::new(var.clone(), -2, vec![0., 0., 1.]);
-        let t = Series::new(var.clone(), 0, vec![1.]);
+        let s = Series::new(X, -2, vec![0., 0., 1.]);
+        let t = Series::new(X, 0, vec![1.]);
         assert_eq!(s, t);
 
-        let s = Series::new(var.clone(), -3, vec![0., 0., 0.]);
-        let t = Series::new(var.clone(), 0, vec![]);
+        let s = Series::new(X, -3, vec![0., 0., 0.]);
+        let t = Series::new(X, 0, vec![]);
         assert_eq!(s, t);
     }
 
