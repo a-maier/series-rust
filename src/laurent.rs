@@ -5,7 +5,7 @@ use std::{
     },
 };
 
-use derive_more::{Display, From, IsVariant, Neg};
+use derive_more::{Display, From, IsVariant};
 use num_traits::{One, Zero};
 
 use crate::{
@@ -24,7 +24,6 @@ use crate::{
     Hash,
     Display,
     From,
-    Neg,
     IsVariant,
 )]
 pub enum Laurent<Var, C: Coeff> {
@@ -52,6 +51,20 @@ impl<Var, C: Coeff> Laurent<Var, C> {
         match self {
             Self::Polynomial(p) if p.is_one() => true,
             _ => false,
+        }
+    }
+}
+
+impl<Var, C: Coeff> Neg for Laurent<Var, C>
+where
+    C: Neg<Output = C>,
+{
+    type Output = Laurent<Var, C>;
+
+    fn neg(self) -> Self::Output {
+        match self {
+            Laurent::Polynomial(p) => (-p).into(),
+            Laurent::Series(s) => (-s).into(),
         }
     }
 }
