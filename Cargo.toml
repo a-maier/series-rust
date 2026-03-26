@@ -15,6 +15,7 @@ derive_more = { version = "2.1.1", features = ["display", "is_variant", "from"] 
 elsa = "1.10"
 num-traits = "0.2"
 paste = "1.0.15"
+rug = { version = "1.5", default-features = false, optional = true, features = ["std", "num-traits"] }
 serde = { version = "1.0", optional = true, features = ["derive"] }
 winnow = { version = "0.7.14", optional = true }
 
@@ -29,7 +30,9 @@ name = "benchmarks"
 harness = false
 
 [features]
-default = ["parse"]
+default = ["parse", "rug-integer"]
 parse = ["winnow"]
 winnow = ["dep:winnow"]
+serde = ["dep:serde", "rug?/serde"]
 thiserror = []
+rug-integer = ["rug/integer", "derive_more/add", "derive_more/add_assign", "derive_more/as_ref", "derive_more/mul_assign", "derive_more/debug", "derive_more/from_str", "derive_more/into", "derive_more/not"]

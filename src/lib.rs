@@ -7,6 +7,7 @@ pub mod ops;
 #[cfg(feature = "parse")]
 pub mod parse;
 pub mod poly;
+pub mod rug;
 pub mod series;
 pub mod series_slice;
 mod traits;
