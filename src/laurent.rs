@@ -29,10 +29,7 @@ impl<Var, C: Coeff> Laurent<Var, C> {
     }
 
     pub fn is_zero(&self) -> bool {
-        match self {
-            Self::Polynomial(p) if p.is_zero() => true,
-            _ => false,
-        }
+        matches!(self, Self::Polynomial(p) if p.is_zero())
     }
 
     pub fn one() -> Self {
@@ -40,10 +37,7 @@ impl<Var, C: Coeff> Laurent<Var, C> {
     }
 
     pub fn is_one(&self) -> bool {
-        match self {
-            Self::Polynomial(p) if p.is_one() => true,
-            _ => false,
-        }
+        matches!(self, Self::Polynomial(p) if p.is_one())
     }
 }
 
@@ -61,7 +55,7 @@ where
     }
 }
 
-impl<'a, Var, C: Coeff> Neg for &'a Laurent<Var, C>
+impl<Var, C: Coeff> Neg for &Laurent<Var, C>
 where
     Laurent<Var, C>: Clone + Neg<Output = Laurent<Var, C>>,
 {
@@ -81,7 +75,7 @@ where
     }
 
     fn is_zero(&self) -> bool {
-        Laurent::is_zero(&self)
+        Laurent::is_zero(self)
     }
 }
 
@@ -94,7 +88,7 @@ where
     }
 
     fn is_one(&self) -> bool {
-        Laurent::is_one(&self)
+        Laurent::is_one(self)
     }
 }
 
@@ -486,6 +480,7 @@ where
     }
 }
 
+#[allow(clippy::suspicious_arithmetic_impl)]
 impl<Var, C: Coeff> Div for Laurent<Var, C>
 where
     Polynomial<Var, C>: Div<C, Output = Polynomial<Var, C>>,

@@ -1961,7 +1961,7 @@ where
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match *self {
-            PolynomialSlice::Const(c) => return write!(f, "{c}"),
+            PolynomialSlice::Const(c) => write!(f, "{c}"),
             PolynomialSlice::Poly {
                 min_pow,
                 coeffs,
@@ -2097,9 +2097,7 @@ where
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self.0 {
-            PolynomialSlice::Const(c) => {
-                return write!(f, "{}", c.split_sign().1);
-            }
+            PolynomialSlice::Const(c) => write!(f, "{}", c.split_sign().1),
             PolynomialSlice::Poly {
                 min_pow,
                 coeffs,
@@ -2132,7 +2130,7 @@ where
                         if !first {
                             write!(f, " {sign} ")?;
                         }
-                        fmt_term(&c, &var, pow, f)?;
+                        fmt_term(&c, var, pow, f)?;
                     }
                     first = false;
                 }

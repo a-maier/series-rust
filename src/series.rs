@@ -1417,7 +1417,7 @@ where
                 if !first {
                     write!(f, " {sign} ")?;
                 }
-                fmt_term(&c, &var, pow, f)?;
+                fmt_term(&c, var, pow, f)?;
             }
             first = false;
         }

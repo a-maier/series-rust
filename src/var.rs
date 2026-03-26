@@ -1,7 +1,7 @@
 use std::{fmt::Display, marker::PhantomData};
 
 /// Error parsing a variable
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct VarParseError<Var>(PhantomData<Var>);
 
 impl<Var> VarParseError<Var> {
