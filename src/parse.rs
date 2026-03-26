@@ -13,7 +13,7 @@ use winnow::{
     token::{any, take_while},
 };
 
-use crate::{Coeff, Polynomial, Series, Sign};
+use crate::{Coeff, Laurent, Polynomial, Series, Sign};
 
 /// Error parsing a polynomial
 #[derive(Debug, Display)]
@@ -45,6 +45,18 @@ where
     }
 }
 
+impl<Var, C> FromStr for Laurent<Var, C>
+where
+    C: AddAssign + Coeff + Neg<Output = C> + ParseCoeff,
+    Var: Clone + Debug + FromStr + PartialEq,
+{
+    type Err = ParseError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        laurent.parse(s).map_err(|e| ParseError(e.to_string()))
+    }
+}
+
 fn poly<Var, C>(input: &mut &str) -> ModalResult<Polynomial<Var, C>>
 where
     Var: FromStr + PartialEq,
@@ -68,6 +80,24 @@ where
             .map(|(p, (var, pow))| p.cutoff_at(&var, pow)),
         preceded(opt(plus), cutoff)
             .map(|(var, pow)| Series::new(var, pow, vec![])),
+    ))
+        .parse_next(input)
+}
+
+fn laurent<Var, C>(input: &mut &str) -> ModalResult<Laurent<Var, C>>
+where
+    Var: Debug + Clone + FromStr + PartialEq,
+    C: AddAssign + Coeff + Neg<Output = C> + ParseCoeff,
+{
+    alt((
+        (poly, opt(preceded(plus, cutoff)))
+            .map(|(p, c)| if let Some((var, pow)) = c {
+                p.cutoff_at(&var, pow).into()
+            } else {
+                p.into()
+            }),
+        preceded(opt(plus), cutoff)
+            .map(|(var, pow)| Series::new(var, pow, vec![]).into()),
     ))
         .parse_next(input)
 }
@@ -391,7 +421,7 @@ where
         if inside_bracket {
             poly.parse_next(input)
         } else {
-            monomial(input)
+            monomial.parse_next(input)
                 .map(
                     |Monomial { c, var, pow }| if let Some(var) = var {
                         Polynomial::new(var, pow, vec![c])
@@ -399,6 +429,33 @@ where
                         debug_assert_eq!(pow, 0);
                         Polynomial::Const(c)
                     })
+        }
+    }
+}
+
+impl<Var, C> ParseCoeff for Laurent<Var, C>
+where
+    Var: Clone + Debug + FromStr + PartialEq,
+    C: AddAssign + Coeff + Neg<Output = C> + ParseCoeff,
+{
+    type Error = winnow::error::ErrMode<ContextError>;
+
+    fn parse_coeff(input: &mut &str, inside_bracket: bool) -> Result<Self, Self::Error> {
+        if inside_bracket {
+            laurent.parse_next(input)
+        } else {
+            alt((
+                monomial
+                    .map(
+                        |Monomial { c, var, pow }| if let Some(var) = var {
+                            Polynomial::new(var, pow, vec![c]).into()
+                        } else {
+                            debug_assert_eq!(pow, 0);
+                            Polynomial::Const(c).into()
+                        }),
+                cutoff
+                    .map(|(var, pow)| Series::new(var, pow, vec![]).into())
+            )).parse_next(input)
         }
     }
 }
@@ -526,6 +583,29 @@ mod tests {
 
         let p: Series<X, i32> = "O(x^10)".parse().unwrap();
         assert_eq!(p, O!(X^10));
+    }
+
+    #[test]
+    fn laurent() {
+        var!(X);
+        var!(Y);
+
+        let l: Laurent<X, i32> = "1 + 0*x^0 + O(x)".parse().unwrap();
+        let res = Laurent::from(Series::new(X, 0, vec![1]));
+        assert_eq!(l, res);
+
+        let l: Laurent<Y, Laurent<X, i32>> = "y + (1/x + 3*x^2 + O(x^3))*y^2".parse().unwrap();
+        let res = Laurent::from(
+            Polynomial::new(
+                Y,
+                1,
+                vec![
+                    Laurent::one(),
+                    Laurent::from(Series::new(X, -1, vec![1, 0, 0, 3]))
+                ]
+            )
+        );
+        assert_eq!(l, res);
     }
 
     #[test]
