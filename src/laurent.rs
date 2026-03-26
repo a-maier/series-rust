@@ -14,6 +14,7 @@ use crate::{
 };
 
 /// A Laurent polynomial or series in a single variable
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(
     Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Display, From, IsVariant,
 )]
