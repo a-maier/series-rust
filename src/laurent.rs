@@ -15,16 +15,7 @@ use crate::{
 
 /// A Laurent polynomial or series in a single variable
 #[derive(
-    Clone,
-    Debug,
-    Eq,
-    PartialEq,
-    Ord,
-    PartialOrd,
-    Hash,
-    Display,
-    From,
-    IsVariant,
+    Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Display, From, IsVariant,
 )]
 pub enum Laurent<Var, C: Coeff> {
     Polynomial(Polynomial<Var, C>),

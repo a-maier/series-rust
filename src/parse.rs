@@ -8,7 +8,9 @@ use derive_more::Display;
 use winnow::{
     ModalResult, Parser,
     ascii::{dec_int, dec_uint, float, multispace0},
-    combinator::{alt, delimited, opt, preceded, repeat, separated_pair, trace},
+    combinator::{
+        alt, delimited, opt, preceded, repeat, separated_pair, trace,
+    },
     error::ContextError,
     token::{any, take_while},
 };
@@ -81,7 +83,7 @@ where
         preceded(opt(plus), cutoff)
             .map(|(var, pow)| Series::new(var, pow, vec![])),
     ))
-        .parse_next(input)
+    .parse_next(input)
 }
 
 fn laurent<Var, C>(input: &mut &str) -> ModalResult<Laurent<Var, C>>
@@ -90,16 +92,17 @@ where
     C: AddAssign + Coeff + Neg<Output = C> + ParseCoeff,
 {
     alt((
-        (poly, opt(preceded(plus, cutoff)))
-            .map(|(p, c)| if let Some((var, pow)) = c {
+        (poly, opt(preceded(plus, cutoff))).map(|(p, c)| {
+            if let Some((var, pow)) = c {
                 p.cutoff_at(&var, pow).into()
             } else {
                 p.into()
-            }),
+            }
+        }),
         preceded(opt(plus), cutoff)
             .map(|(var, pow)| Series::new(var, pow, vec![]).into()),
     ))
-        .parse_next(input)
+    .parse_next(input)
 }
 
 #[derive(Debug)]
@@ -163,10 +166,7 @@ fn opt_signed_monomial<
         .parse_next(input)
 }
 
-fn signed_monomial<
-    Var: FromStr,
-    C: Coeff + Neg<Output = C> + ParseCoeff,
->(
+fn signed_monomial<Var: FromStr, C: Coeff + Neg<Output = C> + ParseCoeff>(
     input: &mut &str,
 ) -> ModalResult<Monomial<Var, C>> {
     (sign, monomial)
@@ -180,7 +180,8 @@ fn signed_monomial<
 fn monomial<Var: FromStr, C: Coeff + ParseCoeff>(
     input: &mut &str,
 ) -> ModalResult<Monomial<Var, C>> {
-    trace("monomial", alt((coeff_times_var_pow, var_pow_as_monomial))).parse_next(input)
+    trace("monomial", alt((coeff_times_var_pow, var_pow_as_monomial)))
+        .parse_next(input)
 }
 
 fn coeff_times_var_pow<Var: FromStr, C: Coeff + ParseCoeff>(
@@ -214,7 +215,7 @@ fn coeff_bracket<C: ParseCoeff>(input: &mut &str) -> ModalResult<C> {
     let res = delimited(open_bracket, coeff_bracket, closing_bracket)
         .parse_next(input);
     if res.is_ok() {
-        return res
+        return res;
     }
     C::parse_coeff(input, true)
         // TODO: how to create a proper error?
@@ -232,9 +233,9 @@ fn var_pow_as_monomial<Var: FromStr, C: Coeff>(
 ) -> ModalResult<Monomial<Var, C>> {
     var_pow
         .map(|(var, pow)| Monomial {
-                c: C::one(),
-                var: Some(var),
-                pow,
+            c: C::one(),
+            var: Some(var),
+            pow,
         })
         .parse_next(input)
 }
@@ -290,7 +291,7 @@ where
 
     fn parse_coeff(
         input: &mut &str,
-        inside_bracket: bool
+        inside_bracket: bool,
     ) -> Result<Self, Self::Error>;
 }
 
@@ -343,17 +344,14 @@ fn pow(input: &mut &str) -> ModalResult<()> {
         .parse_next(input)
 }
 
-fn var_pow<Var: FromStr>(
-    input: &mut &str,
-) -> ModalResult<(Var, isize)> {
+fn var_pow<Var: FromStr>(input: &mut &str) -> ModalResult<(Var, isize)> {
     (var, opt(num_pow))
         .map(|(v, p)| (v, p.unwrap_or(1)))
         .parse_next(input)
 }
 
 fn cutoff<Var: FromStr>(input: &mut &str) -> ModalResult<(Var, isize)> {
-    delimited(("O(", multispace0), var_pow, closing_bracket)
-        .parse_next(input)
+    delimited(("O(", multispace0), var_pow, closing_bracket).parse_next(input)
 }
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
@@ -417,18 +415,21 @@ where
 {
     type Error = winnow::error::ErrMode<ContextError>;
 
-    fn parse_coeff(input: &mut &str, inside_bracket: bool) -> Result<Self, Self::Error> {
+    fn parse_coeff(
+        input: &mut &str,
+        inside_bracket: bool,
+    ) -> Result<Self, Self::Error> {
         if inside_bracket {
             poly.parse_next(input)
         } else {
-            monomial.parse_next(input)
-                .map(
-                    |Monomial { c, var, pow }| if let Some(var) = var {
-                        Polynomial::new(var, pow, vec![c])
-                    } else {
-                        debug_assert_eq!(pow, 0);
-                        Polynomial::Const(c)
-                    })
+            monomial.parse_next(input).map(|Monomial { c, var, pow }| {
+                if let Some(var) = var {
+                    Polynomial::new(var, pow, vec![c])
+                } else {
+                    debug_assert_eq!(pow, 0);
+                    Polynomial::Const(c)
+                }
+            })
         }
     }
 }
@@ -440,22 +441,25 @@ where
 {
     type Error = winnow::error::ErrMode<ContextError>;
 
-    fn parse_coeff(input: &mut &str, inside_bracket: bool) -> Result<Self, Self::Error> {
+    fn parse_coeff(
+        input: &mut &str,
+        inside_bracket: bool,
+    ) -> Result<Self, Self::Error> {
         if inside_bracket {
             laurent.parse_next(input)
         } else {
             alt((
-                monomial
-                    .map(
-                        |Monomial { c, var, pow }| if let Some(var) = var {
-                            Polynomial::new(var, pow, vec![c]).into()
-                        } else {
-                            debug_assert_eq!(pow, 0);
-                            Polynomial::Const(c).into()
-                        }),
-                cutoff
-                    .map(|(var, pow)| Series::new(var, pow, vec![]).into())
-            )).parse_next(input)
+                monomial.map(|Monomial { c, var, pow }| {
+                    if let Some(var) = var {
+                        Polynomial::new(var, pow, vec![c]).into()
+                    } else {
+                        debug_assert_eq!(pow, 0);
+                        Polynomial::Const(c).into()
+                    }
+                }),
+                cutoff.map(|(var, pow)| Series::new(var, pow, vec![]).into()),
+            ))
+            .parse_next(input)
         }
     }
 }
@@ -463,7 +467,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{var, O};
+    use crate::{O, var};
 
     #[test]
     fn constants() {
@@ -552,16 +556,13 @@ mod tests {
         let res = Polynomial::new(
             X,
             0,
-            vec![Polynomial::new(Y, 1, vec![1]), Polynomial::one()]
+            vec![Polynomial::new(Y, 1, vec![1]), Polynomial::one()],
         );
         assert_eq!(p, res);
 
         let p: Polynomial<X, Polynomial<Y, i32>> = "(1 + y)*x".parse().unwrap();
-        let res = Polynomial::new(
-            X,
-            1,
-            vec![Polynomial::new(Y, 0, vec![1, 1])]
-        );
+        let res =
+            Polynomial::new(X, 1, vec![Polynomial::new(Y, 0, vec![1, 1])]);
         assert_eq!(p, res);
     }
 
@@ -576,13 +577,10 @@ mod tests {
         assert_eq!(p, Series::new(X, 0, vec![5, 0]));
 
         let p: Series<X, i32> = "2/x - 3*x^3 + O(x^4)".parse().unwrap();
-        assert_eq!(
-            p,
-            Series::new(X, -1, vec![2, 0, 0, 0, -3])
-        );
+        assert_eq!(p, Series::new(X, -1, vec![2, 0, 0, 0, -3]));
 
         let p: Series<X, i32> = "O(x^10)".parse().unwrap();
-        assert_eq!(p, O!(X^10));
+        assert_eq!(p, O!(X ^ 10));
     }
 
     #[test]
@@ -594,17 +592,16 @@ mod tests {
         let res = Laurent::from(Series::new(X, 0, vec![1]));
         assert_eq!(l, res);
 
-        let l: Laurent<Y, Laurent<X, i32>> = "y + (1/x + 3*x^2 + O(x^3))*y^2".parse().unwrap();
-        let res = Laurent::from(
-            Polynomial::new(
-                Y,
-                1,
-                vec![
-                    Laurent::one(),
-                    Laurent::from(Series::new(X, -1, vec![1, 0, 0, 3]))
-                ]
-            )
-        );
+        let l: Laurent<Y, Laurent<X, i32>> =
+            "y + (1/x + 3*x^2 + O(x^3))*y^2".parse().unwrap();
+        let res = Laurent::from(Polynomial::new(
+            Y,
+            1,
+            vec![
+                Laurent::one(),
+                Laurent::from(Series::new(X, -1, vec![1, 0, 0, 3])),
+            ],
+        ));
         assert_eq!(l, res);
     }
 

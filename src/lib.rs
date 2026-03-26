@@ -9,10 +9,10 @@ pub mod parse;
 pub mod poly;
 pub mod series;
 pub mod series_slice;
-mod zero_ref;
-pub mod var;
 mod traits;
 mod util;
+pub mod var;
+mod zero_ref;
 
 pub use self::laurent::Laurent;
 pub use self::ops::{Exp, Ln, Pow};
