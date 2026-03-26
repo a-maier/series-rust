@@ -350,7 +350,7 @@ impl<Var, C: Coeff> Polynomial<Var, C> {
 
     /// Check if the polynomial is zero
     ///
-    /// See [is_zero].
+    /// See [is_zero](Polynomial::is_zero).
     pub fn is_empty(&self) -> bool {
         self.is_zero()
     }

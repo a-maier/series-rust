@@ -38,9 +38,10 @@ pub(crate) trait ExpCoeff {
 
 /// Split an object into the leading sign and a signless remainder
 ///
-/// This trait is needed for the [Display] implementations of [Series]
-/// and [Polynomials](Polynomial). The lifetime of the reference is
-/// part of the trait signature to support a lightweight reference
+/// This trait is needed for the [Display] implementations of
+/// [Series](crate::Series) and
+/// [Polynomials](crate::Polynomial). The lifetime of the reference
+/// is part of the trait signature to support a lightweight reference
 /// type for `Signless`.
 /// ```
 /// # use series::{SplitSign, Sign};
@@ -172,7 +173,7 @@ macro_rules! impl_split_sign_float {
 
 impl_split_sign_float!(f32, f64);
 
-/// Check if a bracket is needed when used as a coefficient in a [Series] or [Polynomial]
+/// Check if a bracket is needed when used as a coefficient in a [Series](crate::Series) or [Polynomial](crate::Polynomial)
 ///
 /// This trait is needed for the [Display] implementations to make
 /// sure that brackets are added where necessary. Usually that happens

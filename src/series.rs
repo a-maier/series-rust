@@ -813,7 +813,7 @@ where
     ///
     /// Panics if the polynomial is zero, since the result is exactly
     /// zero and not representable as a Laurent series anymore. Use
-    /// [Laurent] instead if this can happen.
+    /// [Laurent](crate::Laurent) instead if this can happen.
     fn mul_assign(&mut self, rhs: Polynomial<Var, C>) {
         match rhs {
             Polynomial::Const(c) => self.mul_assign(c),
@@ -1234,7 +1234,7 @@ where
     ///
     /// Panics if the constant is zero, since the result is exactly
     /// zero and not representable as a Laurent series anymore. Use
-    /// [Laurent] instead if this can happen.
+    /// [Laurent](crate::Laurent) instead if this can happen.
     fn mul_assign(&mut self, rhs: &'a C) {
         self.series.mul_assign(rhs)
     }
@@ -1250,7 +1250,7 @@ where
     ///
     /// Panics if the constant is zero, since the result is exactly
     /// zero and not representable as a Laurent series anymore. Use
-    /// [Laurent] instead if this can happen.
+    /// [Laurent](crate::Laurent) instead if this can happen.
     fn mul_assign(&mut self, rhs: C) {
         self.series.mul_assign(rhs)
     }

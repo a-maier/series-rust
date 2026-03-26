@@ -33,99 +33,115 @@ series = "0.13"
 # Examples
 
 ```rust
-use series::{Laurent, MulInverse, Series, Polynomial};
+use series::{Laurent, MulInverse, Series, Polynomial, var};
 
-// Create a new series in x, starting at order x^2 with coefficients 1, 2, 3,
-// i.e. s = 1*x^2 + 2*x^3 + 3*x^4 + O(x^5).
-let s = Series::new("x", 2, vec![1, 2, 3]);
-println!("s = {s}");
+fn main() {
 
-// The corresponding polynomial
-// p = 1*x^2 + 2*x^3 + 3*x^4.
-let p = Polynomial::new("x", 2, vec![1, 2, 3]);
-assert_eq!(p, Polynomial::from(s));
+   // Define a variable `X`, rendered as "x"
+   //
+   // This defines a struct `X`, a compile-time constant `X` of type `X`,
+   // and a constant string `X_STR == "x"`
+   var!(X);
 
-// series with a cutoff power of 7
-// s = 1*x^2 + 2*x^3 + 3*x^4 + O(x^7).
-let s = Series::with_cutoff("x", 2..7, vec![1, 2, 3]);
+   // Create a new series in x
+   let s: Series<X, i32> = "x^2 + 2*x^3 + 3*x^4 + O(x^5)".parse().unwrap();
+   // We can also use the more efficient direct construction
+   let t = Series::new(X, 2, vec![1, 2, 3]);
+   assert_eq!(s, t);
 
-// To show various kinds of operations we now switch to floating-point
-// coefficients
+   // There is also a constructor with an explicit cutoff power
+   let s = Series::with_cutoff(X, 2..7, vec![1, 2, 3]);
+   assert_eq!(s, "x^2 + 2*x^3 + 3*x^4 + O(x^7)".parse().unwrap());
 
-// Now s = 1 - x + O(x^5).
-let s = Series::with_cutoff("x", 0..5, vec![1., -1.]);
-// Expand 1/(1-x) up to x^4.
-let t = (&s).mul_inverse();
-println!("1/(1-x) = {t}");
+   // The corresponding polynomial
+   let p: Polynomial<X, i32> = "x^2 + 2*x^3 + 3*x^4".parse().unwrap();
+   assert_eq!(p, Polynomial::from(s));
 
-// Series and polynomials can be added, subtracted, multiplied.
-// Series can also be divided by other series.
-// We can either move the arguments or use references
-println!("s+t = {}", &s + &t);
-println!("s-t = {}", &s - &t);
-println!("s*t = {}", &s * &t);
-println!("s/t = {}", &s / t);
+   // Series and Polynomials are generic in their variable and coefficient types
+   let p: Polynomial<String, i32> = "x^2 + 2*x^3 + 3*x^4".parse().unwrap();
 
-// We can also multiply or divide each coefficient by a number
-println!("s*3 = {}", &s * 3.);
-println!("s/3 = {}", &s / 3.);
-// Polynomials can be multiplied by 0
-assert_eq!(&p * 0, Polynomial::zero());
-// But for series, multiplication by 0 is not defined,
-// as the result is not a series anymore
-assert!(std::panic::catch_unwind(|| &s * 0.).is_err());
-// We can instead use the Laurent sum type, which can be either
-// a series or a polynomial
-let l = Laurent::from(s);
-assert_eq!(&l * 0., Laurent::zero());
+   // To show various kinds of operations we now switch to floating-point
+   // coefficients
 
+   let s: Series<X, f64> = "1. - x + O(x^5)".parse().unwrap();
+   // Expand 1 / (1 - x) up to x^4.
+   let t = (&s).mul_inverse();
+   println!("1/(1-x) = {t}");
+
+   // Series and polynomials can be added, subtracted, multiplied.
+   // Series can also be divided by other series.
+   // We can either move the arguments or use references
+   println!("s + t = {}", &s + &t);
+   println!("s - t = {}", &s - &t);
+   println!("s * t = {}", &s * &t);
+   println!("s / t = {}", &s / t);
+
+   // We can also multiply or divide each coefficient by a number
+   println!("s * 3 = {}", &s * 3.);
+   println!("s / 3 = {}", &s / 3.);
+   // Polynomials can be multiplied by 0
+   assert_eq!(&p * 0, Polynomial::zero());
+   // But for series, multiplication by 0 is not defined,
+   // as the result is not a series anymore
+   assert!(std::panic::catch_unwind(|| &s * 0.).is_err());
+   // We can instead use the Laurent sum type, which can be either
+   // a series or a polynomial
+   let l = Laurent::from(s);
+   assert_eq!(&l * 0., Laurent::zero());
+}
 ```
 
 # Exponentials, logarithms, and powers
 
 More advanced operations on Laurent series in general require the
 variable type to be convertible to the coefficient type by
-implementing the [From] trait:
+implementing the
+[From](https://doc.rust-lang.org/std/convert/trait.From.html) trait:
 
 ```
-use series::Series;
+use series::{Series, var};
 use series::ops::{Ln, Exp, Pow};
 
-// In the examples shown here, this conversion is actually never used,
-// so we can get away with a dummy implementation.
-#[derive(Debug, Clone, PartialEq)]
-struct Variable<'a>(&'a str);
+var!(X);
 
-impl<'a> From<Variable<'a>> for f64 {
-    fn from(_s: Variable<'a>) -> f64 {
-        panic!("Can't convert variable to f64")
-    }
+fn main() {
+   // In the examples shown here, this conversion is actually never used,
+   // so we can get away with a dummy implementation.
+   impl From<X> for f64 {
+       fn from(_: X) -> f64 {
+           panic!("Can't convert variable `x` to f64")
+       }
+   }
+
+   // Now we can calculate logarithms, exponentials, and powers:
+   let s = Series::new(X, 0, vec![1., -3., 5.]);
+   println!("exp(s) = {}", s.clone().exp());
+   println!("ln(s) = {}", s.clone().ln());
+   let t = s.clone();
+   println!("s^s = {}", (&s).pow(&t));
+   println!("s^4 = {}", s.powi(4));
 }
-
-impl<'a> std::fmt::Display for Variable<'a> {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        self.0.fmt(f)
-    }
-}
-
-// Now we can calculate logarithms, exponentials, and powers:
-let s = Series::new(Variable("x"), 0, vec![1., -3., 5.]);
-println!("exp(s) = {}", s.clone().exp());
-println!("ln(s) = {}", s.clone().ln());
-let t = s.clone();
-println!("s^s = {}", (&s).pow(&t));
-println!("s^4 = {}", s.powi(4));
 ```
 
-# Multivariate series
+# Multivariate series and polynomials
 
 Multivariate polynomials can be created via nesting:
 
 ```
-use series::Polynomial;
+use series::{Polynomial, var};
 
-let p = Polynomial::new("x0", 0, vec![1, 2, 3]);
-let p = Polynomial::new("x1", 0, vec![p.clone(), &p + 3,  &p * 2]);
+var!(X);
+var!(Y);
+
+fn main() {
+   let p: Polynomial<X, Polynomial<Y, i32>> =
+      "+ 1 + 2*y + 3*y^2
+       + (4 + 2*y + 3*y^2)*x
+       + (2 + 4*y + 6*y^2)*x^2".parse().unwrap();
+   let q = Polynomial::new(Y, 0, vec![1, 2, 3]);
+   let q = Polynomial::new(X, 0, vec![q.clone(), &q + 3,  &q * 2]);
+   assert_eq!(p, q);
+}
 ```
 
 Laurent series are not supported as coefficients, since they can never
@@ -133,9 +149,14 @@ be identically zero. A way around this limitation is to use the
 [Laurent] struct:
 
 ```
-use series::{Laurent, Polynomial, Series};
+use series::{Laurent, Polynomial, Series, var};
 
-let s = Series::new("x0", 0, vec![1, 2, 3]);
-let s = Laurent::from(s);
-let p = Polynomial::new("x1", 0, vec![s.clone(), &s + 3,  &s * 2]);
+var!(X);
+var!(Y);
+
+fn main() {
+   let s = Series::new(Y, 0, vec![1, 2, 3]);
+   let s = Laurent::from(s);
+   let p = Polynomial::new(X, 0, vec![s.clone(), &s + 3,  &s * 2]);
+}
 ```

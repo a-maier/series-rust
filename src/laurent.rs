@@ -509,12 +509,8 @@ where
     ///
     /// # Panics
     ///
-    /// Panics if the divisor is zero or if the dividend is a
-    /// polynomial and the divisor is a non-constant polynomial.
-    ///
-    /// # Example
-    /// ```
-    /// ```
+    /// Panics if the dividend is a polynomial and the divisor is a
+    /// non-constant polynomial.
     fn div(self, rhs: Self) -> Self::Output {
         match (self, rhs) {
             (

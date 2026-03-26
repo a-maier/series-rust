@@ -1211,7 +1211,7 @@ where
     ///
     /// Panics if the constant is zero, since the result is exactly
     /// zero and not representable as a Laurent series anymore. Use
-    /// [Laurent] instead if this can happen.
+    /// [Laurent](crate::Laurent) instead if this can happen.
     fn mul_assign(&mut self, rhs: &'a C) {
         if rhs.is_zero() {
             panic!("Cannot multiply series by 0")
@@ -1232,7 +1232,7 @@ where
     ///
     /// Panics if the constant is zero, since the result is exactly
     /// zero and not representable as a Laurent series anymore. Use
-    /// [Laurent] instead if this can happen.
+    /// [Laurent](crate::Laurent) instead if this can happen.
     fn mul_assign(&mut self, rhs: C) {
         *self *= &rhs
     }
