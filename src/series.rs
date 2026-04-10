@@ -100,6 +100,21 @@ impl<Var, C: Coeff> Series<Var, C> {
         self.series.cutoff_pow()
     }
 
+    /// Shift all powers by `n`, i.e. multiply by `x^n`
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use series::Series;
+    /// let mut s = Series::new("x", -1, vec![1, 2, 3]);
+    /// s.shift_pow(1);
+    /// assert_eq!(s.min_pow(), 0);
+    /// assert_eq!(s.cutoff_pow(), 3);
+    /// ```
+    pub fn shift_pow(&mut self, n: isize) {
+        self.series.min_pow += n;
+    }
+
     /// Truncate the expansion power
     ///
     /// Only has an effect if the new power is less than the old one
