@@ -24,6 +24,9 @@ pub use self::traits::{
 };
 pub use paste;
 
+#[cfg(feature = "winnow")]
+pub use winnow;
+
 use std::iter::Zip;
 use std::ops::RangeFrom;
 
