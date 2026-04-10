@@ -62,6 +62,10 @@ impl<Var, C: Coeff> NonConstPoly<Var, C> {
     pub fn var(&self) -> &Var {
         &self.var
     }
+
+    pub(crate) fn coeffs(&self) -> &[C] {
+        &self.coeffs
+    }
 }
 
 impl<Var, C: Coeff> Display for Polynomial<Var, C>
