@@ -30,9 +30,10 @@ name = "benchmarks"
 harness = false
 
 [features]
-default = ["parse", "rug-integer"]
+default = ["parse", "rug-integer", "rug-rational"]
 parse = ["winnow"]
 winnow = ["dep:winnow"]
 serde = ["dep:serde", "rug?/serde"]
 thiserror = []
 rug-integer = ["rug/integer", "derive_more/add", "derive_more/add_assign", "derive_more/as_ref", "derive_more/mul_assign", "derive_more/debug", "derive_more/from_str", "derive_more/into", "derive_more/not"]
+rug-rational = ["rug/rational", "derive_more/add", "derive_more/add_assign", "derive_more/as_ref", "derive_more/mul_assign", "derive_more/debug", "derive_more/from_str", "derive_more/into", "derive_more/not"]
