@@ -100,6 +100,24 @@ impl<Var, C: Coeff> Series<Var, C> {
         self.series.cutoff_pow()
     }
 
+    /// Truncate the expansion power
+    ///
+    /// Only has an effect if the new power is less than the old one
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use series::Series;
+    /// let mut s = Series::new("x", -1, vec![1, 2, 3]);
+    /// s.truncate_at(1);
+    /// assert_eq!(s.cutoff_pow(), 1);
+    /// s.truncate_at(-5);
+    /// assert_eq!(s.cutoff_pow(), -5);
+    /// ```
+    pub fn truncate_at(&mut self, n: isize) {
+        self.series.truncate_at(n)
+    }
+
     /// Get the number of known coefficients in the series.
     ///
     /// # Example
