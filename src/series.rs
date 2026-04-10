@@ -45,8 +45,7 @@ impl<Var, C: Coeff> Series<Var, C> {
     ///
     /// This creates a series in the variable "x", starting at "x"^-1
     /// with coefficients 1, 2, 3. and vanishing coefficients up to
-    /// "x"^5 .In other words, the series
-    /// x^-1 + 2 + 3*x + O(x^5).
+    /// "x"^5 . In other words, the series x^-1 + 2 + 3*x + O(x^5).
     /// ```rust
     /// # use series::Series;
     /// let s = Series::with_cutoff("x", -1..5, vec![1, 2, 3]);
