@@ -1,7 +1,7 @@
 use crate::traits::{AsSlice, NeedsCoeffBracket, SplitSign};
 use crate::util::{trim_slice_zero, trim_zero};
 use crate::zero_ref::zero_ref;
-use crate::{Coeff, IntoIter, Series, SeriesParts, SeriesSlice, Sign};
+use crate::{Coeff, IntoIter, Pow, Series, SeriesParts, SeriesSlice, Sign};
 
 use core::slice;
 use std::fmt::Display;
@@ -101,6 +101,36 @@ where
         (sign, SignlessPoly(self))
     }
 }
+
+macro_rules! impl_powu {
+    ($($t:ty), *) => {
+        $(
+            impl<Var, C: Coeff> Pow<$t> for Polynomial<Var, C>
+            where
+                Self: One,
+            for<'c> Self: MulAssign<&'c Self>,
+            for<'c> &'c Self: Mul<Output = Self>
+            {
+                type Output = Polynomial<Var, C>;
+
+                fn pow(self, mut exp: $t) -> Self::Output {
+                    let mut res: Self = One::one();
+                    let mut rhs = self;
+                    while exp > 0 {
+                        if exp & 1 != 0 {
+                            res *= &rhs
+                        };
+                        rhs = &rhs * &rhs;
+                        exp /= 2;
+                    }
+                    res
+                }
+            }
+        )*
+    };
+}
+
+impl_powu!(u8, u16, u32, u64, u128, usize);
 
 #[derive(PartialEq)]
 pub struct SignlessPoly<'a, Var, C>(pub(crate) &'a Polynomial<Var, C>);
