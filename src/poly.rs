@@ -710,12 +710,23 @@ impl<Var, C: Coeff> std::iter::IntoIterator for Polynomial<Var, C> {
         match self {
             // TODO: avoid the vec allocation?
             Polynomial::Const(c) => (0..).zip(vec![c]),
-            Polynomial::Poly(NonConstPoly {
-                min_pow,
-                coeffs,
-                var: _,
-            }) => (min_pow..).zip(coeffs),
+            Polynomial::Poly(p) => p.into_iter(),
         }
+    }
+}
+
+impl<Var, C: Coeff> std::iter::IntoIterator for NonConstPoly<Var, C> {
+    type Item = (isize, C);
+    type IntoIter = crate::IntoIter<C>;
+
+    /// Consuming iterator over the polynomial powers and coefficients.
+    fn into_iter(self) -> IntoIter<C> {
+        let Self {
+            min_pow,
+            coeffs,
+            var: _,
+        } = self;
+        (min_pow..).zip(coeffs)
     }
 }
 
