@@ -20,11 +20,10 @@ impl<Var: Default + Display> Display for VarParseError<Var> {
 ///
 /// This is a convenience macro for defining variables for
 /// [Series](crate::Series) or [Polynomial](crate::Polynomial).
-/// Effectively, `var!(VarName)` defines a struct `VarName` together
-/// with a compile-time constant `VAR_NAME` and a string constant
-/// `VAR_NAME_STR == "var_name"`. [Display] and
-/// [FromStr](std::str::FromStr) are implemented matching the value of
-/// this string constant.
+/// Effectively, `var!(VarName)` defines a unit-like struct VarName`
+/// together with a compile-time string constant `VAR_NAME_STR ==
+/// "var_name"`. [Display] and [FromStr](std::str::FromStr) are
+/// implemented matching the value of this string constant.
 ///
 /// # Example
 /// ```
@@ -43,9 +42,7 @@ macro_rules! var {
     ($var:ident) => {
         $crate::paste::paste! {
             #[derive(Copy, Clone, Debug, Default, Eq, PartialEq, Ord, PartialOrd, Hash)]
-            struct [< $var:camel >] { }
-
-            const [< $var:snake:upper >]: [< $var:camel >] = [< $var:camel >]{};
+            struct [< $var:camel >];
 
             const [< $var:snake:upper _STR >]: &str = stringify!([< $var:snake:lower >]);
 
@@ -60,7 +57,7 @@ macro_rules! var {
 
                 fn from_str(s: &str) -> Result<Self, Self::Err> {
                     if s == [< $var:snake:upper _STR >] {
-                        Ok([< $var:snake:upper >])
+                        Ok([< $var:camel >])
                     } else {
                         Err($crate::var::VarParseError::new())
                     }
@@ -71,9 +68,7 @@ macro_rules! var {
     ($v:vis $var:ident) => {
         $crate::paste::paste! {
             #[derive(Copy, Clone, Debug, Default, Eq, PartialEq, Ord, PartialOrd, Hash)]
-            $v struct [< $var:camel >] { }
-
-            $v const [< $var:snake:upper >]: [< $var:camel >] = [< $var:camel >]{};
+            $v struct [< $var:camel >];
 
             $v const [< $var:snake:upper _STR >]: &str = stringify!([< $var:snake:lower >]);
 
@@ -88,7 +83,7 @@ macro_rules! var {
 
                 fn from_str(s: &str) -> Result<Self, Self::Err> {
                     if s == [< $var:snake:upper _STR >] {
-                        Ok([< $var:snake:upper >])
+                        Ok([< $var:camel >])
                     } else {
                         Err($crate::var::VarParseError::new())
                     }
