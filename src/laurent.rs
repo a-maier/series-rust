@@ -41,6 +41,25 @@ impl<Var, C: Coeff> Laurent<Var, C> {
     pub fn is_one(&self) -> bool {
         matches!(self, Self::Polynomial(p) if p.is_one())
     }
+
+    pub fn min_pow(&self) -> Option<isize> {
+        match self {
+            Laurent::Polynomial(p) => p.min_pow(),
+            Laurent::Series(s) => Some(s.min_pow()),
+        }
+    }
+}
+
+impl<Var: Clone + Debug + PartialEq, C: Coeff> Laurent<Var, C> {
+    pub fn cutoff_at(self, var: &Var, cutoff: isize) -> Self {
+        match self {
+            Laurent::Polynomial(p) => p.cutoff_at(var, cutoff).into(),
+            Laurent::Series(mut s) => {
+                s.truncate_at(cutoff);
+                s.into()
+            },
+        }
+    }
 }
 
 impl<Var, C: Coeff> Neg for Laurent<Var, C>
