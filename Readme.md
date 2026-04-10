@@ -144,7 +144,7 @@ fn main() {
 }
 ```
 
-Laurent series are not supported as coefficients, since they can never
+Series are not supported as coefficients, since they can never
 be identically zero. A way around this limitation is to use the
 [Laurent] struct:
 
