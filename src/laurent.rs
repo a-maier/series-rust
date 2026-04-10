@@ -9,8 +9,10 @@ use derive_more::{Display, From, IsVariant};
 use num_traits::{One, Zero};
 
 use crate::{
-    Coeff, NeedsCoeffBracket, Polynomial, PolynomialSlice, Series, SeriesSlice,
-    Sign, SplitSign, poly::SignlessPoly, series::SignlessSeries,
+    AsSlice, Coeff, NeedsCoeffBracket, Polynomial, PolynomialSlice, Series,
+    SeriesSlice, Sign, SplitSign,
+    poly::{NonConstPoly, SignlessPoly},
+    series::SignlessSeries,
 };
 
 /// A Laurent polynomial or series in a single variable
@@ -379,13 +381,92 @@ impl_sub_assign!(
     SeriesSlice<'a, Var, C>
 );
 
+impl<Var, C: Coeff> MulAssign<Polynomial<Var, C>> for Laurent<Var, C>
+where
+    Polynomial<Var, C>: MulAssign,
+    Series<Var, C>: MulAssign<C> + MulAssign<NonConstPoly<Var, C>>,
+    Self: Zero,
+{
+    fn mul_assign(&mut self, rhs: Polynomial<Var, C>) {
+        match self {
+            Laurent::Polynomial(p) => p.mul_assign(rhs),
+            Laurent::Series(s) => match rhs {
+                Polynomial::Const(c) => {
+                    if c.is_zero() {
+                        self.set_zero()
+                    } else {
+                        s.mul_assign(c);
+                    }
+                }
+                Polynomial::Poly(p) => s.mul_assign(p),
+            },
+        }
+    }
+}
+
+impl<'a, Var, C: Coeff> MulAssign<&'a Polynomial<Var, C>> for Laurent<Var, C>
+where
+    Polynomial<Var, C>: MulAssign<&'a Polynomial<Var, C>>,
+    Series<Var, C>: MulAssign<&'a C> + MulAssign<&'a NonConstPoly<Var, C>>,
+    Self: Zero,
+{
+    fn mul_assign(&mut self, rhs: &'a Polynomial<Var, C>) {
+        match self {
+            Laurent::Polynomial(p) => p.mul_assign(rhs),
+            Laurent::Series(s) => match rhs {
+                Polynomial::Const(c) => {
+                    if c.is_zero() {
+                        self.set_zero()
+                    } else {
+                        s.mul_assign(c);
+                    }
+                }
+                Polynomial::Poly(p) => s.mul_assign(p),
+            },
+        }
+    }
+}
+
+macro_rules! impl_mul_assign_series {
+    ($($t:ty), *) => {
+        $(
+            impl<'a, Var, C: Coeff> MulAssign<$t> for Laurent<Var, C>
+            where
+                Series<Var, C>: MulAssign<$t>,
+                $t: Mul<C, Output = Series<Var, C>>,
+                NonConstPoly<Var, C>: Mul<$t, Output = Series<Var, C>>
+            {
+                fn mul_assign(&mut self, rhs: $t) {
+                    let res = std::mem::replace(self, Self::zero());
+                    let res = match res {
+                        Laurent::Series(mut s) => {
+                            s.mul_assign(rhs);
+                            Laurent::Series(s)
+                        }
+                        Laurent::Polynomial(Polynomial::Const(c)) => if c.is_zero() {
+                            Self::zero()
+                        } else {
+                            // TODO: assumes multiplication commutes
+                            (rhs * c).into()
+                        },
+                        Laurent::Polynomial(Polynomial::Poly(p)) =>
+                            (p * rhs).into()
+                    };
+                    *self = res
+                }
+            }
+        )*
+    };
+}
+
+impl_mul_assign_series!(Series<Var, C>, &'a Series<Var, C>, SeriesSlice<'a, Var, C>);
+
 impl<Var, C: Coeff> Mul for Laurent<Var, C>
 where
-    Polynomial<Var, C>: Mul<Output = Polynomial<Var, C>>
-        + Mul<Series<Var, C>, Output = Series<Var, C>>,
+    Polynomial<Var, C>: Mul<Output = Polynomial<Var, C>>,
     Series<Var, C>: Mul<Output = Series<Var, C>>
-        + Mul<Polynomial<Var, C>, Output = Series<Var, C>>,
-    Self: Zero,
+        + Mul<NonConstPoly<Var, C>, Output = Series<Var, C>>
+        + Mul<C, Output = Series<Var, C>>,
 {
     type Output = Self;
 
@@ -395,13 +476,17 @@ where
                 p1.mul(p2).into()
             }
             (Laurent::Polynomial(p), Laurent::Series(s))
-            | (Laurent::Series(s), Laurent::Polynomial(p)) => {
-                if p.is_zero() {
-                    Self::zero()
-                } else {
-                    s.mul(p).into()
+            | (Laurent::Series(s), Laurent::Polynomial(p)) => match p {
+                Polynomial::Const(c) => {
+                    if c.is_zero() {
+                        Laurent::zero()
+                    } else {
+                        s.mul(c).into()
+                    }
                 }
-            }
+                // TODO: assumes multiplication commutes
+                Polynomial::Poly(p) => s.mul(p).into(),
+            },
             (Laurent::Series(s1), Laurent::Series(s2)) => s1.mul(s2).into(),
         }
     }
@@ -410,10 +495,12 @@ where
 impl<'a, Var, C: Coeff> Mul<&'a Laurent<Var, C>> for Laurent<Var, C>
 where
     Polynomial<Var, C>: Mul<&'a Polynomial<Var, C>, Output = Polynomial<Var, C>>
-        + Mul<&'a Series<Var, C>, Output = Series<Var, C>>,
+        + Mul<&'a Series<Var, C>, Output = Laurent<Var, C>>,
     Series<Var, C>: Mul<&'a Series<Var, C>, Output = Series<Var, C>>
-        + Mul<&'a Polynomial<Var, C>, Output = Series<Var, C>>,
-    Self: Zero,
+        + Mul<&'a NonConstPoly<Var, C>, Output = Series<Var, C>>
+        + Mul<&'a C, Output = Series<Var, C>>,
+    NonConstPoly<Var, C>: Mul<&'a Series<Var, C>, Output = Series<Var, C>>,
+    &'a Series<Var, C>: Mul<C, Output = Series<Var, C>>,
 {
     type Output = Self;
 
@@ -422,19 +509,26 @@ where
             (Laurent::Polynomial(p1), Laurent::Polynomial(p2)) => {
                 p1.mul(p2).into()
             }
-            (Laurent::Polynomial(p), Laurent::Series(s)) => {
-                if p.is_zero() {
+            (Laurent::Polynomial(Polynomial::Const(c)), Laurent::Series(s)) => {
+                if c.is_zero() {
                     Self::zero()
                 } else {
-                    p.mul(s).into()
+                    // TODO: assumes multiplication commutes
+                    s.mul(c).into()
                 }
             }
-            (Laurent::Series(s), Laurent::Polynomial(p)) => {
-                if p.is_zero() {
+            (Laurent::Polynomial(Polynomial::Poly(p)), Laurent::Series(s)) => {
+                p.mul(s).into()
+            }
+            (Laurent::Series(s), Laurent::Polynomial(Polynomial::Const(c))) => {
+                if c.is_zero() {
                     Self::zero()
                 } else {
-                    s.mul(p).into()
+                    s.mul(c).into()
                 }
+            }
+            (Laurent::Series(s), Laurent::Polynomial(Polynomial::Poly(p))) => {
+                s.mul(p).into()
             }
             (Laurent::Series(s1), Laurent::Series(s2)) => s1.mul(s2).into(),
         }
@@ -448,16 +542,17 @@ where
     type Output = Laurent<Var, C>;
 
     fn mul(self, rhs: Laurent<Var, C>) -> Self::Output {
+        // TODO: assumes multiplication commutes
         rhs.mul(self)
     }
 }
 
 impl<'a, Var, C: Coeff> Mul for &'a Laurent<Var, C>
 where
-    &'a Polynomial<Var, C>: Mul<Output = Polynomial<Var, C>>
-        + Mul<&'a Series<Var, C>, Output = Series<Var, C>>,
+    &'a Polynomial<Var, C>: Mul<Output = Polynomial<Var, C>>,
     &'a Series<Var, C>: Mul<Output = Series<Var, C>>
-        + Mul<&'a Polynomial<Var, C>, Output = Series<Var, C>>,
+        + Mul<&'a NonConstPoly<Var, C>, Output = Series<Var, C>>
+        + Mul<&'a C, Output = Series<Var, C>>,
     Laurent<Var, C>: Zero,
 {
     type Output = Laurent<Var, C>;
@@ -467,16 +562,65 @@ where
             (Laurent::Polynomial(p1), Laurent::Polynomial(p2)) => {
                 p1.mul(p2).into()
             }
+            // TODO: assumes multiplication commutes
             (Laurent::Polynomial(p), Laurent::Series(s))
-            | (Laurent::Series(s), Laurent::Polynomial(p)) => {
-                if p.is_zero() {
-                    Self::Output::zero()
-                } else {
-                    s.mul(p).into()
+            | (Laurent::Series(s), Laurent::Polynomial(p)) => match p {
+                Polynomial::Const(c) => {
+                    if c.is_zero() {
+                        Laurent::zero()
+                    } else {
+                        s.mul(c).into()
+                    }
                 }
-            }
+                Polynomial::Poly(p) => s.mul(p).into(),
+            },
             (Laurent::Series(s1), Laurent::Series(s2)) => s1.mul(s2).into(),
         }
+    }
+}
+
+macro_rules! impl_mul_via_mul_assign {
+    ($($t:ty), *) => {
+        $(
+            impl<'a, Var, C: Coeff> Mul<$t> for Laurent<Var, C>
+            where
+                Self: MulAssign<$t>
+            {
+                type Output = Laurent<Var, C>;
+
+                fn mul(mut self, rhs: $t) -> Self::Output {
+                    self.mul_assign(rhs);
+                    self
+                }
+            }
+
+            impl<'a, Var, C: Coeff> Mul<Laurent<Var, C>> for $t
+            where
+                Laurent<Var, C>: MulAssign<$t>
+            {
+                type Output = Laurent<Var, C>;
+
+                fn mul(self, rhs: Laurent<Var, C>) -> Self::Output {
+                    rhs * self
+                }
+            }
+        )*
+    };
+}
+
+impl_mul_via_mul_assign!(
+    Polynomial<Var, C>, &'a Polynomial<Var, C>,
+    Series<Var, C>, SeriesSlice<'a, Var, C>
+);
+
+impl<'a, Var, C: Coeff> Mul<&'a Series<Var, C>> for Laurent<Var, C>
+where
+    Self: Mul<SeriesSlice<'a, Var, C>, Output = Laurent<Var, C>>,
+{
+    type Output = Laurent<Var, C>;
+
+    fn mul(self, rhs: &'a Series<Var, C>) -> Self::Output {
+        self.mul(rhs.as_slice(..))
     }
 }
 
@@ -487,6 +631,7 @@ where
     Series<Var, C>: Div<Output = Series<Var, C>>
         + Div<Polynomial<Var, C>, Output = Series<Var, C>>
         + Mul<C, Output = Series<Var, C>>,
+    NonConstPoly<Var, C>: Div<Series<Var, C>, Output = Series<Var, C>>,
     Laurent<Var, C>: Zero,
     C: Div<Output = C>,
 {
@@ -520,8 +665,7 @@ where
                 }
             }
             (Laurent::Polynomial(Polynomial::Poly(p)), Laurent::Series(s)) => {
-                let cutoff_pow = s.len() as isize + p.min_pow();
-                p.cutoff_at(cutoff_pow).div(s).into()
+                p.div(s).into()
             }
             (Laurent::Series(s), Laurent::Polynomial(p)) => s.div(p).into(),
             (Laurent::Series(s1), Laurent::Series(s2)) => s1.div(s2).into(),

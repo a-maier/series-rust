@@ -1,5 +1,5 @@
 use crate::ops::{Exp, Ln, Pow};
-use crate::traits::{AsSlice, ExpCoeff, MulInverse};
+use crate::traits::{ExpCoeff, MulInverse};
 use crate::util::trim_slice_start_zero;
 use crate::zero_ref::zero_ref;
 use crate::{Coeff, Iter, SeriesSlice, anon_series::AnonSeries};
@@ -290,71 +290,36 @@ where
     }
 }
 
-impl<'a, C: Coeff> Mul for AnonSeriesSlice<'a, C>
+impl<'a, C: Coeff> Mul<AnonSeries<C>> for AnonSeriesSlice<'a, C>
 where
-    C: Clone,
     AnonSeries<C>: Mul<AnonSeriesSlice<'a, C>, Output = AnonSeries<C>>,
 {
     type Output = AnonSeries<C>;
 
-    fn mul(self, other: AnonSeriesSlice<'a, C>) -> Self::Output {
-        AnonSeries::from(self) * other
-    }
-}
-
-impl<C: Coeff> Mul<AnonSeries<C>> for AnonSeriesSlice<'_, C>
-where
-    C: Clone,
-    AnonSeries<C>: MulAssign<AnonSeries<C>>,
-{
-    type Output = AnonSeries<C>;
-
     fn mul(self, other: AnonSeries<C>) -> Self::Output {
-        AnonSeries::from(self) * other
+        // TODO: assumes multiplication commutes
+        other.mul(self)
     }
 }
 
-impl<'b, C: Coeff> Mul<&'b AnonSeries<C>> for AnonSeriesSlice<'_, C>
-where
-    C: Clone,
-    for<'c> AnonSeries<C>: Mul<AnonSeriesSlice<'c, C>, Output = AnonSeries<C>>,
-{
-    type Output = AnonSeries<C>;
+macro_rules! impl_mul_as_owned {
+    ($($t:ty), *) => {
+        $(
+            impl<'a, C: Coeff> Mul<$t> for AnonSeriesSlice<'a, C>
+            where
+                AnonSeries<C>: Mul<$t, Output = AnonSeries<C>> + From<AnonSeriesSlice<'a, C>>,
+            {
+                type Output = AnonSeries<C>;
 
-    fn mul(self, other: &'b AnonSeries<C>) -> Self::Output {
-        self * other.as_slice(..)
-    }
+                fn mul(self, other: $t) -> Self::Output {
+                    AnonSeries::from(self).mul(other)
+                }
+            }
+        )*
+    };
 }
 
-impl<C: Coeff> Mul<C> for AnonSeriesSlice<'_, C>
-where
-    for<'c> &'c C: Mul<Output = C>,
-{
-    type Output = AnonSeries<C>;
-
-    fn mul(self, other: C) -> Self::Output {
-        if other.is_zero() {
-            panic!("Cannot multiply series by 0")
-        }
-        let coeffs = self.coeffs.iter().map(|c| c * &other).collect();
-        AnonSeries::new(self.min_pow(), coeffs)
-    }
-}
-
-impl<'b, C: Coeff> Mul<&'b C> for AnonSeriesSlice<'_, C>
-where
-    for<'c> &'c C: Mul<Output = C>,
-{
-    type Output = AnonSeries<C>;
-
-    fn mul(self, other: &'b C) -> Self::Output {
-        if other.is_zero() {
-            panic!("Cannot multiply series by 0")
-        }
-        let coeffs = self.coeffs.iter().map(|c| c * other).collect();
-        AnonSeries::new(self.min_pow(), coeffs)
-    }
-}
+impl_mul_as_owned!(AnonSeriesSlice<'a, C>, &'a AnonSeries<C>, C, &'a C);
 
 impl<C: Coeff, T> Div<T> for AnonSeriesSlice<'_, C>
 where

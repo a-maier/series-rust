@@ -295,6 +295,21 @@ impl<C: Coeff> AnonSeries<C> {
         let coeffs = self.into_iter().map(|(pow, c)| f(pow, c)).collect();
         AnonSeries::new(min_pow, coeffs)
     }
+
+    pub(crate) fn mul_by_slice<'a>(&mut self, b_0: &'a C, b: &'a [C])
+    where
+        for<'c> &'c C: Mul<Output = C>,
+        C: MulAssign<&'a C> + AddAssign,
+    {
+        // compute Cauchy product
+        for k in (0..self.coeffs.len()).rev() {
+            let (c_k, a) = self.coeffs[..k + 1].split_last_mut().unwrap();
+            *c_k *= b_0;
+            for (a, b) in a.iter().rev().zip(b) {
+                *c_k += a * b
+            }
+        }
+    }
 }
 
 impl<C: 'static + Coeff + Send + Sync> AnonSeries<C> {
@@ -811,11 +826,9 @@ where
     }
 }
 
-impl<'a, C: Coeff + Clone + AddAssign> MulAssign<&'a AnonSeries<C>>
-    for AnonSeries<C>
+impl<'a, C: Coeff> MulAssign<&'a AnonSeries<C>> for AnonSeries<C>
 where
-    for<'b> &'b C: Mul<Output = C>,
-    C: MulAssign<&'a C>,
+    Self: MulAssign<AnonSeriesSlice<'a, C>>,
 {
     /// Set s = s * t for two series s,t
     ///
@@ -835,24 +848,17 @@ where
 
 impl<'a, C> MulAssign<AnonSeriesSlice<'a, C>> for AnonSeries<C>
 where
-    for<'b> &'b C: Mul<Output = C>,
-    C: MulAssign<&'a C> + Coeff + Clone + AddAssign,
+    for<'c> &'c C: Mul<Output = C>,
+    C: MulAssign<&'a C> + Coeff + AddAssign,
 {
     fn mul_assign(&mut self, other: AnonSeriesSlice<'a, C>) {
         self.min_pow += other.min_pow();
         let num_coeffs = min(self.coeffs.len(), other.coeffs.len());
         self.coeffs.truncate(num_coeffs);
-        // compute Cauchy product
-        for k in (1..self.coeffs.len()).rev() {
-            let (c_k, c) = self.coeffs[..=k].split_last_mut().unwrap();
-            *c_k *= &other.coeffs[0];
-            for i in 1..=k {
-                *c_k += &c[k - i] * &other.coeffs[i]
-            }
-        }
-        if let Some(c0) = self.coeffs.first_mut() {
-            *c0 *= &other.coeffs[0]
-        }
+        let Some((b_0, b)) = other.coeffs.split_first() else {
+            return;
+        };
+        self.mul_by_slice(b_0, b);
     }
 }
 
@@ -876,65 +882,31 @@ where
     }
 }
 
-// TODO: somehow make multiplication symmetric?
-impl<C: Coeff> Mul for AnonSeries<C>
-where
-    AnonSeries<C>: MulAssign,
-{
-    type Output = AnonSeries<C>;
+macro_rules! impl_mul_right_via_mul_assign {
+    ($($t:ty), *) => {
+        $(
+            impl<'a, C: Coeff> Mul<$t> for AnonSeries<C>
+            where
+                AnonSeries<C>: MulAssign<$t>,
+            {
+                type Output = AnonSeries<C>;
 
-    fn mul(mut self, other: AnonSeries<C>) -> Self::Output {
-        self *= other;
-        self
-    }
+                fn mul(mut self, other: $t) -> Self::Output {
+                    self.mul_assign(other);
+                    self
+                }
+            }
+        )*
+    };
 }
 
-impl<'a, C: Coeff> Mul<&'a AnonSeries<C>> for AnonSeries<C>
-where
-    AnonSeries<C>: MulAssign<AnonSeriesSlice<'a, C>>,
-{
-    type Output = AnonSeries<C>;
-
-    fn mul(self, other: &'a AnonSeries<C>) -> Self::Output {
-        self * other.as_slice(..)
-    }
-}
-
-impl<'a, C: Coeff> Mul<AnonSeriesSlice<'a, C>> for AnonSeries<C>
-where
-    AnonSeries<C>: MulAssign<AnonSeriesSlice<'a, C>>,
-{
-    type Output = AnonSeries<C>;
-
-    fn mul(mut self, other: AnonSeriesSlice<'a, C>) -> Self::Output {
-        self *= other;
-        self
-    }
-}
-
-impl<C: Coeff> Mul<C> for AnonSeries<C>
-where
-    for<'c> C: MulAssign<&'c C>,
-{
-    type Output = AnonSeries<C>;
-
-    fn mul(mut self, other: C) -> Self::Output {
-        self *= &other;
-        self
-    }
-}
-
-impl<'a, C: Coeff> Mul<&'a C> for AnonSeries<C>
-where
-    for<'c> C: MulAssign<&'c C>,
-{
-    type Output = AnonSeries<C>;
-
-    fn mul(mut self, other: &'a C) -> Self::Output {
-        self *= other;
-        self
-    }
-}
+impl_mul_right_via_mul_assign!(
+    AnonSeries<C>,
+    &'a AnonSeries<C>,
+    AnonSeriesSlice<'a, C>,
+    C,
+    &'a C
+);
 
 impl<'a, C: Coeff, T> Mul<T> for &'a AnonSeries<C>
 where
@@ -942,8 +914,8 @@ where
 {
     type Output = AnonSeries<C>;
 
-    fn mul(self, other: T) -> Self::Output {
-        self.as_slice(..) * other
+    fn mul(self, rhs: T) -> Self::Output {
+        self.as_slice(..).mul(rhs)
     }
 }
 

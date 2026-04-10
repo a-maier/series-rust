@@ -1,14 +1,13 @@
+use crate::Polynomial;
 use crate::ops::{Exp, Ln, Pow};
-use crate::poly::fmt_terms;
-use crate::traits::{
-    AsSlice, ExpCoeff, MulInverse, NeedsCoeffBracket, SplitSign,
-};
+use crate::poly::{NonConstPoly, fmt_terms};
+use crate::traits::{ExpCoeff, MulInverse, NeedsCoeffBracket, SplitSign};
 use crate::{
     Coeff, Iter, PolynomialSlice, Series, anon_series_slice::AnonSeriesSlice,
 };
 
 use num_traits::One;
-use std::fmt::Display;
+use std::fmt::{Debug, Display};
 use std::ops::{
     Add, AddAssign, Div, DivAssign, Index, Mul, MulAssign, Neg, Sub, SubAssign,
 };
@@ -269,69 +268,47 @@ where
     }
 }
 
-impl<'a, Var, C: Coeff> Mul for SeriesSlice<'a, Var, C>
+impl<'a, Var, C: Coeff> Mul<Series<Var, C>> for SeriesSlice<'a, Var, C>
 where
-    Var: Clone,
-    C: Clone,
     Series<Var, C>: Mul<SeriesSlice<'a, Var, C>, Output = Series<Var, C>>,
 {
     type Output = Series<Var, C>;
 
-    fn mul(self, other: SeriesSlice<'a, Var, C>) -> Self::Output {
-        Series::from(self) * other
+    fn mul(self, rhs: Series<Var, C>) -> Self::Output {
+        // TODO: assumes multiplication commutes
+        rhs.mul(self)
     }
 }
 
-impl<Var, C: Coeff> Mul<Series<Var, C>> for SeriesSlice<'_, Var, C>
-where
-    Var: Clone,
-    C: Clone,
-    Series<Var, C>: MulAssign<Series<Var, C>>,
-{
-    type Output = Series<Var, C>;
+macro_rules! impl_mul_as_owned {
+    ($($t:ty), *) => {
+        $(
+            impl<'a, C: Coeff, Var> Mul<$t> for SeriesSlice<'a, Var, C>
+            where
+                Series<Var, C>: Mul<$t, Output = Series<Var, C>> + From<SeriesSlice<'a, Var, C>>,
+            {
+                type Output = Series<Var, C>;
 
-    fn mul(self, other: Series<Var, C>) -> Self::Output {
-        Series::from(self) * other
-    }
+                fn mul(self, other: $t) -> Self::Output {
+                    Series::from(self).mul(other)
+                }
+            }
+        )*
+    };
 }
 
-impl<'b, Var, C: Coeff> Mul<&'b Series<Var, C>> for SeriesSlice<'_, Var, C>
-where
-    C: Clone,
-    Var: Clone,
-    for<'c> Series<Var, C>:
-        Mul<SeriesSlice<'c, Var, C>, Output = Series<Var, C>>,
-{
-    type Output = Series<Var, C>;
+impl_mul_as_owned!(
+    SeriesSlice<'a, Var, C>,
+    &'a Series<Var, C>,
+    PolynomialSlice<'a, Var, C>,
+    &'a Polynomial<Var, C>,
+    &'a NonConstPoly<Var, C>,
+    C,
+    &'a C
+);
 
-    fn mul(self, other: &'b Series<Var, C>) -> Self::Output {
-        self * other.as_slice(..)
-    }
-}
-
-impl<Var, C: Coeff> Mul<C> for SeriesSlice<'_, Var, C>
-where
-    Var: Clone,
-    for<'c> &'c C: Mul<Output = C>,
-{
-    type Output = Series<Var, C>;
-
-    fn mul(self, other: C) -> Self::Output {
-        (self.series * other).in_var(self.var.clone())
-    }
-}
-
-impl<'b, Var, C: Coeff> Mul<&'b C> for SeriesSlice<'_, Var, C>
-where
-    Var: Clone,
-    for<'c> &'c C: Mul<Output = C>,
-{
-    type Output = Series<Var, C>;
-
-    fn mul(self, other: &'b C) -> Self::Output {
-        (self.series * other).in_var(self.var.clone())
-    }
-}
+// TODO: avoid allocation
+impl_mul_as_owned!(Polynomial<Var, C>, NonConstPoly<Var, C>);
 
 impl<Var, C: Coeff, T> Div<T> for SeriesSlice<'_, Var, C>
 where

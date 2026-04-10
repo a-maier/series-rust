@@ -1,7 +1,8 @@
 use num_traits::One;
 
+use crate::anon_series_slice::AnonSeriesSlice;
 use crate::ops::{Exp, Ln, Pow};
-use crate::poly::fmt_term;
+use crate::poly::{NonConstPoly, fmt_term};
 use crate::{Coeff, IntoIter, Iter};
 use crate::{Polynomial, PolynomialSlice, traits::*};
 use crate::{anon_series::AnonSeries, series_slice::*};
@@ -773,71 +774,42 @@ where
     }
 }
 
-impl<'a, Var: PartialEq + fmt::Debug, C: Coeff + Clone + AddAssign>
-    MulAssign<&'a Series<Var, C>> for Series<Var, C>
+impl<C: Coeff, Var> MulAssign for Series<Var, C>
 where
-    for<'b> &'b C: Mul<Output = C>,
-    C: MulAssign<&'a C>,
+    Var: Debug + PartialEq,
+    AnonSeries<C>: MulAssign,
 {
-    /// Set s = s * t for two series s,t
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// # use series::Series;
-    /// let mut s = Series::new("x", -3, vec![1., 0., -3.]);
-    /// s *= &s.clone();
-    /// let res = Series::new("x", -6, vec![1., 0., -6.]);
-    /// assert_eq!(res, s);
-    /// ```
-    ///
-    /// # Panics
-    ///
-    /// Panics if the series have different expansion variables.
-    fn mul_assign(&mut self, other: &'a Series<Var, C>) {
-        self.mul_assign(other.as_slice(..))
+    fn mul_assign(&mut self, other: Series<Var, C>) {
+        assert_eq!(self.var, other.var);
+        self.series.mul_assign(other.series)
     }
 }
 
-impl<'a, Var, C> MulAssign<SeriesSlice<'a, Var, C>> for Series<Var, C>
+impl<'a, C: Coeff, Var> MulAssign<&Series<Var, C>> for Series<Var, C>
 where
-    Var: PartialEq + fmt::Debug,
-    for<'b> &'b C: Mul<Output = C>,
-    C: MulAssign<&'a C> + Coeff + Clone + AddAssign,
+    Var: Debug + PartialEq,
+    for<'c> AnonSeries<C>: MulAssign<&'c AnonSeries<C>>,
+{
+    fn mul_assign(&mut self, other: &Series<Var, C>) {
+        assert_eq!(self.var, other.var);
+        self.series.mul_assign(&other.series)
+    }
+}
+
+impl<'a, C: Coeff, Var> MulAssign<SeriesSlice<'a, Var, C>> for Series<Var, C>
+where
+    Var: Debug + PartialEq,
+    AnonSeries<C>: MulAssign<AnonSeriesSlice<'a, C>>,
 {
     fn mul_assign(&mut self, other: SeriesSlice<'a, Var, C>) {
-        assert_eq!(self.var(), other.var());
-        self.series.mul_assign(other.series);
-    }
-}
-
-impl<Var, C: Coeff> MulAssign for Series<Var, C>
-where
-    for<'a> Series<Var, C>: MulAssign<&'a Series<Var, C>>,
-{
-    /// Set s = s * t for two series s,t
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// # use series::Series;
-    /// let mut s = Series::new("x", -3, vec![1., 0., -3.]);
-    /// s *= &s.clone();
-    /// let res = Series::new("x", -6, vec![1., 0., -6.]);
-    /// assert_eq!(res, s);
-    /// ```
-    ///
-    /// # Panics
-    ///
-    /// Panics if the series have different expansion variables.
-    fn mul_assign(&mut self, other: Series<Var, C>) {
-        *self *= &other
+        assert_eq!(&self.var, other.var);
+        self.series.mul_assign(other.series)
     }
 }
 
 impl<Var, C: Coeff> MulAssign<Polynomial<Var, C>> for Series<Var, C>
 where
-    Self: MulAssign + MulAssign<C>,
+    Self: MulAssign<C> + MulAssign<NonConstPoly<Var, C>>,
 {
     /// Multiply by a polynomial
     ///
@@ -849,10 +821,7 @@ where
     fn mul_assign(&mut self, rhs: Polynomial<Var, C>) {
         match rhs {
             Polynomial::Const(c) => self.mul_assign(c),
-            Polynomial::Poly(p) => {
-                let cutoff_pow = self.len() as isize + p.min_pow();
-                self.mul_assign(p.cutoff_at(cutoff_pow))
-            }
+            Polynomial::Poly(p) => self.mul_assign(p),
         }
     }
 }
@@ -869,23 +838,53 @@ where
 impl<'a, Var, C: Coeff> MulAssign<PolynomialSlice<'a, Var, C>>
     for Series<Var, C>
 where
-    Self: MulAssign + MulAssign<&'a C>,
-    Polynomial<Var, C>: From<PolynomialSlice<'a, Var, C>>,
-    Var: Clone + Debug + PartialEq,
+    Self: MulAssign<&'a C>,
+    Var: Debug + PartialEq,
+    C: MulAssign<&'a C> + AddAssign,
+    for<'c> &'c C: Mul<Output = C>,
 {
     fn mul_assign(&mut self, rhs: PolynomialSlice<'a, Var, C>) {
         match rhs {
             PolynomialSlice::Const(c) => self.mul_assign(c),
             PolynomialSlice::Poly {
                 min_pow,
-                coeffs: _,
+                coeffs,
                 var,
             } => {
-                let cutoff_pow = self.len() as isize + min_pow;
-                let p = Polynomial::from(rhs);
-                self.mul_assign(p.cutoff_at(var, cutoff_pow))
+                assert_eq!(self.var(), var);
+                self.series.min_pow += min_pow;
+                let Some((b_0, b)) = coeffs.split_first() else {
+                    panic!("Cannot multiply series by 0")
+                };
+                self.series.mul_by_slice(b_0, b)
             }
         }
+    }
+}
+
+impl<Var: Debug + PartialEq, C: Coeff> MulAssign<NonConstPoly<Var, C>>
+    for Series<Var, C>
+where
+    for<'c> &'c C: Mul<Output = C>,
+    for<'c> C: MulAssign<&'c C>,
+    C: AddAssign,
+{
+    fn mul_assign(&mut self, rhs: NonConstPoly<Var, C>) {
+        self.mul_assign(&rhs);
+    }
+}
+
+impl<'a, Var: Debug + PartialEq, C: Coeff> MulAssign<&'a NonConstPoly<Var, C>>
+    for Series<Var, C>
+where
+    for<'c> &'c C: Mul<Output = C>,
+    C: MulAssign<&'a C> + AddAssign,
+{
+    fn mul_assign(&mut self, rhs: &'a NonConstPoly<Var, C>) {
+        assert_eq!(self.var(), rhs.var());
+        let (b0, b) = rhs.coeffs().split_first().unwrap();
+        self.series.min_pow += rhs.min_pow();
+        self.series.mul_by_slice(b0, b);
     }
 }
 
@@ -910,17 +909,18 @@ macro_rules! impl_mul_via_mul_assign {
 impl_mul_via_mul_assign!(
     Series<Var, C>, &'a Series<Var, C>, SeriesSlice<'a, Var, C>,
     Polynomial<Var, C>, &'a Polynomial<Var, C>, PolynomialSlice<'a, Var, C>,
+    NonConstPoly<Var, C>, &'a NonConstPoly<Var, C>,
     C, &'a C
 );
 
 impl<'a, Var, C: Coeff, T> Mul<T> for &'a Series<Var, C>
 where
-    SeriesSlice<'a, Var, C>: Mul<T, Output = Series<Var, C>>,
+    SeriesSlice<'a, Var, C>: Mul<T>,
 {
-    type Output = Series<Var, C>;
+    type Output = <SeriesSlice<'a, Var, C> as Mul<T>>::Output;
 
     fn mul(self, other: T) -> Self::Output {
-        self.as_slice(..) * other
+        self.as_slice(..).mul(other)
     }
 }
 

@@ -2285,6 +2285,7 @@ macro_rules! impl_mul_series {
             type Output = Series<Var, C>;
 
             fn mul(self, other: $s) -> Self::Output {
+                // TODO: assumes multiplication commutes
                 other.mul(self)
             }
         }
@@ -2300,6 +2301,12 @@ impl_mul_series!(&'a Polynomial<Var, C>, SeriesSlice<'a, Var, C>);
 impl_mul_series!(PolynomialSlice<'a, Var, C>, Series<Var, C>);
 impl_mul_series!(PolynomialSlice<'a, Var, C>, &'a Series<Var, C>);
 impl_mul_series!(PolynomialSlice<'a, Var, C>, SeriesSlice<'a, Var, C>);
+impl_mul_series!(NonConstPoly<Var, C>, Series<Var, C>);
+impl_mul_series!(NonConstPoly<Var, C>, &'a Series<Var, C>);
+impl_mul_series!(NonConstPoly<Var, C>, SeriesSlice<'a, Var, C>);
+impl_mul_series!(&'a NonConstPoly<Var, C>, Series<Var, C>);
+impl_mul_series!(&'a NonConstPoly<Var, C>, &'a Series<Var, C>);
+impl_mul_series!(&'a NonConstPoly<Var, C>, SeriesSlice<'a, Var, C>);
 
 macro_rules! impl_poly_sub_series {
     ($($s:ty), *) => {
