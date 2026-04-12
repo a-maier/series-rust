@@ -104,11 +104,21 @@ macro_rules! var {
 /// ```
 /// # use series::{Polynomial, once_var};
 /// once_var!(X);
+/// // We need to set a name before parsing or printing `X` for the first time
+/// X::set_name("x").unwrap();
 /// let p: Polynomial<X, i32> = "x".parse().unwrap();
 /// assert_eq!(p.to_string(), "x");
 ///
+/// // Since the variable name is only known at run time it is quite likely
+/// // that its lifetime is not `'static`. To extend it we can use a
+/// // [Box] or [String] and leak the allocation
+/// once_var!(Z);
+/// let name = "z".to_string();
+/// Z::set_name(name.leak()).unwrap();
+///
 /// // with limited visibility
-/// var!{pub(crate) Y};
+/// once_var!{pub(crate) Y};
+/// Y::set_name("y").unwrap();
 /// let p: Polynomial<Y, i32> = "y".parse().unwrap();
 /// assert_eq!(p.to_string(), "y");
 /// ```
