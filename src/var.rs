@@ -32,7 +32,7 @@ impl<Var: Default + Display> Display for VarParseError<Var> {
 /// let p: Polynomial<X, i32> = "x".parse().unwrap();
 /// assert_eq!(p.to_string(), "x");
 ///
-/// // with limited visibility
+/// // with custom visibility
 /// var!{pub(crate) Y};
 /// let p: Polynomial<Y, i32> = "y".parse().unwrap();
 /// assert_eq!(p.to_string(), "y");
@@ -94,13 +94,13 @@ macro_rules! var {
 
 }
 
-/// Define a variable with name known at run time
+/// Define a variable with name known at run time.
 ///
 /// This is an alternative to [var] for cases where the name of the
 /// variable is only known at run time. It can and must be set exactly
 /// once.
 ///
-/// # Example
+/// # Examples
 /// ```
 /// # use series::{Polynomial, once_var};
 /// once_var!(X);
@@ -108,15 +108,22 @@ macro_rules! var {
 /// X::set_name("x").unwrap();
 /// let p: Polynomial<X, i32> = "x".parse().unwrap();
 /// assert_eq!(p.to_string(), "x");
+/// ```
 ///
-/// // Since the variable name is only known at run time it is quite likely
-/// // that its lifetime is not `'static`. To extend it we can use a
-/// // [Box] or [String] and leak the allocation
+/// Since the variable name is only known at run time it is quite likely
+/// that its lifetime is not `'static`. To extend it we can use a
+/// [Box] or [String] and leak the allocation:
+///
+/// ```
+/// # use series::{Polynomial, once_var};
 /// once_var!(Z);
 /// let name = "z".to_string();
 /// Z::set_name(name.leak()).unwrap();
+/// ```
 ///
-/// // with limited visibility
+/// Variables can be defined with custom visibility:
+/// ```
+/// # use series::{Polynomial, once_var};
 /// once_var!{pub(crate) Y};
 /// Y::set_name("y").unwrap();
 /// let p: Polynomial<Y, i32> = "y".parse().unwrap();
