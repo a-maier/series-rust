@@ -124,7 +124,6 @@ impl<C: Coeff> AnonSeries<C> {
         self.as_slice(..).len()
     }
 
-
     /// Truncate the expansion power
     ///
     /// Only has an effect if the new power is less than the old one

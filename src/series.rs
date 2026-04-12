@@ -785,7 +785,7 @@ where
     }
 }
 
-impl<'a, C: Coeff, Var> MulAssign<&Series<Var, C>> for Series<Var, C>
+impl<C: Coeff, Var> MulAssign<&Series<Var, C>> for Series<Var, C>
 where
     Var: Debug + PartialEq,
     for<'c> AnonSeries<C>: MulAssign<&'c AnonSeries<C>>,

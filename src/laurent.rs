@@ -57,7 +57,7 @@ impl<Var: Clone + Debug + PartialEq, C: Coeff> Laurent<Var, C> {
             Laurent::Series(mut s) => {
                 s.truncate_at(cutoff);
                 s.into()
-            },
+            }
         }
     }
 }
