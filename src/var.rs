@@ -93,3 +93,105 @@ macro_rules! var {
     };
 
 }
+
+/// Define a variable with name known at run time
+///
+/// This is an alternative to [var] for cases where the name of the
+/// variable is only known at run time. It can and must be set exactly
+/// once.
+///
+/// # Example
+/// ```
+/// # use series::{Polynomial, once_var};
+/// once_var!(X);
+/// let p: Polynomial<X, i32> = "x".parse().unwrap();
+/// assert_eq!(p.to_string(), "x");
+///
+/// // with limited visibility
+/// var!{pub(crate) Y};
+/// let p: Polynomial<Y, i32> = "y".parse().unwrap();
+/// assert_eq!(p.to_string(), "y");
+/// ```
+#[macro_export]
+macro_rules! once_var {
+    ($var:ident) => {
+        $crate::paste::paste! {
+            #[derive(Copy, Clone, Debug, Default, Eq, PartialEq, Ord, PartialOrd, Hash)]
+            struct [< $var:camel >];
+
+            impl [< $var:camel >] {
+                fn set_name(name: &'static str) -> Result<(), &'static str> {
+                    [< $var:snake:upper _STR >].set(name)
+                }
+
+                fn get_name() -> Option<&'static str> {
+                    [< $var:snake:upper _STR >].get().map(|v| *v)
+                }
+            }
+
+            static [< $var:snake:upper _STR >]: std::sync::OnceLock<&str> = std::sync::OnceLock::new();
+
+            impl std::fmt::Display for [< $var:camel >] {
+                fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                    let name = Self::get_name()
+                        .expect("Variable name not set. Use `set_name` before using the variable.");
+                    std::fmt::Display::fmt(name, f)
+                }
+            }
+
+            impl std::str::FromStr for [< $var:camel >] {
+                type Err = $crate::var::VarParseError<Self>;
+
+                fn from_str(s: &str) -> Result<Self, Self::Err> {
+                    let name = [< $var:camel >]::get_name()
+                        .expect("Variable name not set. Use `set_name` before using the variable.");
+                    if s == name {
+                        Ok([< $var:camel >])
+                    } else {
+                        Err($crate::var::VarParseError::new())
+                    }
+                }
+            }
+        }
+    };
+    ($v:vis $var:ident) => {
+        $crate::paste::paste! {
+            #[derive(Copy, Clone, Debug, Default, Eq, PartialEq, Ord, PartialOrd, Hash)]
+            $v struct [< $var:camel >];
+
+            impl [< $var:camel >] {
+                $v fn set_name(name: &'static str) -> Result<(), &'static str> {
+                    [< $var:snake:upper _STR >].set(name)
+                }
+
+                $v fn get_name() -> Option<&'static str> {
+                    [< $var:snake:upper _STR >].get().map(|v| *v)
+                }
+            }
+
+            $v static [< $var:snake:upper _STR >]: std::sync::OnceLock<&str> = std::sync::OnceLock::new();
+
+            impl std::fmt::Display for [< $var:camel >] {
+                fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                    let name = Self::get_name()
+                        .expect("Variable name not set. Use `set_name` before using the variable.");
+                    std::fmt::Display::fmt(name, f)
+                }
+            }
+
+            impl std::str::FromStr for [< $var:camel >] {
+                type Err = $crate::var::VarParseError<Self>;
+
+                fn from_str(s: &str) -> Result<Self, Self::Err> {
+                    let name = [< $var:camel >]::get_name()
+                        .expect("Variable name not set. Use `set_name` before using the variable.");
+                    if s == name {
+                        Ok([< $var:camel >])
+                    } else {
+                        Err($crate::var::VarParseError::new())
+                    }
+                }
+            }
+        }
+    };
+}
