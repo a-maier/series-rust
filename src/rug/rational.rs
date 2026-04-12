@@ -269,16 +269,33 @@ macro_rules! impl_from {
     };
 }
 
-#[cfg(feature = "rug-integer")]
-impl From<crate::rug::Integer> for Rational {
-    fn from(value: crate::rug::Integer) -> Self {
-        Self(rug::Rational::from(value.0))
-    }
-}
-
 impl_from!(
     i8, i16, i32, i64, i128, isize, u8, u16, u32, u64, u128, usize
 );
+
+#[cfg(feature = "rug-integer")]
+impl_from!(rug::Integer);
+
+#[cfg(feature = "rug-integer")]
+impl From<(rug::Integer, rug::Integer)> for Rational {
+    fn from(val: (rug::Integer, rug::Integer)) -> Self {
+        Self(rug::Rational::from(val))
+    }
+}
+
+#[cfg(feature = "rug-integer")]
+impl From<super::Integer> for Rational {
+    fn from(value: super::Integer) -> Self {
+        Self::from(value.0)
+    }
+}
+
+#[cfg(feature = "rug-integer")]
+impl From<(super::Integer, super::Integer)> for Rational {
+    fn from(value: (super::Integer, super::Integer)) -> Self {
+        Self::from((value.0.0, value.1.0))
+    }
+}
 
 impl NeedsCoeffBracket for Rational {
     fn needs_coeff_bracket(&self) -> bool {
