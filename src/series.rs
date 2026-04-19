@@ -73,6 +73,25 @@ impl<Var, C: Coeff> Series<Var, C> {
         &self.var
     }
 
+    /// Replace the expansion variable
+    ///
+    /// Returns a pair of the series in the new expansion variable and
+    /// the old variable.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// # use series::Series;
+    /// let s = Series::new("x", -1, vec![1, 2, 3]);
+    /// let (s, x) = s.replace_var("x", "y");
+    /// assert_eq!(s.var(), &"y");
+    /// assert_eq!(x, &"x");
+    /// ```
+    pub fn replace_var<W>(self, new_var: W) -> (Series<W, C>, Var) {
+        let Self { series, var: old_var } = self;
+        (Series{ series, var: new_var }, old_var)
+    }
+
     /// Get the leading power of the series expansion variable
     ///
     /// # Example

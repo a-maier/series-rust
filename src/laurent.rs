@@ -48,6 +48,19 @@ impl<Var, C: Coeff> Laurent<Var, C> {
             Laurent::Series(s) => Some(s.min_pow()),
         }
     }
+
+    pub fn replace_var<W>(self, new_var: W) -> (Laurent<W, C>, Option<Var>) {
+        match self {
+            Laurent::Polynomial(p) => {
+                let (p, old_var) = p.replace_var(new_var);
+                (p.into(), old_var)
+            }
+            Laurent::Series(s) => {
+                let (s, old_var) = s.replace_var(new_var);
+                (s.into(), Some(old_var))
+            },
+        }
+    }
 }
 
 impl<Var: Clone + Debug + PartialEq, C: Coeff> Laurent<Var, C> {
