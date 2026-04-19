@@ -21,9 +21,9 @@ impl<Var: Default + Display> Display for VarParseError<Var> {
 /// This is a convenience macro for defining variables for
 /// [Series](crate::Series) or [Polynomial](crate::Polynomial).
 /// Effectively, `var!(VarName)` defines a unit-like struct VarName`
-/// together with a compile-time string constant `VAR_NAME_STR ==
-/// "var_name"`. [Display] and [FromStr](std::str::FromStr) are
-/// implemented matching the value of this string constant.
+/// with an associated string constant `var_name`. [Display] and
+/// [FromStr](std::str::FromStr) are implemented matching the value of
+/// this string constant.
 ///
 /// # Example
 /// ```
@@ -40,41 +40,23 @@ impl<Var: Default + Display> Display for VarParseError<Var> {
 #[macro_export]
 macro_rules! var {
     ($var:ident) => {
-        $crate::paste::paste! {
-            #[derive(Copy, Clone, Debug, Default, Eq, PartialEq, Ord, PartialOrd, Hash)]
-            struct [< $var:camel >];
-
-            const [< $var:snake:upper _STR >]: &str = stringify!([< $var:snake:lower >]);
-
-            impl std::fmt::Display for [< $var:camel >] {
-                fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-                    std::fmt::Display::fmt([< $var:snake:upper _STR >], f)
-                }
-            }
-
-            impl std::str::FromStr for [< $var:camel >] {
-                type Err = $crate::var::VarParseError<Self>;
-
-                fn from_str(s: &str) -> Result<Self, Self::Err> {
-                    if s == [< $var:snake:upper _STR >] {
-                        Ok([< $var:camel >])
-                    } else {
-                        Err($crate::var::VarParseError::new())
-                    }
-                }
-            }
-        }
+        var!(pub(self) $var);
     };
     ($v:vis $var:ident) => {
         $crate::paste::paste! {
             #[derive(Copy, Clone, Debug, Default, Eq, PartialEq, Ord, PartialOrd, Hash)]
             $v struct [< $var:camel >];
 
-            $v const [< $var:snake:upper _STR >]: &str = stringify!([< $var:snake:lower >]);
+            impl [< $var:camel >] {
+                $v const fn name() -> &'static str {
+                    stringify!([< $var:snake:lower >])
+                }
+            }
+
 
             impl std::fmt::Display for [< $var:camel >] {
                 fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-                    std::fmt::Display::fmt([< $var:snake:upper _STR >], f)
+                    std::fmt::Display::fmt(Self::name(), f)
                 }
             }
 
@@ -82,7 +64,7 @@ macro_rules! var {
                 type Err = $crate::var::VarParseError<Self>;
 
                 fn from_str(s: &str) -> Result<Self, Self::Err> {
-                    if s == [< $var:snake:upper _STR >] {
+                    if s == Self::name() {
                         Ok([< $var:camel >])
                     } else {
                         Err($crate::var::VarParseError::new())
@@ -132,44 +114,7 @@ macro_rules! var {
 #[macro_export]
 macro_rules! once_var {
     ($var:ident) => {
-        $crate::paste::paste! {
-            #[derive(Copy, Clone, Debug, Default, Eq, PartialEq, Ord, PartialOrd, Hash)]
-            struct [< $var:camel >];
-
-            impl [< $var:camel >] {
-                fn set_name(name: &'static str) -> Result<(), &'static str> {
-                    [< $var:snake:upper _STR >].set(name)
-                }
-
-                fn get_name() -> Option<&'static str> {
-                    [< $var:snake:upper _STR >].get().map(|v| *v)
-                }
-            }
-
-            static [< $var:snake:upper _STR >]: std::sync::OnceLock<&str> = std::sync::OnceLock::new();
-
-            impl std::fmt::Display for [< $var:camel >] {
-                fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-                    let name = Self::get_name()
-                        .expect("Variable name not set. Use `set_name` before using the variable.");
-                    std::fmt::Display::fmt(name, f)
-                }
-            }
-
-            impl std::str::FromStr for [< $var:camel >] {
-                type Err = $crate::var::VarParseError<Self>;
-
-                fn from_str(s: &str) -> Result<Self, Self::Err> {
-                    let name = [< $var:camel >]::get_name()
-                        .expect("Variable name not set. Use `set_name` before using the variable.");
-                    if s == name {
-                        Ok([< $var:camel >])
-                    } else {
-                        Err($crate::var::VarParseError::new())
-                    }
-                }
-            }
-        }
+        once_var!(pub(self) $var);
     };
     ($v:vis $var:ident) => {
         $crate::paste::paste! {
@@ -181,16 +126,16 @@ macro_rules! once_var {
                     [< $var:snake:upper _STR >].set(name)
                 }
 
-                $v fn get_name() -> Option<&'static str> {
+                $v fn name() -> Option<&'static str> {
                     [< $var:snake:upper _STR >].get().map(|v| *v)
                 }
             }
 
-            $v static [< $var:snake:upper _STR >]: std::sync::OnceLock<&str> = std::sync::OnceLock::new();
+            static [< $var:snake:upper _STR >]: std::sync::OnceLock<&str> = std::sync::OnceLock::new();
 
             impl std::fmt::Display for [< $var:camel >] {
                 fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-                    let name = Self::get_name()
+                    let name = Self::name()
                         .expect("Variable name not set. Use `set_name` before using the variable.");
                     std::fmt::Display::fmt(name, f)
                 }
@@ -200,7 +145,7 @@ macro_rules! once_var {
                 type Err = $crate::var::VarParseError<Self>;
 
                 fn from_str(s: &str) -> Result<Self, Self::Err> {
-                    let name = [< $var:camel >]::get_name()
+                    let name = [< $var:camel >]::name()
                         .expect("Variable name not set. Use `set_name` before using the variable.");
                     if s == name {
                         Ok([< $var:camel >])
