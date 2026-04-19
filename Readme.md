@@ -39,8 +39,7 @@ fn main() {
 
    // Define a variable `X`, rendered as "x"
    //
-   // This defines a struct `X`, a compile-time constant `X` of type `X`,
-   // and a constant string `X_STR == "x"`
+   // This defines a struct `X` with name `X::name() == "x"`.
    var!(X);
 
    // Create a new series in x
