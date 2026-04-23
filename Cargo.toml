@@ -30,7 +30,7 @@ name = "benchmarks"
 harness = false
 
 [features]
-default = ["parse", "rug-integer", "rug-rational"]
+default = ["parse"]
 parse = ["winnow"]
 winnow = ["dep:winnow"]
 serde = ["dep:serde", "rug?/serde"]
