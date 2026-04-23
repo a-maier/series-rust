@@ -23,7 +23,7 @@ library providing at least basic symbolic math.
 
 # Usage
 
-Add this to your Cargo.toml:
+Run `cargo add series` or add this to your Cargo.toml:
 
 ```toml
 [dependencies]
