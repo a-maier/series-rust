@@ -83,9 +83,9 @@ impl<Var, C: Coeff> Series<Var, C> {
     /// ```rust
     /// # use series::Series;
     /// let s = Series::new("x", -1, vec![1, 2, 3]);
-    /// let (s, x) = s.replace_var("x", "y");
+    /// let (s, x) = s.replace_var("y");
     /// assert_eq!(s.var(), &"y");
-    /// assert_eq!(x, &"x");
+    /// assert_eq!(x, "x");
     /// ```
     pub fn replace_var<W>(self, new_var: W) -> (Series<W, C>, Var) {
         let Self { series, var: old_var } = self;
