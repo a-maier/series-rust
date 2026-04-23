@@ -15,9 +15,14 @@ derive_more = { version = "2.1.1", features = ["display", "is_variant", "from"] 
 elsa = "1.11"
 num-traits = "0.2"
 paste = "1.0.15"
-rug = { version = "1.29", default-features = false, optional = true, features = ["std", "num-traits"] }
 serde = { version = "1.0", optional = true, features = ["derive"] }
 winnow = { version = "1.0.2", optional = true }
+
+[dependencies.rug]
+version = "1.29"
+default-features = false
+optional = true
+features = ["std", "num-traits"]
 
 [dev-dependencies]
 criterion = "0.8"
@@ -34,5 +39,25 @@ default = ["parse"]
 parse = ["winnow"]
 winnow = ["dep:winnow"]
 serde = ["dep:serde", "rug?/serde"]
-rug-integer = ["rug/integer", "derive_more/add", "derive_more/add_assign", "derive_more/as_ref", "derive_more/mul_assign", "derive_more/debug", "derive_more/from_str", "derive_more/into", "derive_more/not"]
-rug-rational = ["rug/rational", "derive_more/add", "derive_more/add_assign", "derive_more/as_ref", "derive_more/mul_assign", "derive_more/debug", "derive_more/from_str", "derive_more/into", "derive_more/not"]
+rug-integer = [
+  "rug/integer",
+  "derive_more/add",
+  "derive_more/add_assign",
+  "derive_more/as_ref",
+  "derive_more/mul_assign",
+  "derive_more/debug",
+  "derive_more/from_str",
+  "derive_more/into",
+  "derive_more/not",
+]
+rug-rational = [
+  "rug/rational",
+  "derive_more/add",
+  "derive_more/add_assign",
+  "derive_more/as_ref",
+  "derive_more/mul_assign",
+  "derive_more/debug",
+  "derive_more/from_str",
+  "derive_more/into",
+  "derive_more/not",
+]
