@@ -1,3 +1,39 @@
+# Version 0.14.0
+
+A major rewrite with many backwards-incompatible changes.
+
+- Added macros `var!` and `once_var!` for defining light-weight
+  variables with name set at compile time (`var!`) or once at runtime
+  (`once_var!`).
+- Added `Laurent` as a sum type of series and polynomials. `Laurent`
+  replaces `InnerSeries`, which was removed.
+- Redesigned `Polynomial` as a sum type of constants and non-constant
+  polynomials. This type replaces the old `PolynomialIn`. Polynomials
+  with anonymous variables (`Polynomial` in versions 0.12 and 0.13)
+  are no longer supported.
+- Renamed
+  `SeriesIn` -> `Series`
+  `Series` -> `AnonSeries`
+- Multiplying series by zero now leads to a panic instead of an
+  incorrect result.
+- Rewrote `Display` implementations to support series and polynomials
+  whose coefficients implement the new `SplitSign` and
+  `NeedsCoeffBracket` traits. This includes integers and floats, as
+  well as nested series and polynomials.
+- Added `O!` macro for representing series without coefficients.
+- Extended support for arithmetic operations, e.g. combining series
+  and polynomials.
+- Added basic `FromStr` implementations for series and polynomials via
+  the `parse` feature.
+- Added optional support for arbitrary-precision integer and rational
+  coefficients via [rug](https://crates.io/crates/rug).
+- Added `map` method to replace series and polynomial coefficients.
+- Added `truncate_at` method to truncate series at a lower expansion order.
+- Added `shift_pow` method to shift all powers in a series.
+- Added `replace_var` method to replace the variable of a series or
+  polynomial.
+- Updated the crate to the 2024 Rust edition.
+
 # Version 0.13.0
 
 - Added `InnerSeries` type to support nested series.
