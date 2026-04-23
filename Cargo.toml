@@ -17,7 +17,7 @@ num-traits = "0.2"
 paste = "1.0.15"
 rug = { version = "1.29", default-features = false, optional = true, features = ["std", "num-traits"] }
 serde = { version = "1.0", optional = true, features = ["derive"] }
-winnow = { version = "0.7.15", optional = true }
+winnow = { version = "1.0.2", optional = true }
 
 [dev-dependencies]
 criterion = "0.5"
