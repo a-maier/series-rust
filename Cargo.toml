@@ -1,7 +1,7 @@
 [package]
 name = "series"
 version = "0.13.0"
-authors = ["Andreas Maier <amaier@ifae.es>"]
+authors = ["Andreas Maier <andreas.maier@ifj.edu.pl>"]
 edition = "2024"
 description = "Laurent series in a single variable"
 license = "GPL-3.0-or-later"
