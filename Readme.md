@@ -159,3 +159,17 @@ fn main() {
    let p = Polynomial::new(X, 0, vec![s.clone(), &s + 3,  &s * 2]);
 }
 ```
+
+## Features
+
+### Default features
+
+- `parse`: Enable `FromStr` implementation for series and polynomials.
+
+### Non-default features
+
+- `rug-integer`: Enable support for arbitrary-precision integers as
+  coefficients via [rug](https://crates.io/crates/rug).
+
+- `rug-rational`: Enable support for arbitrary-precision rational
+  numbers as coefficients via [rug](https://crates.io/crates/rug).
