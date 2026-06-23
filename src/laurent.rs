@@ -413,6 +413,30 @@ impl_sub_assign!(
     SeriesSlice<'a, Var, C>
 );
 
+impl<Var, C: Coeff> MulAssign for Laurent<Var, C>
+where
+    Self: MulAssign<Series<Var, C>> + MulAssign<Polynomial<Var, C>>,
+{
+    fn mul_assign(&mut self, rhs: Self) {
+        match rhs {
+            Laurent::Polynomial(polynomial) => self.mul_assign(polynomial),
+            Laurent::Series(series) => self.mul_assign(series),
+        }
+    }
+}
+
+impl<'a, Var, C: Coeff> MulAssign<&'a Laurent<Var, C>> for Laurent<Var, C>
+where
+    Self: MulAssign<&'a Series<Var, C>> + MulAssign<&'a Polynomial<Var, C>>,
+{
+    fn mul_assign(&mut self, rhs: &'a Laurent<Var, C>) {
+        match rhs {
+            Laurent::Polynomial(polynomial) => self.mul_assign(polynomial),
+            Laurent::Series(series) => self.mul_assign(series),
+        }
+    }
+}
+
 impl<Var, C: Coeff> MulAssign<Polynomial<Var, C>> for Laurent<Var, C>
 where
     Polynomial<Var, C>: MulAssign,
