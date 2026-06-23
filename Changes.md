@@ -1,3 +1,7 @@
+# Version 0.15.0
+
+- Implement `MulAssign<Self>` and `MulAssign<&'a Self>` for `Laurent`.
+
 # Version 0.14.0
 
 A major rewrite with many backwards-incompatible changes.
