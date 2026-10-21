@@ -44,7 +44,7 @@ harness = false
 default = ["parse"]
 parse = ["winnow"]
 winnow = ["dep:winnow"]
-serde = ["dep:serde", "rug?/serde", "malachite?/serde"]
+serde = ["dep:serde", "rug?/serde", "malachite?/enable_serde"]
 rug-integer = [
   "rug/integer",
   "derive_more/add",
