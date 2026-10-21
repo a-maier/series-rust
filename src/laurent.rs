@@ -58,7 +58,7 @@ impl<Var, C: Coeff> Laurent<Var, C> {
             Laurent::Series(s) => {
                 let (s, old_var) = s.replace_var(new_var);
                 (s.into(), Some(old_var))
-            },
+            }
         }
     }
 }

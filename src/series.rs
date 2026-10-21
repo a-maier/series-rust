@@ -88,8 +88,17 @@ impl<Var, C: Coeff> Series<Var, C> {
     /// assert_eq!(x, "x");
     /// ```
     pub fn replace_var<W>(self, new_var: W) -> (Series<W, C>, Var) {
-        let Self { series, var: old_var } = self;
-        (Series{ series, var: new_var }, old_var)
+        let Self {
+            series,
+            var: old_var,
+        } = self;
+        (
+            Series {
+                series,
+                var: new_var,
+            },
+            old_var,
+        )
     }
 
     /// Get the leading power of the series expansion variable
