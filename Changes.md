@@ -1,3 +1,8 @@
+# Version 0.16.0
+
+- Add optional support for
+  [malachite](https://crates.io/crates/malachite).
+
 # Version 0.15.0
 
 - Implement `MulAssign<Self>` and `MulAssign<&'a Self>` for `Laurent`.
