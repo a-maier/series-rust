@@ -3,6 +3,7 @@
 pub mod anon_series;
 pub mod anon_series_slice;
 pub mod laurent;
+pub mod malachite;
 pub mod ops;
 #[cfg(feature = "parse")]
 pub mod parse;

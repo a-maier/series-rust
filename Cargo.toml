@@ -24,6 +24,12 @@ default-features = false
 optional = true
 features = ["std", "num-traits"]
 
+[dependencies.malachite]
+version = "0.14.0"
+default-features = false
+optional = true
+features = ["std"]
+
 [dev-dependencies]
 criterion = "0.8"
 rand = "0.10"
@@ -38,7 +44,7 @@ harness = false
 default = ["parse"]
 parse = ["winnow"]
 winnow = ["dep:winnow"]
-serde = ["dep:serde", "rug?/serde"]
+serde = ["dep:serde", "rug?/serde", "malachite?/serde"]
 rug-integer = [
   "rug/integer",
   "derive_more/add",
@@ -52,6 +58,28 @@ rug-integer = [
 ]
 rug-rational = [
   "rug/rational",
+  "derive_more/add",
+  "derive_more/add_assign",
+  "derive_more/as_ref",
+  "derive_more/mul_assign",
+  "derive_more/debug",
+  "derive_more/from_str",
+  "derive_more/into",
+  "derive_more/not",
+]
+malachite-integer = [
+  "malachite/naturals_and_integers",
+  "derive_more/add",
+  "derive_more/add_assign",
+  "derive_more/as_ref",
+  "derive_more/mul_assign",
+  "derive_more/debug",
+  "derive_more/from_str",
+  "derive_more/into",
+  "derive_more/not",
+]
+malachite-rational = [
+  "malachite/rationals",
   "derive_more/add",
   "derive_more/add_assign",
   "derive_more/as_ref",
