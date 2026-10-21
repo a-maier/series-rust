@@ -160,6 +160,26 @@ fn main() {
 }
 ```
 
+# Arbitrary precision integer and rational coefficients
+
+Rational and large integer coefficients are supported via [non-default
+features](#non-default-features). For instance, with the
+`rug-rational` feature:
+```
+# #[cfg(feature = "rug-rational")] {
+use series::{Polynomial, rug::Rational, var};
+
+var!(X);
+
+fn main() {
+   let p: Polynomial<X, Rational> = "1 + 1/2*x".parse().unwrap();
+   let q: Polynomial<X, Rational> = "1 - 1/2*x".parse().unwrap();
+   let pq: Polynomial<X, Rational> = "1 - 1/4*x^2".parse().unwrap();
+   assert_eq!(p * q, pq);
+}
+# }
+```
+
 ## Features
 
 ### Default features
@@ -167,6 +187,12 @@ fn main() {
 - `parse`: Enable `FromStr` implementation for series and polynomials.
 
 ### Non-default features
+
+- `malachite-integer`: Enable support for arbitrary-precision integers as
+  coefficients via [malachite](https://crates.io/crates/malachite).
+
+- `malachite-rational`: Enable support for arbitrary-precision rational
+  numbers as coefficients via [malachite](https://crates.io/crates/malachite).
 
 - `rug-integer`: Enable support for arbitrary-precision integers as
   coefficients via [rug](https://crates.io/crates/rug).
