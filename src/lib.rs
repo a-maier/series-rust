@@ -52,12 +52,6 @@ pub type IntoIter<C> = Zip<RangeFrom<isize>, std::vec::IntoIter<C>>;
 #[cfg(doctest)]
 pub struct ReadmeDoctests;
 
-#[cfg(feature = "rug")]
-pub use rug;
-
-#[cfg(feature = "malachite")]
-pub use malachite;
-
 #[cfg(test)]
 mod tests {
     use super::*;
